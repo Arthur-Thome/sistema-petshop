@@ -13,6 +13,9 @@ import Layout from "./components/Layout";
 import RotaProtegida from "./components/RotaProtegida";
 import FormularioTutor from "./pages/FormularioTutor";
 import DetalhesTutor from "./pages/DetalhesTutor";
+import FormularioPet from "./pages/FormularioPet";
+import Pets from "./pages/Pets";
+import DetalhesPet from "./pages/DetalhesPet";
 
 function App() {
   return (
@@ -61,10 +64,23 @@ function App() {
           />
 
           <Route
-            path="/pets"
-            element={
-              <PaginaEmConstrucao titulo="Pets" />
-            }
+            path="pets"
+            element={<Pets />}
+          />
+
+          <Route
+            path="pets/novo"
+            element={<FormularioPet />}
+          />
+
+          <Route
+            path="pets/:id"
+            element={<DetalhesPet />}
+          />
+
+          <Route
+            path="pets/:id/editar"
+            element={<FormularioPet />}
           />
 
           <Route

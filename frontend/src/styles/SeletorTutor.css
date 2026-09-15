@@ -1,0 +1,168 @@
+/* Campo reutilizável para localização e seleção de tutores. */
+
+.tutor-selector {
+  width: 100%;
+}
+
+.tutor-search-container {
+  position: relative;
+}
+
+.tutor-search-container input {
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  font-size: 14px;
+
+  box-sizing: border-box;
+}
+
+.tutor-search-container input:focus {
+  border-color: #6b7280;
+  outline: none;
+}
+
+.tutor-search-results {
+  position: absolute;
+  z-index: 20;
+
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+
+  max-height: 300px;
+
+  overflow-y: auto;
+
+  background: #ffffff;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.tutor-search-result {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+
+  width: 100%;
+
+  padding: 12px;
+
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+
+  background: #ffffff;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.tutor-search-result:last-child {
+  border-bottom: none;
+}
+
+.tutor-search-result:hover {
+  background: #f9fafb;
+}
+
+.tutor-search-result strong {
+  color: #1f2937;
+
+  font-size: 14px;
+}
+
+.tutor-search-result span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.tutor-search-result small {
+  color: #b91c1c;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tutor-search-empty {
+  padding: 15px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+  text-align: center;
+}
+
+.selected-tutor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  padding: 14px;
+
+  background: #f9fafb;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.selected-tutor > div {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.selected-tutor span {
+  color: #6b7280;
+
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.selected-tutor strong {
+  color: #1f2937;
+
+  font-size: 15px;
+}
+
+.selected-tutor small {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.selected-tutor .inactive-tutor-warning {
+  margin-top: 3px;
+
+  color: #b91c1c;
+
+  font-weight: 600;
+}
+
+.selected-tutor button {
+  padding: 8px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}

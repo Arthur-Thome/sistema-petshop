@@ -7,6 +7,9 @@ const pool = require("./src/database/connection");
 const authRoutes = require("./src/routes/authRoutes");
 const usuarioRoutes = require("./src/routes/usuarioRoutes");
 const tutorRoutes = require("./src/routes/tutorRoutes");
+const petRoutes = require("./src/routes/petRoutes");
+const dashboardRoutes = require("./src/routes/dashboardRoutes");
+const path = require("path");
 
 const app = express();
 
@@ -19,12 +22,24 @@ app.use(cors());
 // Converte automaticamente requisições JSON para req.body.
 app.use(express.json());
 
+// Disponibiliza publicamente somente os arquivos da pasta uploads.
+// Exemplo:
+// /uploads/pets/nome-da-imagem.jpg
+app.use(
+  "/uploads",
+  express.static(
+    path.resolve(__dirname, "src/uploads")
+  )
+);
+
 
 // Rotas principais da API.
 // Cada módulo mantém suas próprias regras e endpoints.
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/tutores", tutorRoutes);
+app.use("/api/pets", petRoutes);
+app.use("/api/dashboard" ,dashboardRoutes);
 
 
 // Rota simples utilizada para verificar se a API está funcionando.

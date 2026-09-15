@@ -1,0 +1,236 @@
+/* Formulário utilizado para cadastro e, futuramente, edição de pets. */
+
+.pet-form-page {
+  width: 100%;
+}
+
+.pet-form {
+  margin-top: 22px;
+}
+
+.pet-form-section {
+  margin-bottom: 20px;
+  padding: 24px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.section-heading {
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  margin: 0 0 5px;
+
+  color: #1f2937;
+
+  font-size: 18px;
+}
+
+.section-heading p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+.pet-form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+.pet-form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.pet-form-field.full {
+  grid-column: 1 / -1;
+}
+
+.pet-form-field label {
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pet-form-field input,
+.pet-form-field select,
+.pet-form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #1f2937;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.pet-form-field input:focus,
+.pet-form-field select:focus,
+.pet-form-field textarea:focus {
+  border-color: #6b7280;
+}
+
+.pet-form-field textarea {
+  resize: vertical;
+}
+
+.field-help {
+  margin-top: 7px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.form-alert {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+}
+
+.form-alert.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.form-alert.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pet-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  padding-bottom: 30px;
+}
+
+
+@media (max-width: 700px) {
+  .pet-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-form-field.full {
+    grid-column: auto;
+  }
+
+  .pet-form-actions {
+    flex-direction: column-reverse;
+  }
+}
+
+.pet-form-loading {
+  padding: 25px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  color: #6b7280;
+}
+
+/* Seleção e pré-visualização da foto do pet. */
+
+.pet-photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.pet-photo-preview,
+.pet-photo-preview-placeholder {
+  width: 130px;
+  height: 130px;
+
+  flex-shrink: 0;
+
+  border-radius: 12px;
+}
+
+.pet-photo-preview {
+  object-fit: cover;
+}
+
+.pet-photo-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #e5e7eb;
+  color: #374151;
+
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.pet-photo-upload-controls {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pet-photo-upload-controls input[type="file"] {
+  display: none;
+}
+
+.photo-select-button {
+  padding: 10px 15px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.pet-photo-upload-controls span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.pet-photo-upload-controls strong {
+  color: #374151;
+
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .pet-photo-upload {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

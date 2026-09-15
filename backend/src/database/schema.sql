@@ -48,3 +48,49 @@ CREATE TABLE IF NOT EXISTS tutores (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tutores_cpf
 ON tutores(cpf)
 WHERE cpf IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS pets (
+    id SERIAL PRIMARY KEY,
+
+    tutor_id INTEGER NOT NULL,
+
+    nome VARCHAR(150) NOT NULL,
+    especie VARCHAR(50) NOT NULL,
+    raca VARCHAR(100),
+    sexo VARCHAR(20),
+    data_nascimento DATE,
+    peso DECIMAL(6,2),
+    cor VARCHAR(100),
+
+    foto VARCHAR(500),
+
+    observacoes TEXT,
+
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_pets_tutor
+        FOREIGN KEY (tutor_id)
+        REFERENCES tutores(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_pets_sexo
+        CHECK (
+            sexo IS NULL
+            OR sexo IN ('macho', 'femea')
+        ),
+
+    CONSTRAINT chk_pets_peso
+        CHECK (
+            peso IS NULL
+            OR peso > 0
+        )
+);
+
+CREATE INDEX IF NOT EXISTS idx_pets_tutor
+ON pets(tutor_id);
+
+CREATE INDEX IF NOT EXISTS idx_pets_nome
+ON pets(nome);

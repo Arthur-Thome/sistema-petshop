@@ -28,3 +28,11 @@ Thumbs.db
 
 # VS Code
 .vscode/
+
+# Arquivos enviados pelos usuários não são versionados.
+backend/src/uploads/**/*
+
+# Mantemos somente a estrutura das pastas no Git.
+!backend/src/uploads/.gitkeep
+!backend/src/uploads/pets/
+!backend/src/uploads/pets/.gitkeep

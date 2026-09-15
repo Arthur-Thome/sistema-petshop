@@ -1,7 +1,56 @@
+import { useEffect, useState } from "react";
+import api from "../services/api";
+
 function Dashboard() {
   const usuario = JSON.parse(
     localStorage.getItem("usuario") || "{}"
   );
+
+  const [resumo, setResumo] = useState({
+    pets_cadastrados: 0,
+    na_creche: null,
+    no_hotel: null,
+    atendimentos_hoje: null,
+    estoque_baixo: null,
+  });
+
+  const [carregando, setCarregando] =
+    useState(true);
+
+  const [erroDashboard, setErroDashboard] =
+  useState(false);
+
+
+
+/*
+ * O Dashboard utiliza um endpoint de resumo para não
+ * precisar baixar todos os registros apenas para contar.
+ */
+useEffect(() => {
+  async function carregarDashboard() {
+    try {
+      setErroDashboard(false);
+      setCarregando(true);
+
+      const resposta =
+        await api.get(
+          "/dashboard/resumo"
+        );
+
+      setResumo(resposta.data);
+    } catch (error) {
+      setErroDashboard(true);
+      console.error(
+        "Erro ao carregar Dashboard:",
+        error
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  carregarDashboard();
+}, []);
 
   return (
     <div>
@@ -34,15 +83,55 @@ function Dashboard() {
           gap: "20px",
         }}
       >
-        <Card titulo="Pets cadastrados" valor="-" icone="🐾" />
+        <Card
+          titulo="Pets cadastrados"
+          valor={
+            carregando
+              ? "..."
+              : resumo.pets_cadastrados
+          }
+          icone="🐾"
+        />
 
-        <Card titulo="Na creche" valor="-" icone="🏠" />
+        <Card
+          titulo="Na creche"
+          valor={
+            carregando
+              ? "..."
+              : resumo.na_creche ?? "-"
+          }
+          icone="🏠"
+        />
 
-        <Card titulo="No hotel" valor="-" icone="🏨" />
+        <Card
+          titulo="No hotel"
+          valor={
+            carregando
+              ? "..."
+              : resumo.no_hotel ?? "-"
+          }
+          icone="🏨"
+        />
 
-        <Card titulo="Atendimentos hoje" valor="-" icone="✂" />
+        <Card
+          titulo="Atendimentos hoje"
+          valor={
+            carregando
+              ? "..."
+              : resumo.atendimentos_hoje ?? "-"
+          }
+          icone="✂"
+        />
 
-        <Card titulo="Estoque baixo" valor="-" icone="📦" />
+        <Card
+          titulo="Estoque baixo"
+          valor={
+            carregando
+              ? "..."
+              : resumo.estoque_baixo ?? "-"
+          }
+          icone="📦"
+        />
       </div>
     </div>
   );

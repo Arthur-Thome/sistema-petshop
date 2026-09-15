@@ -194,3 +194,55 @@
     flex-direction: column;
   }
 }
+
+/* Lista dos animais relacionados ao tutor. */
+
+.tutor-pets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutor-pet-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  padding: 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.tutor-pet-item > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tutor-pet-item strong {
+  color: #1f2937;
+}
+
+.tutor-pet-item span {
+  font-size: 13px;
+}
+
+.tutor-pet-item > div > span {
+  color: #6b7280;
+}
+
+.tutor-pet-item button {
+  padding: 8px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}

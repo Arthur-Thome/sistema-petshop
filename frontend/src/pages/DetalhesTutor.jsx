@@ -15,8 +15,38 @@ function DetalhesTutor() {
   const [modalAberto, setModalAberto] = useState(false);
   const [processandoStatus, setProcessandoStatus] = useState(false);
   const [erroConfirmacao, setErroConfirmacao] = useState("");
+  // Pets relacionados ao tutor atualmente exibido.
+  const [petsTutor, setPetsTutor] = useState([]);
+  const [carregandoPets, setCarregandoPets] = useState(true);
 
-    // Busca sempre os dados atuais do tutor diretamente da API.
+// Carrega os animais relacionados ao tutor.
+// O relacionamento é feito através de pets.tutor_id.
+useEffect(() => {
+  async function carregarPetsTutor() {
+    try {
+      setCarregandoPets(true);
+
+      const resposta = await api.get(
+        `/pets/tutor/${id}`
+      );
+
+      setPetsTutor(resposta.data);
+    } catch (error) {
+      console.error(
+        "Erro ao carregar pets do tutor:",
+        error
+      );
+
+      setPetsTutor([]);
+    } finally {
+      setCarregandoPets(false);
+    }
+  }
+
+  carregarPetsTutor();
+}, [id]);
+
+  // Busca sempre os dados atuais do tutor diretamente da API.
   useEffect(() => {
     async function carregarTutor() {
       try {
@@ -231,17 +261,51 @@ function DetalhesTutor() {
           <h2>Pets deste tutor</h2>
         </div>
 
-        <div className="empty-pets">
-          <div>🐾</div>
+          <div className="tutor-pets-list">
+            {carregandoPets ? (
+              <p>Carregando pets...</p>
+            ) : petsTutor.length === 0 ? (
+              <p>Nenhum pet cadastrado para este tutor.</p>
+            ) : (
+              petsTutor.map((pet) => (
+                <div
+                  key={pet.id}
+                  className="tutor-pet-item"
+                >
+                  <div>
+                    <strong>{pet.nome}</strong>
 
-          <strong>
-            Nenhum pet cadastrado
-          </strong>
+                    <span>
+                      {pet.raca ||
+                        pet.especie ||
+                        "Não informado"}
+                    </span>
+                  </div>
 
-          <p>
-            Os pets vinculados a este tutor aparecerão aqui.
-          </p>
-        </div>
+                  <span
+                    className={
+                      pet.ativo
+                        ? "status-badge active"
+                        : "status-badge inactive"
+                    }
+                  >
+                    {pet.ativo
+                      ? "Ativo"
+                      : "Inativo"}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/pets/${pet.id}`)
+                    }
+                  >
+                    Visualizar
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
       </section>
 
       <div className="danger-zone">
