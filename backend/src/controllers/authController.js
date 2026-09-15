@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const pool = require("../database/connection");
 const { registrarLog } = require("../services/logService");
 
+// Autentica o usuário e gera um JWT quando as credenciais
+// estiverem corretas e a conta estiver ativa.
 async function login(req, res) {
   try {
     const { email, senha } = req.body;
@@ -34,6 +36,8 @@ async function login(req, res) {
       });
     }
 
+    // A senha recebida é comparada diretamente com o hash.
+    // A senha original nunca é armazenada.
     const senhaCorreta = await bcrypt.compare(
       senha,
       usuario.senha_hash
@@ -44,7 +48,8 @@ async function login(req, res) {
         mensagem: "E-mail ou senha inválidos.",
       });
     }
-
+    // O token contém apenas informações necessárias para identificar
+    // a sessão. Dados sensíveis não devem ser colocados no JWT.
     const token = jwt.sign(
       {
         id: usuario.id,
@@ -55,7 +60,7 @@ async function login(req, res) {
         expiresIn: process.env.JWT_EXPIRES_IN || "8h",
       }
     );
-
+    // Registra o login bem-sucedido para fins de auditoria.
     await registrarLog({
   usuarioId: usuario.id,
   acao: "LOGIN",

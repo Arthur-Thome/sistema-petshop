@@ -6,6 +6,9 @@ function RotaProtegida({ children }) {
   const [carregando, setCarregando] = useState(true);
   const [autenticado, setAutenticado] = useState(false);
 
+  // Não confiamos apenas na existência do token no navegador.
+  // /auth/me confirma no backend se a sessão continua válida
+  z// e se o usuário permanece ativo.
   useEffect(() => {
     async function verificarAutenticacao() {
       const token = localStorage.getItem("token");

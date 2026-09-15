@@ -2,6 +2,8 @@ const bcrypt = require("bcrypt");
 const pool = require("../database/connection");
 const { registrarLog } = require("../services/logService");
 
+// Cadastro de usuários é restrito pelas rotas aos perfis autorizados.
+// A senha é transformada em hash antes de qualquer gravação.
 async function cadastrarUsuario(req, res) {
   try {
     const { nome, email, senha, perfil } = req.body;

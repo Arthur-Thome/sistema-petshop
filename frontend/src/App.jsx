@@ -7,7 +7,12 @@ import {
 
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
+import PaginaEmConstrucao from "./pages/PaginaEmConstrucao";
+import Tutores from "./pages/Tutores";
+import Layout from "./components/Layout";
 import RotaProtegida from "./components/RotaProtegida";
+import FormularioTutor from "./pages/FormularioTutor";
+import DetalhesTutor from "./pages/DetalhesTutor";
 
 function App() {
   return (
@@ -15,7 +20,7 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={<Navigate to="/login" replace />}
+          element={<Navigate to="/dashboard" replace />}
         />
 
         <Route
@@ -24,16 +29,90 @@ function App() {
         />
 
         <Route
-          path="/dashboard"
           element={
             <RotaProtegida>
-              <Dashboard />
-            </RotaProtegida>}
-        />
+              <Layout />
+            </RotaProtegida>
+          }
+        >
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
+
+          <Route
+            path="/tutores"
+            element={<Tutores />}
+          />
+
+          <Route
+            path="/tutores/novo"
+            element={<FormularioTutor />}
+          />
+
+          <Route
+            path="/tutores/:id"
+            element={<DetalhesTutor />}
+          />
+
+          <Route
+            path="/tutores/:id/editar"
+            element={<FormularioTutor />}
+          />
+
+          <Route
+            path="/pets"
+            element={
+              <PaginaEmConstrucao titulo="Pets" />
+            }
+          />
+
+          <Route
+            path="/creche"
+            element={
+              <PaginaEmConstrucao titulo="Creche" />
+            }
+          />
+
+          <Route
+            path="/hotel"
+            element={
+              <PaginaEmConstrucao titulo="Hotel" />
+            }
+          />
+
+          <Route
+            path="/banho-tosa"
+            element={
+              <PaginaEmConstrucao titulo="Banho e Tosa" />
+            }
+          />
+
+          <Route
+            path="/produtos"
+            element={
+              <PaginaEmConstrucao titulo="Produtos" />
+            }
+          />
+
+          <Route
+            path="/estoque"
+            element={
+              <PaginaEmConstrucao titulo="Estoque" />
+            }
+          />
+
+          <Route
+            path="/administracao"
+            element={
+              <PaginaEmConstrucao titulo="Administração" />
+            }
+          />
+        </Route>
 
         <Route
           path="*"
-          element={<Navigate to="/login" replace />}
+          element={<Navigate to="/dashboard" replace />}
         />
       </Routes>
     </BrowserRouter>

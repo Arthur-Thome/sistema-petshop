@@ -1,0 +1,176 @@
+.app-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f6f8;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 260px;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 24px 20px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logo {
+  font-size: 32px;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sidebar-header span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 16px 12px;
+}
+
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 4px;
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  color: #d1d5db;
+  text-decoration: none;
+
+  font-size: 14px;
+
+  transition: 0.2s;
+}
+
+.sidebar-menu a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.sidebar-menu a.active {
+  background: #374151;
+  color: #ffffff;
+}
+
+.sidebar-menu a span {
+  width: 22px;
+  text-align: center;
+}
+
+.menu-section {
+  margin: 24px 14px 8px;
+
+  color: #6b7280;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 16px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #4b5563;
+
+  font-weight: bold;
+}
+
+.user-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.user-info strong {
+  overflow: hidden;
+
+  font-size: 13px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-info span {
+  margin-top: 2px;
+
+  color: #9ca3af;
+
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.logout-button {
+  border: none;
+  background: transparent;
+
+  color: #d1d5db;
+
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  color: #ffffff;
+}
+
+.main-content {
+  width: calc(100% - 260px);
+  min-height: 100vh;
+
+  margin-left: 260px;
+  padding: 32px;
+}

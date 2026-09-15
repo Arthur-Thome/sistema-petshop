@@ -1,6 +1,14 @@
 const jwt = require("jsonwebtoken");
 const pool = require("../database/connection");
 
+
+// Valida o JWT enviado no cabeçalho Authorization.
+//
+// Além de validar o token, consultamos novamente o usuário
+// no banco em cada requisição protegida. Dessa forma,
+// alterações de perfil ou desativação de conta passam a
+// valer imediatamente, mesmo que exista um JWT ainda válido.
+
 async function autenticar(req, res, next) {
   const authHeader = req.headers.authorization;
 
@@ -21,8 +29,10 @@ async function autenticar(req, res, next) {
   const token = partes[1];
 
   try {
+    // Verifica assinatura e expiração do token.
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // O banco é a fonte atual da situação e das permissões do usuário.
     const resultado = await pool.query(
       `SELECT id, nome, email, perfil, ativo
        FROM usuarios

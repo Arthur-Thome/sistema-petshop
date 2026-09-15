@@ -1,3 +1,11 @@
+// Cria um middleware reutilizável de autorização por perfil.
+//
+// Exemplo:
+// permitirPerfis("administrador", "gerente")
+//
+// Esconder opções no frontend melhora a interface, mas não
+// substitui esta validação no backend.
+
 function permitirPerfis(...perfisPermitidos) {
   return (req, res, next) => {
     if (!req.usuario) {

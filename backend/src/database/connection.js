@@ -1,5 +1,9 @@
 const { Pool } = require("pg");
 
+
+// Pool mantém conexões reutilizáveis com PostgreSQL.
+// As credenciais ficam no .env e nunca devem ser colocadas
+// diretamente no código ou enviadas ao GitHub.
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,

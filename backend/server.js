@@ -5,23 +5,38 @@ require("dotenv").config();
 const pool = require("./src/database/connection");
 
 const authRoutes = require("./src/routes/authRoutes");
-
 const usuarioRoutes = require("./src/routes/usuarioRoutes");
+const tutorRoutes = require("./src/routes/tutorRoutes");
 
 const app = express();
 
+
+// Permite que o frontend faça requisições para esta API.
+// Em produção, poderemos restringir o CORS ao domínio do sistema.
 app.use(cors());
+
+
+// Converte automaticamente requisições JSON para req.body.
 app.use(express.json());
-app.use("/api/auth", authRoutes);
+
+
+// Rotas principais da API.
+// Cada módulo mantém suas próprias regras e endpoints.
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/tutores", tutorRoutes);
 
+
+// Rota simples utilizada para verificar se a API está funcionando.
 app.get("/", (req, res) => {
   res.json({
     mensagem: "API do sistema pet shop funcionando",
   });
 });
 
+
+// Rota temporária de diagnóstico da conexão com PostgreSQL.
+// Poderemos remover esta rota antes de publicar o sistema em produção.
 app.get("/teste-banco", async (req, res) => {
   try {
     const resultado = await pool.query("SELECT NOW()");
@@ -38,6 +53,7 @@ app.get("/teste-banco", async (req, res) => {
     });
   }
 });
+
 
 const PORT = process.env.PORT || 3001;
 

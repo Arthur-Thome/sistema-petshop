@@ -1,0 +1,206 @@
+.form-page {
+  width: 100%;
+  max-width: 1100px;
+}
+
+.back-button {
+  padding: 10px 15px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #374151;
+
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: #f3f4f6;
+}
+
+.tutor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section {
+  padding: 25px;
+
+  background: #ffffff;
+
+  border-radius: 12px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.form-section-header {
+  margin-bottom: 24px;
+}
+
+.form-section-header h2 {
+  margin: 0;
+
+  color: #1f2937;
+
+  font-size: 18px;
+}
+
+.form-section-header p {
+  margin: 6px 0 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field-full {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-field label span {
+  color: #dc2626;
+}
+
+.form-field input,
+.form-textarea {
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #1f2937;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.form-field input:focus,
+.form-textarea:focus {
+  border-color: #6b7280;
+}
+
+.form-textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  padding: 20px 0;
+}
+
+.cancel-button,
+.save-button {
+  padding: 12px 20px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.cancel-button {
+  border: 1px solid #d1d5db;
+
+  background: #ffffff;
+  color: #374151;
+}
+
+.save-button {
+  border: none;
+
+  background: #1f2937;
+  color: #ffffff;
+}
+
+.save-button:hover {
+  background: #374151;
+}
+
+.cancel-button:hover {
+  background: #f3f4f6;
+}
+
+.save-button:disabled,
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-alert {
+  padding: 13px 15px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+}
+
+.form-alert-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.form-alert-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+@media (max-width: 800px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field-full {
+    grid-column: auto;
+  }
+
+  .form-grid > div:empty {
+    display: none;
+  }
+}
+
+.cep-message,
+.cep-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.cep-message {
+  color: #6b7280;
+}
+
+.cep-error {
+  color: #dc2626;
+}
