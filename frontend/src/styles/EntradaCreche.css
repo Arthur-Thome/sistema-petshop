@@ -1,0 +1,276 @@
+.entrada-creche-page {
+  width: 100%;
+}
+
+.entrada-creche-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+.entrada-creche-header h1 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.entrada-creche-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.entrada-creche-erro {
+  padding: 14px 16px;
+  margin-bottom: 20px;
+
+  background: #ffffff;
+
+  border-radius: 8px;
+
+  color: #991b1b;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.entrada-creche-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.entrada-creche-bloco {
+  padding: 22px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.entrada-creche-bloco h2 {
+  margin: 0 0 18px;
+
+  color: #1f2937;
+
+  font-size: 18px;
+}
+
+
+/*
+ * Busca de pets.
+ */
+.entrada-creche-busca {
+  margin-bottom: 18px;
+}
+
+.entrada-creche-busca input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Cada pet é um botão para permitir seleção
+ * sem criar controles adicionais na interface.
+ */
+.entrada-pets-lista {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(280px, 1fr));
+
+  gap: 12px;
+}
+
+.entrada-pet-card {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  padding: 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  color: #374151;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.entrada-pet-card:hover:not(:disabled) {
+  border-color: #6b7280;
+}
+
+.entrada-pet-card.selecionado {
+  border: 2px solid #374151;
+}
+
+.entrada-pet-card.indisponivel {
+  background: #f3f4f6;
+
+  opacity: 0.7;
+
+  cursor: not-allowed;
+}
+
+.entrada-pet-card > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entrada-pet-card > div:first-child strong {
+  font-size: 16px;
+}
+
+.entrada-pet-card > div:first-child span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.entrada-pet-tutor {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.entrada-pet-tutor span {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.entrada-pet-tutor strong {
+  font-size: 13px;
+}
+
+.entrada-pet-status {
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #6b7280;
+}
+
+
+/*
+ * Resumo do pet selecionado.
+ */
+.entrada-pet-selecionado {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 15px;
+
+  margin-bottom: 20px;
+}
+
+.entrada-pet-selecionado div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entrada-pet-selecionado span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.entrada-pet-selecionado strong {
+  color: #374151;
+}
+
+
+/*
+ * Observações são opcionais.
+ */
+.entrada-observacoes {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.entrada-observacoes span {
+  color: #374151;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.entrada-observacoes textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  resize: vertical;
+
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.entrada-creche-acoes {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.entrada-creche-vazio {
+  padding: 20px;
+
+  background: #f9fafb;
+
+  border-radius: 7px;
+
+  color: #6b7280;
+
+  text-align: center;
+}
+
+
+@media (max-width: 700px) {
+
+  .entrada-creche-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .entrada-pets-lista {
+    grid-template-columns: 1fr;
+  }
+
+  .entrada-pet-selecionado {
+    grid-template-columns: 1fr;
+  }
+
+  .entrada-creche-acoes {
+    flex-direction: column;
+  }
+
+}

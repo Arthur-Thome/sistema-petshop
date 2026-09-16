@@ -1,0 +1,155 @@
+.historico-creche-page {
+  width: 100%;
+}
+
+.historico-creche-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+.historico-creche-header h1 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.historico-creche-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.historico-creche-busca {
+  display: flex;
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+.historico-creche-busca input {
+  width: 100%;
+  max-width: 500px;
+
+  box-sizing: border-box;
+
+  padding: 10px 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  font-size: 14px;
+}
+
+.historico-creche-tabela-container {
+  overflow-x: auto;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.historico-creche-tabela {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.historico-creche-tabela th,
+.historico-creche-tabela td {
+  padding: 14px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+
+  text-align: left;
+
+  vertical-align: top;
+}
+
+.historico-creche-tabela th {
+  color: #6b7280;
+
+  font-size: 12px;
+
+  background: #f9fafb;
+}
+
+.historico-creche-tabela td {
+  color: #374151;
+
+  font-size: 13px;
+}
+
+.historico-creche-tabela td:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historico-creche-tabela small {
+  color: #6b7280;
+}
+
+.historico-status {
+  display: inline-block;
+
+  padding: 5px 8px;
+
+  border-radius: 20px;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.historico-status.ativo {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.historico-status.finalizado {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.historico-creche-erro,
+.historico-creche-vazio {
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 8px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.historico-creche-erro {
+  margin-bottom: 20px;
+  color: #991b1b;
+}
+
+
+@media (max-width: 700px) {
+
+  .historico-creche-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .historico-creche-busca {
+    flex-direction: column;
+  }
+
+  .historico-creche-busca input {
+    max-width: none;
+  }
+
+}

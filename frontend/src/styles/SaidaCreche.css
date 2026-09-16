@@ -1,0 +1,200 @@
+.saida-creche-page {
+  width: 100%;
+}
+
+.saida-creche-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+.saida-creche-header h1 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.saida-creche-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.saida-creche-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.saida-creche-bloco {
+  padding: 22px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.saida-creche-bloco h2 {
+  margin: 0 0 18px;
+
+  color: #1f2937;
+
+  font-size: 18px;
+}
+
+
+/*
+ * Resumo da permanência que está sendo finalizada.
+ */
+.saida-creche-pet {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+.saida-creche-pet div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.saida-creche-pet span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.saida-creche-pet strong {
+  color: #374151;
+}
+
+
+/*
+ * Mantemos a observação feita na entrada visível
+ * para o funcionário antes de finalizar.
+ */
+.saida-observacao-entrada {
+  margin-top: 20px;
+
+  padding: 14px;
+
+  background: #f9fafb;
+
+  border-radius: 7px;
+}
+
+.saida-observacao-entrada span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.saida-observacao-entrada p {
+  margin: 5px 0 0;
+
+  color: #374151;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+ * Observações informadas no momento da saída.
+ */
+.saida-observacoes {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.saida-observacoes span {
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.saida-observacoes textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  resize: vertical;
+
+  font-family: inherit;
+  font-size: 14px;
+}
+
+
+/*
+ * Aviso para deixar claro que a operação finaliza
+ * a permanência, mas não exclui o histórico.
+ */
+.saida-creche-aviso {
+  margin-top: 18px;
+
+  padding: 13px;
+
+  background: #f3f4f6;
+
+  border-radius: 7px;
+
+  color: #4b5563;
+
+  font-size: 13px;
+}
+
+.saida-creche-acoes {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.saida-creche-erro,
+.saida-creche-mensagem {
+  padding: 18px;
+
+  background: #ffffff;
+
+  border-radius: 8px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.saida-creche-erro {
+  margin-bottom: 20px;
+
+  color: #991b1b;
+}
+
+
+@media (max-width: 700px) {
+
+  .saida-creche-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saida-creche-pet {
+    grid-template-columns: 1fr;
+  }
+
+  .saida-creche-acoes {
+    flex-direction: column;
+  }
+
+}

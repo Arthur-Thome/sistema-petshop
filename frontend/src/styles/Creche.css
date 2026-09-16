@@ -1,0 +1,298 @@
+/*
+ * Tela operacional da Creche.
+ *
+ * Mantemos os controles principais destacados porque
+ * esta será uma página utilizada frequentemente.
+ */
+
+.creche-page {
+  width: 100%;
+}
+
+.creche-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+.creche-header h1 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.creche-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.creche-header-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+
+/*
+ * Pequeno resumo operacional.
+ */
+.creche-resumo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 18px 20px;
+  margin-bottom: 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.creche-resumo span {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.creche-resumo strong {
+  font-size: 28px;
+  color: #1f2937;
+}
+
+
+/*
+ * Busca rápida apenas entre os pets
+ * atualmente presentes.
+ */
+.creche-busca {
+  margin-bottom: 20px;
+}
+
+.creche-busca input {
+  width: 100%;
+  max-width: 500px;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  font-size: 14px;
+}
+
+.creche-busca input:focus {
+  outline: none;
+  border-color: #6b7280;
+}
+
+
+/*
+ * Cards dos pets atualmente na Creche.
+ */
+.creche-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(320px, 1fr));
+
+  gap: 18px;
+}
+
+.creche-card {
+  background: #ffffff;
+
+  padding: 20px;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.creche-card-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+.creche-card-topo h3 {
+  margin: 0 0 5px;
+
+  color: #1f2937;
+}
+
+.creche-card-topo div > span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.creche-status {
+  padding: 5px 9px;
+
+  background: #f3f4f6;
+
+  border-radius: 20px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+
+/*
+ * Informações operacionais.
+ */
+.creche-card-info {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 15px;
+
+  margin-top: 17px;
+}
+
+.creche-card-info div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.creche-card-info span,
+.creche-observacao span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.creche-card-info strong {
+  color: #374151;
+  font-size: 14px;
+}
+
+
+/*
+ * Observações de entrada ficam separadas dos
+ * dados principais para facilitar a leitura.
+ */
+.creche-observacao {
+  margin-top: 17px;
+
+  padding: 12px;
+
+  background: #f9fafb;
+
+  border-radius: 7px;
+}
+
+.creche-observacao p {
+  margin: 5px 0 0;
+
+  color: #374151;
+
+  font-size: 14px;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+ * Ações do atendimento.
+ */
+.creche-card-acoes {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+
+/*
+ * Estados da página.
+ */
+.creche-mensagem,
+.creche-vazia,
+.creche-erro {
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.creche-vazia {
+  text-align: center;
+}
+
+.creche-vazia h3 {
+  margin-top: 0;
+
+  color: #374151;
+}
+
+.creche-vazia p {
+  margin-bottom: 0;
+
+  color: #6b7280;
+}
+
+.creche-erro {
+  margin-bottom: 20px;
+
+  color: #991b1b;
+}
+
+
+/*
+ * Adaptação para telas menores.
+ */
+@media (max-width: 700px) {
+
+  .creche-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .creche-header-acoes {
+    width: 100%;
+  }
+
+  .creche-header-acoes button {
+    flex: 1;
+  }
+
+  .creche-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .creche-card-info {
+    grid-template-columns: 1fr;
+  }
+
+  .creche-card-acoes {
+    flex-direction: column;
+  }
+
+}

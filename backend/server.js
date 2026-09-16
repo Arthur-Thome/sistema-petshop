@@ -11,6 +11,7 @@ const petRoutes = require("./src/routes/petRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
 const produtoRoutes = require("./src/routes/produtoRoutes");
 const estoqueRoutes = require("./src/routes/estoqueRoutes");
+const crecheRoutes = require("./src/routes/crecheRoutes");
 const path = require("path");
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/pets", petRoutes);
 app.use("/api/dashboard" ,dashboardRoutes);
 app.use("/api/produtos", produtoRoutes);
 app.use("/api/estoque", estoqueRoutes);
+app.use("/api/creche", crecheRoutes);
 
 
 // Rota simples utilizada para verificar se a API está funcionando.

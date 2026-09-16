@@ -36,6 +36,21 @@ async function buscarResumo(req, res) {
 
     const estoqueBaixo =
       resultadoEstoqueBaixo.rows[0].total;
+    /*
+    * Conta somente permanências abertas.
+    *
+    * Como o banco impede duas permanências abertas para
+    * o mesmo pet, esse total corresponde à quantidade
+    * de pets que estão na Creche neste momento.
+    */
+    const resultadoCreche = await pool.query(`
+      SELECT COUNT(*)::INTEGER AS total
+      FROM creche
+      WHERE status = 'NA_CRECHE'
+    `);
+
+    const naCreche =
+      resultadoCreche.rows[0].total;
 
     return res.status(200).json({
       pets_cadastrados: totalPets,
@@ -44,7 +59,7 @@ async function buscarResumo(req, res) {
        * Estes indicadores serão implementados quando
        * seus respectivos módulos forem criados.
        */
-      na_creche: null,
+      na_creche: naCreche,
       no_hotel: null,
       atendimentos_hoje: null,
       estoque_baixo: estoqueBaixo,

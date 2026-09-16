@@ -20,6 +20,10 @@ import Produtos from "./pages/Produtos";
 import FormularioProduto from "./pages/FormularioProduto";
 import DetalhesProduto from "./pages/DetalhesProduto";
 import MovimentarEstoque from "./pages/MovimentarEstoque";
+import Creche from "./pages/Creche";
+import EntradaCreche from "./pages/EntradaCreche";
+import SaidaCreche from "./pages/SaidaCreche";
+import HistoricoCreche from "./pages/HistoricoCreche";
 
 function App() {
   return (
@@ -89,9 +93,22 @@ function App() {
 
           <Route
             path="/creche"
-            element={
-              <PaginaEmConstrucao titulo="Creche" />
-            }
+            element={<Creche />}
+          />
+
+          <Route
+            path="creche/entrada"
+            element={<EntradaCreche />}
+          />
+
+          <Route
+            path="creche/:id/saida"
+            element={<SaidaCreche />}
+          />
+
+          <Route
+            path="creche/historico"
+            element={<HistoricoCreche />}
           />
 
           <Route
