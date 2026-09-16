@@ -1,0 +1,96 @@
+.form-produto-page {
+  width: 100%;
+  max-width: 900px;
+}
+
+.form-produto-header {
+  margin-bottom: 24px;
+}
+
+.form-produto-header h1 {
+  margin: 0 0 6px;
+}
+
+.form-produto-header p {
+  margin: 0;
+  color: #666;
+}
+
+.form-produto {
+  padding: 24px;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.form-produto .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.form-produto label {
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.form-produto input,
+.form-produto select,
+.form-produto textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.form-produto textarea {
+  resize: vertical;
+}
+
+.campo-opcional {
+  color: #777;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.form-produto-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.form-produto-erro {
+  margin-bottom: 18px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fdeaea;
+  color: #a32a2a;
+}
+
+.btn-secondary {
+  background: #1f2937;
+  color: #ffffff;
+  padding: 10px 16px;
+
+  border: none;
+  border-radius: 7px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

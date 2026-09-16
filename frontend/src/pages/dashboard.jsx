@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+
 function Dashboard() {
+
+  const navigate = useNavigate();
+
+
   const usuario = JSON.parse(
     localStorage.getItem("usuario") || "{}"
   );
+
 
   const [resumo, setResumo] = useState({
     pets_cadastrados: 0,
@@ -14,47 +21,75 @@ function Dashboard() {
     estoque_baixo: null,
   });
 
+
   const [carregando, setCarregando] =
     useState(true);
 
-  const [erroDashboard, setErroDashboard] =
-  useState(false);
+
+  const [
+    erroDashboard,
+    setErroDashboard,
+  ] = useState(false);
 
 
 
-/*
- * O Dashboard utiliza um endpoint de resumo para não
- * precisar baixar todos os registros apenas para contar.
- */
-useEffect(() => {
-  async function carregarDashboard() {
-    try {
-      setErroDashboard(false);
-      setCarregando(true);
+  /*
+   * O Dashboard utiliza um endpoint de resumo para não
+   * precisar baixar todos os registros apenas para contar.
+   */
+  useEffect(() => {
 
-      const resposta =
-        await api.get(
-          "/dashboard/resumo"
+    async function carregarDashboard() {
+
+      try {
+
+        setErroDashboard(false);
+        setCarregando(true);
+
+
+        const resposta =
+          await api.get(
+            "/dashboard/resumo"
+          );
+
+
+        setResumo(
+          resposta.data
         );
 
-      setResumo(resposta.data);
-    } catch (error) {
-      setErroDashboard(true);
-      console.error(
-        "Erro ao carregar Dashboard:",
-        error
-      );
-    } finally {
-      setCarregando(false);
-    }
-  }
+      } catch (error) {
 
-  carregarDashboard();
-}, []);
+        setErroDashboard(true);
+
+        console.error(
+          "Erro ao carregar Dashboard:",
+          error
+        );
+
+      } finally {
+
+        setCarregando(false);
+
+      }
+    }
+
+
+    carregarDashboard();
+
+  }, []);
+
+
 
   return (
+
     <div>
-      <div style={{ marginBottom: "32px" }}>
+
+      <div
+        style={{
+          marginBottom: "32px",
+        }}
+      >
+
         <h1
           style={{
             margin: 0,
@@ -65,6 +100,7 @@ useEffect(() => {
           Dashboard
         </h1>
 
+
         <p
           style={{
             marginTop: "8px",
@@ -73,16 +109,36 @@ useEffect(() => {
         >
           Bem-vindo, {usuario.nome}.
         </p>
+
       </div>
+
+
+      {erroDashboard && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "12px",
+            background: "#fdeaea",
+            color: "#a32a2a",
+            borderRadius: "8px",
+          }}
+        >
+          Não foi possível atualizar os dados do Dashboard.
+        </div>
+      )}
+
 
       <div
         style={{
           display: "grid",
+
           gridTemplateColumns:
             "repeat(auto-fit, minmax(200px, 1fr))",
+
           gap: "20px",
         }}
       >
+
         <Card
           titulo="Pets cadastrados"
           valor={
@@ -92,6 +148,7 @@ useEffect(() => {
           }
           icone="🐾"
         />
+
 
         <Card
           titulo="Na creche"
@@ -103,6 +160,7 @@ useEffect(() => {
           icone="🏠"
         />
 
+
         <Card
           titulo="No hotel"
           valor={
@@ -112,6 +170,7 @@ useEffect(() => {
           }
           icone="🏨"
         />
+
 
         <Card
           titulo="Atendimentos hoje"
@@ -123,30 +182,108 @@ useEffect(() => {
           icone="✂"
         />
 
+
         <Card
-          titulo="Estoque baixo"
+          titulo="Produtos para repor"
           valor={
             carregando
               ? "..."
               : resumo.estoque_baixo ?? "-"
           }
           icone="📦"
+          onClick={() =>
+            navigate(
+              "/produtos?estoque=baixo"
+            )
+          }
         />
+
       </div>
+
     </div>
   );
 }
 
-function Card({ titulo, valor, icone }) {
+
+
+/*
+ * Componente reutilizado pelos cards do Dashboard.
+ *
+ * Quando onClick é informado, o card também funciona
+ * como um atalho para outra área do sistema.
+ */
+function Card({
+  titulo,
+  valor,
+  icone,
+  onClick,
+}) {
+
+  const clicavel =
+    typeof onClick === "function";
+
+
+  function tratarTeclado(event) {
+
+    if (!clicavel) {
+      return;
+    }
+
+
+    if (
+      event.key === "Enter" ||
+      event.key === " "
+    ) {
+
+      event.preventDefault();
+
+      onClick();
+
+    }
+  }
+
+
   return (
+
     <div
+      onClick={onClick}
+
+      onKeyDown={
+        tratarTeclado
+      }
+
+      role={
+        clicavel
+          ? "button"
+          : undefined
+      }
+
+      tabIndex={
+        clicavel
+          ? 0
+          : undefined
+      }
+
       style={{
         background: "#ffffff",
+
         padding: "22px",
+
         borderRadius: "12px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+
+        boxShadow:
+          "0 2px 8px rgba(0,0,0,0.05)",
+
+        cursor:
+          clicavel
+            ? "pointer"
+            : "default",
+
+        transition:
+          "transform 0.15s ease, box-shadow 0.15s ease",
       }}
     >
+
       <div
         style={{
           fontSize: "28px",
@@ -156,27 +293,54 @@ function Card({ titulo, valor, icone }) {
         {icone}
       </div>
 
+
       <div
         style={{
           fontSize: "28px",
+
           fontWeight: "bold",
+
           color: "#1f2937",
         }}
       >
         {valor}
       </div>
 
+
       <div
         style={{
           marginTop: "5px",
+
           color: "#6b7280",
+
           fontSize: "13px",
         }}
       >
         {titulo}
       </div>
+
+
+      {clicavel && (
+
+        <div
+          style={{
+            marginTop: "10px",
+
+            color: "#4b5563",
+
+            fontSize: "12px",
+
+            fontWeight: "600",
+          }}
+        >
+          Ver produtos →
+        </div>
+
+      )}
+
     </div>
   );
 }
+
 
 export default Dashboard;

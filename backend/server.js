@@ -9,6 +9,8 @@ const usuarioRoutes = require("./src/routes/usuarioRoutes");
 const tutorRoutes = require("./src/routes/tutorRoutes");
 const petRoutes = require("./src/routes/petRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
+const produtoRoutes = require("./src/routes/produtoRoutes");
+const estoqueRoutes = require("./src/routes/estoqueRoutes");
 const path = require("path");
 
 const app = express();
@@ -40,6 +42,8 @@ app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/tutores", tutorRoutes);
 app.use("/api/pets", petRoutes);
 app.use("/api/dashboard" ,dashboardRoutes);
+app.use("/api/produtos", produtoRoutes);
+app.use("/api/estoque", estoqueRoutes);
 
 
 // Rota simples utilizada para verificar se a API está funcionando.

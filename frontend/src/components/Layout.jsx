@@ -63,17 +63,12 @@ function Layout() {
           </NavLink>
 
           <div className="menu-section">
-            PRODUTOS
+            ESTOQUE
           </div>
 
           <NavLink to="/produtos">
             <span>📦</span>
             Produtos
-          </NavLink>
-
-          <NavLink to="/estoque">
-            <span>▤</span>
-            Estoque
           </NavLink>
 
           {/* Administração fica oculta para outros perfis.

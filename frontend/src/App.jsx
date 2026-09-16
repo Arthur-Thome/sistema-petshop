@@ -16,6 +16,10 @@ import DetalhesTutor from "./pages/DetalhesTutor";
 import FormularioPet from "./pages/FormularioPet";
 import Pets from "./pages/Pets";
 import DetalhesPet from "./pages/DetalhesPet";
+import Produtos from "./pages/Produtos";
+import FormularioProduto from "./pages/FormularioProduto";
+import DetalhesProduto from "./pages/DetalhesProduto";
+import MovimentarEstoque from "./pages/MovimentarEstoque";
 
 function App() {
   return (
@@ -105,17 +109,28 @@ function App() {
           />
 
           <Route
-            path="/produtos"
-            element={
-              <PaginaEmConstrucao titulo="Produtos" />
-            }
+            path="produtos"
+            element={<Produtos />}
           />
 
           <Route
-            path="/estoque"
-            element={
-              <PaginaEmConstrucao titulo="Estoque" />
-            }
+            path="produtos/novo"
+            element={<FormularioProduto />}
+          />
+
+          <Route
+            path="produtos/:id"
+            element={<DetalhesProduto />}
+          />
+
+          <Route
+            path="produtos/:id/movimentar"
+            element={<MovimentarEstoque />}
+          />
+
+          <Route
+            path="produtos/:id/editar"
+            element={<FormularioProduto />}
           />
 
           <Route
