@@ -15,10 +15,10 @@ function Dashboard() {
 
   const [resumo, setResumo] = useState({
     pets_cadastrados: 0,
-    na_creche: null,
-    no_hotel: null,
+    na_creche: 0,
+    no_hotel: 0,
     atendimentos_hoje: null,
-    estoque_baixo: null,
+    estoque_baixo: 0,
   });
 
 
@@ -162,13 +162,16 @@ function Dashboard() {
 
 
         <Card
-          titulo="No hotel"
+          titulo="Hospedados"
           valor={
             carregando
               ? "..."
-              : resumo.no_hotel ?? "-"
+              : resumo.hospedados ?? "-"
           }
           icone="🏨"
+          onClick={() =>
+            navigate("/hotel")
+          }
         />
 
 

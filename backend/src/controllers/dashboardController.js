@@ -52,6 +52,23 @@ async function buscarResumo(req, res) {
     const naCreche =
       resultadoCreche.rows[0].total;
 
+    /*
+    * Reservas futuras não contam como pets presentes
+    * no Hotel. Somente HOSPEDADO representa um animal
+    * fisicamente no estabelecimento.
+    */
+    const hospedadosResult =
+      await pool.query(
+        `
+          SELECT COUNT(*)::INTEGER AS total
+          FROM hotel
+          WHERE status = 'HOSPEDADO'
+        `
+      );
+
+    const hospedados =
+      hospedadosResult.rows[0].total;
+
     return res.status(200).json({
       pets_cadastrados: totalPets,
 
@@ -60,7 +77,7 @@ async function buscarResumo(req, res) {
        * seus respectivos módulos forem criados.
        */
       na_creche: naCreche,
-      no_hotel: null,
+      no_hotel: hospedados,
       atendimentos_hoje: null,
       estoque_baixo: estoqueBaixo,
     });

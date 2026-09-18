@@ -24,6 +24,13 @@ import Creche from "./pages/Creche";
 import EntradaCreche from "./pages/EntradaCreche";
 import SaidaCreche from "./pages/SaidaCreche";
 import HistoricoCreche from "./pages/HistoricoCreche";
+import Hotel from "./pages/Hotel";
+import NovaReservaHotel from "./pages/NovaReservaHotel";
+import CheckinHotel from "./pages/CheckinHotel";
+import CheckoutHotel from "./pages/CheckoutHotel";
+import CancelarReservaHotel from "./pages/CancelarReservaHotel";
+import HistoricoHotel from "./pages/HistoricoHotel";
+import DetalhesHotel from "./pages/DetalhesHotel";
 
 function App() {
   return (
@@ -113,9 +120,37 @@ function App() {
 
           <Route
             path="/hotel"
-            element={
-              <PaginaEmConstrucao titulo="Hotel" />
-            }
+            element={<Hotel />}
+          />
+
+          <Route
+            path="hotel/nova-reserva"
+            element={<NovaReservaHotel />}
+          />
+
+          <Route
+            path="hotel/:id/checkin"
+            element={<CheckinHotel />}
+          />
+
+          <Route
+            path="hotel/:id/checkout"
+            element={<CheckoutHotel />}
+          />
+
+          <Route
+            path="hotel/:id/cancelar"
+            element={<CancelarReservaHotel />}
+          />
+
+          <Route
+            path="hotel/historico"
+            element={<HistoricoHotel />}
+          />
+
+          <Route
+            path="hotel/:id"
+            element={<DetalhesHotel />}
           />
 
           <Route

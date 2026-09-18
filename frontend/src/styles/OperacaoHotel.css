@@ -1,0 +1,125 @@
+.operacao-hotel {
+  width: 100%;
+  max-width: 900px;
+}
+
+.operacao-hotel-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.operacao-hotel-cabecalho h1 {
+  margin: 0 0 6px;
+}
+
+.operacao-hotel-cabecalho p {
+  margin: 0;
+  color: #666;
+}
+
+.operacao-hotel-card {
+  padding: 22px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #e1e1e1;
+  border-radius: 12px;
+}
+
+.operacao-hotel-card h2 {
+  margin: 8px 0 20px;
+}
+
+.operacao-hotel-status {
+  display: inline-block;
+  padding: 5px 9px;
+  background: #e9f1ff;
+  color: #285fa8;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.operacao-hotel-status.hospedado {
+  background: #e7f5ec;
+  color: #267a43;
+}
+
+.operacao-hotel-dados {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.operacao-hotel-dados div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.operacao-hotel-dados span {
+  color: #666;
+  font-size: 13px;
+}
+
+.operacao-hotel-observacao {
+  margin-top: 18px;
+  padding: 14px;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.operacao-hotel-observacao p {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+.operacao-hotel-card textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #d5d5d5;
+  border-radius: 8px;
+  resize: vertical;
+  font: inherit;
+}
+
+.operacao-hotel-aviso {
+  margin-bottom: 20px;
+  padding: 14px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.operacao-hotel-erro {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  background: #fdecec;
+  color: #a12626;
+  border-radius: 8px;
+}
+
+.operacao-hotel-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .operacao-hotel-cabecalho {
+    flex-direction: column;
+  }
+
+  .operacao-hotel-dados {
+    grid-template-columns: 1fr;
+  }
+
+  .operacao-hotel-acoes {
+    flex-direction: column-reverse;
+  }
+}
