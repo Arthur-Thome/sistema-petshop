@@ -41,6 +41,10 @@ import CancelarBanhoTosa from "./pages/CancelarBanhoTosa";
 import FinalizarBanhoTosa from "./pages/FinalizarBanhoTosa";
 import PagamentoBanhoTosa from "./pages/PagamentoBanhoTosa";
 import ComprovanteBanhoTosa from "./pages/ComprovanteBanhoTosa";
+import Administracao from "./pages/Administracao";
+import RotaAdministrador from "./components/RotaAdministrador";
+import Auditoria from "./pages/Auditoria";
+import DetalhesAuditoria from "./pages/DetalhesAuditoria";
 
 function App() {
   return (
@@ -245,8 +249,28 @@ function App() {
 
           <Route
             path="/administracao"
+             element={
+              <RotaAdministrador>
+                <Administracao />
+              </RotaAdministrador>
+            }
+          />
+
+          <Route
+            path="/administracao/auditoria"
             element={
-              <PaginaEmConstrucao titulo="Administração" />
+              <RotaAdministrador>
+                <Auditoria />
+              </RotaAdministrador>
+            }
+          />
+
+          <Route
+            path="/administracao/auditoria/:id"
+            element={
+              <RotaAdministrador>
+                <DetalhesAuditoria />
+              </RotaAdministrador>
             }
           />
         </Route>

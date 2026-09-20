@@ -1,0 +1,278 @@
+/*
+ * =====================================================
+ * DETALHES DA AUDITORIA
+ * =====================================================
+ */
+
+.detalhes-auditoria-page {
+  width: 100%;
+}
+
+
+.detalhes-auditoria-header {
+  margin-bottom: 24px;
+}
+
+
+.detalhes-auditoria-voltar {
+  margin: 0 0 12px;
+
+  padding: 0;
+
+  background: transparent;
+
+  border: none;
+
+  color: #6b7280;
+
+  cursor: pointer;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+.detalhes-auditoria-voltar:hover {
+  color: #1f2937;
+}
+
+
+.detalhes-auditoria-header h1 {
+  margin: 0;
+
+  color: #1f2937;
+
+  font-size: 28px;
+}
+
+
+.detalhes-auditoria-header p {
+  margin: 8px 0 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+/*
+ * =====================================================
+ * CARDS
+ * =====================================================
+ */
+
+.detalhes-auditoria-card {
+  margin-bottom: 20px;
+
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+}
+
+
+.detalhes-auditoria-card-header {
+  padding: 16px 18px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+.detalhes-auditoria-card-header h2 {
+  margin: 0;
+
+  color: #374151;
+
+  font-size: 16px;
+}
+
+
+.detalhes-auditoria-card-header p {
+  margin: 5px 0 0;
+
+  color: #9ca3af;
+
+  font-size: 12px;
+}
+
+
+.detalhes-auditoria-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(200px, 1fr)
+    );
+
+  gap: 0;
+}
+
+
+.detalhes-auditoria-campo {
+  display: flex;
+
+  min-height: 80px;
+
+  padding: 16px 18px;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  border-right: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+
+.detalhes-auditoria-campo span {
+  color: #9ca3af;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+}
+
+
+.detalhes-auditoria-campo strong {
+  color: #374151;
+
+  font-size: 13px;
+
+  overflow-wrap: anywhere;
+}
+
+
+/*
+ * =====================================================
+ * COMPARAÇÃO ANTES / DEPOIS
+ * =====================================================
+ */
+
+.detalhes-auditoria-comparacao {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 0;
+}
+
+
+.detalhes-auditoria-valor {
+  min-width: 0;
+
+  padding: 18px;
+}
+
+
+.detalhes-auditoria-valor:first-child {
+  border-right: 1px solid #e5e7eb;
+}
+
+
+.detalhes-auditoria-valor-titulo {
+  margin-bottom: 10px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+
+.detalhes-auditoria-valor pre {
+  max-height: 500px;
+
+  margin: 0;
+
+  overflow: auto;
+
+  padding: 14px;
+
+  background: #f9fafb;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 8px;
+
+  color: #374151;
+
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace;
+
+  font-size: 11px;
+
+  line-height: 1.6;
+
+  white-space: pre-wrap;
+
+  overflow-wrap: anywhere;
+}
+
+
+.detalhes-auditoria-vazio,
+.detalhes-auditoria-sem-alteracoes {
+  color: #9ca3af;
+
+  font-size: 12px;
+}
+
+
+.detalhes-auditoria-sem-alteracoes {
+  padding: 30px 18px;
+
+  text-align: center;
+}
+
+
+/*
+ * =====================================================
+ * ESTADOS
+ * =====================================================
+ */
+
+.detalhes-auditoria-estado {
+  padding: 40px;
+
+  color: #6b7280;
+
+  text-align: center;
+}
+
+
+.detalhes-auditoria-erro {
+  padding: 15px;
+
+  background: #fdeaea;
+
+  border-radius: 8px;
+
+  color: #a32a2a;
+
+  font-size: 13px;
+}
+
+
+@media (max-width: 800px) {
+
+  .detalhes-auditoria-comparacao {
+    grid-template-columns: 1fr;
+  }
+
+
+  .detalhes-auditoria-valor:first-child {
+    border-right: none;
+
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+}
