@@ -1,25 +1,57 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
 import api from "../services/api";
+
+import "../styles/Dashboard.css";
 
 
 function Dashboard() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
 
-  const usuario = JSON.parse(
-    localStorage.getItem("usuario") || "{}"
-  );
+  const usuario =
+    JSON.parse(
+      localStorage.getItem(
+        "usuario"
+      ) || "{}"
+    );
 
 
-  const [resumo, setResumo] = useState({
-    pets_cadastrados: 0,
-    na_creche: 0,
-    no_hotel: 0,
-    atendimentos_hoje: null,
-    estoque_baixo: 0,
-  });
+  const perfil =
+    usuario.perfil;
+
+
+  const [resumo, setResumo] =
+    useState({
+      pets_cadastrados: 0,
+      tutores_cadastrados: 0,
+      na_creche: 0,
+      no_hotel: 0,
+      atendimentos_hoje: 0,
+      proximos_atendimentos: [],
+
+      estoque_baixo: 0,
+      pagamentos_pendentes: 0,
+      valor_pagamentos_pendentes: 0,
+      reservas_hotel: 0,
+
+      usuarios_ativos: 0,
+
+      usuarios_por_perfil: {
+        administradores: 0,
+        gerentes: 0,
+        funcionarios: 0,
+      },
+    });
 
 
   const [carregando, setCarregando] =
@@ -32,10 +64,11 @@ function Dashboard() {
   ] = useState(false);
 
 
-
   /*
-   * O Dashboard utiliza um endpoint de resumo para não
-   * precisar baixar todos os registros apenas para contar.
+   * O Dashboard utiliza um único endpoint de resumo.
+   *
+   * O próprio backend decide quais indicadores cada
+   * perfil pode receber.
    */
   useEffect(() => {
 
@@ -53,9 +86,21 @@ function Dashboard() {
           );
 
 
-        setResumo(
-          resposta.data
-        );
+        setResumo((anterior) => ({
+          ...anterior,
+          ...resposta.data,
+
+          usuarios_por_perfil: {
+            ...anterior
+              .usuarios_por_perfil,
+
+            ...(
+              resposta.data
+                .usuarios_por_perfil ||
+              {}
+            ),
+          },
+        }));
 
       } catch (error) {
 
@@ -79,129 +124,580 @@ function Dashboard() {
   }, []);
 
 
+  /*
+   * Somente gerente e administrador recebem
+   * indicadores de gestão.
+   */
+  const podeVerGestao =
+    perfil === "gerente" ||
+    perfil === "administrador";
+
+
+  /*
+   * Indicadores administrativos são exclusivos
+   * do administrador.
+   */
+  const ehAdministrador =
+    perfil === "administrador";
+
+
+  function formatarValor(valor) {
+
+    return Number(
+      valor || 0
+    ).toLocaleString(
+      "pt-BR",
+      {
+        style: "currency",
+        currency: "BRL",
+      }
+    );
+
+  }
+
+
+  function formatarDataHora(data) {
+
+    if (!data) {
+      return "-";
+    }
+
+
+    return new Date(
+      data
+    ).toLocaleString(
+      "pt-BR",
+      {
+        dateStyle: "short",
+        timeStyle: "short",
+      }
+    );
+
+  }
+
+
+  function formatarServicos(
+    servicos
+  ) {
+
+    if (
+      !Array.isArray(servicos) ||
+      servicos.length === 0
+    ) {
+      return "Serviço não informado";
+    }
+
+
+    return servicos
+      .map(
+        (servico) =>
+          servico.nome
+      )
+      .join(", ");
+
+  }
+
 
   return (
 
-    <div>
+    <div className="dashboard-page">
 
-      <div
-        style={{
-          marginBottom: "32px",
-        }}
-      >
+      <div className="dashboard-header">
 
-        <h1
-          style={{
-            margin: 0,
-            color: "#1f2937",
-            fontSize: "28px",
-          }}
-        >
-          Dashboard
-        </h1>
+        <div>
+
+          <h1>
+            Dashboard
+          </h1>
 
 
-        <p
-          style={{
-            marginTop: "8px",
-            color: "#6b7280",
-          }}
-        >
-          Bem-vindo, {usuario.nome}.
-        </p>
+          <p>
+            Bem-vindo,{" "}
+            <strong>
+              {usuario.nome}
+            </strong>
+            .
+          </p>
+
+        </div>
+
+
+        <div className="dashboard-perfil">
+
+          {perfil === "administrador" &&
+            "Administrador"}
+
+          {perfil === "gerente" &&
+            "Gerente"}
+
+          {perfil === "funcionario" &&
+            "Funcionário"}
+
+        </div>
 
       </div>
 
 
       {erroDashboard && (
-        <div
-          style={{
-            marginBottom: "20px",
-            padding: "12px",
-            background: "#fdeaea",
-            color: "#a32a2a",
-            borderRadius: "8px",
-          }}
-        >
-          Não foi possível atualizar os dados do Dashboard.
+
+        <div className="dashboard-erro">
+
+          Não foi possível atualizar
+          os dados do Dashboard.
+
         </div>
+
       )}
 
 
-      <div
-        style={{
-          display: "grid",
+      {/* =========================================
+          OPERAÇÃO DO DIA
+          ========================================= */}
 
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(200px, 1fr))",
+      <section className="dashboard-section">
 
-          gap: "20px",
-        }}
-      >
+        <div className="dashboard-section-header">
 
-        <Card
-          titulo="Pets cadastrados"
-          valor={
-            carregando
-              ? "..."
-              : resumo.pets_cadastrados
-          }
-          icone="🐾"
-        />
+          <div>
 
+            <h2>
+              Visão geral
+            </h2>
 
-        <Card
-          titulo="Na creche"
-          valor={
-            carregando
-              ? "..."
-              : resumo.na_creche ?? "-"
-          }
-          icone="🏠"
-        />
+            <p>
+              Informações principais da
+              operação.
+            </p>
+
+          </div>
+
+        </div>
 
 
-        <Card
-          titulo="Hospedados"
-          valor={
-            carregando
-              ? "..."
-              : resumo.hospedados ?? "-"
-          }
-          icone="🏨"
-          onClick={() =>
-            navigate("/hotel")
-          }
-        />
+        <div className="dashboard-cards">
+
+          <Card
+            titulo="Pets ativos"
+            valor={
+              carregando
+                ? "..."
+                : resumo
+                    .pets_cadastrados
+            }
+            icone="🐾"
+            textoLink="Ver pets →"
+            onClick={() =>
+              navigate("/pets")
+            }
+          />
 
 
-        <Card
-          titulo="Atendimentos hoje"
-          valor={
-            carregando
-              ? "..."
-              : resumo.atendimentos_hoje ?? "-"
-          }
-          icone="✂"
-        />
+          <Card
+            titulo="Tutores ativos"
+            valor={
+              carregando
+                ? "..."
+                : resumo
+                    .tutores_cadastrados
+            }
+            icone="👤"
+            textoLink="Ver tutores →"
+            onClick={() =>
+              navigate("/tutores")
+            }
+          />
 
 
-        <Card
-          titulo="Produtos para repor"
-          valor={
-            carregando
-              ? "..."
-              : resumo.estoque_baixo ?? "-"
-          }
-          icone="📦"
-          onClick={() =>
-            navigate(
-              "/produtos?estoque=baixo"
-            )
-          }
-        />
+          <Card
+            titulo="Na creche"
+            valor={
+              carregando
+                ? "..."
+                : resumo.na_creche
+            }
+            icone="🏠"
+            textoLink="Ver creche →"
+            onClick={() =>
+              navigate("/creche")
+            }
+          />
 
-      </div>
+
+          <Card
+            titulo="Hospedados"
+            valor={
+              carregando
+                ? "..."
+                : resumo.no_hotel
+            }
+            icone="🏨"
+            textoLink="Ver hotel →"
+            onClick={() =>
+              navigate("/hotel")
+            }
+          />
+
+
+          <Card
+            titulo="Banho e Tosa hoje"
+            valor={
+              carregando
+                ? "..."
+                : resumo
+                    .atendimentos_hoje
+            }
+            icone="✂️"
+            textoLink="Ver atendimentos →"
+            onClick={() =>
+              navigate("/banho-tosa")
+            }
+          />
+
+        </div>
+
+      </section>
+
+
+      {/* =========================================
+          PRÓXIMOS ATENDIMENTOS
+          ========================================= */}
+
+      <section className="dashboard-section">
+
+        <div className="dashboard-section-header">
+
+          <div>
+
+            <h2>
+              Próximos atendimentos
+            </h2>
+
+            <p>
+              Próximos agendamentos de
+              Banho e Tosa.
+            </p>
+
+          </div>
+
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() =>
+              navigate(
+                "/banho-tosa/novo"
+              )
+            }
+          >
+            Novo Agendamento
+          </button>
+
+        </div>
+
+
+        <div className="dashboard-proximos">
+
+          {carregando ? (
+
+            <div className="dashboard-vazio">
+              Carregando atendimentos...
+            </div>
+
+          ) : resumo
+              .proximos_atendimentos
+              .length === 0 ? (
+
+            <div className="dashboard-vazio">
+
+              Nenhum atendimento
+              futuro agendado.
+
+            </div>
+
+          ) : (
+
+            resumo
+              .proximos_atendimentos
+              .map(
+                (atendimento) => (
+
+                <div
+                  key={
+                    atendimento.id
+                  }
+                  className="dashboard-atendimento"
+                  onClick={() =>
+                    navigate(
+                      `/banho-tosa/${atendimento.id}`
+                    )
+                  }
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+
+                    if (
+                      event.key ===
+                        "Enter" ||
+                      event.key === " "
+                    ) {
+
+                      event
+                        .preventDefault();
+
+                      navigate(
+                        `/banho-tosa/${atendimento.id}`
+                      );
+
+                    }
+
+                  }}
+                >
+
+                  <div className="dashboard-atendimento-data">
+
+                    <span>
+                      Agendamento
+                    </span>
+
+                    <strong>
+                      {formatarDataHora(
+                        atendimento
+                          .agendado_para
+                      )}
+                    </strong>
+
+                  </div>
+
+
+                  <div className="dashboard-atendimento-pet">
+
+                    <strong>
+                      {
+                        atendimento
+                          .pet_nome
+                      }
+                    </strong>
+
+                    <span>
+                      Tutor:{" "}
+                      {
+                        atendimento
+                          .tutor_nome
+                      }
+                    </span>
+
+                  </div>
+
+
+                  <div className="dashboard-atendimento-servicos">
+
+                    {formatarServicos(
+                      atendimento
+                        .servicos
+                    )}
+
+                  </div>
+
+
+                  <div className="dashboard-atendimento-acao">
+                    Ver →
+                  </div>
+
+                </div>
+
+              ))
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* =========================================
+          INDICADORES DE GESTÃO
+          GERENTE + ADMINISTRADOR
+          ========================================= */}
+
+      {podeVerGestao && (
+
+        <section className="dashboard-section">
+
+          <div className="dashboard-section-header">
+
+            <div>
+
+              <h2>
+                Gestão
+              </h2>
+
+              <p>
+                Indicadores para acompanhamento
+                da operação.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="dashboard-cards">
+
+            <Card
+              titulo="Produtos para repor"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .estoque_baixo
+              }
+              icone="📦"
+              textoLink="Ver produtos →"
+              onClick={() =>
+                navigate(
+                  "/produtos?estoque=baixo"
+                )
+              }
+            />
+
+
+            <Card
+              titulo="Pagamentos pendentes"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .pagamentos_pendentes
+              }
+              icone="💳"
+              textoLink="Ver Banho e Tosa →"
+              onClick={() =>
+                navigate(
+                  "/banho-tosa"
+                )
+              }
+            />
+
+
+            <Card
+              titulo="Valor pendente"
+              valor={
+                carregando
+                  ? "..."
+                  : formatarValor(
+                      resumo
+                        .valor_pagamentos_pendentes
+                    )
+              }
+              icone="💰"
+            />
+
+
+            <Card
+              titulo="Reservas futuras"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .reservas_hotel
+              }
+              icone="📅"
+              textoLink="Ver hotel →"
+              onClick={() =>
+                navigate("/hotel")
+              }
+            />
+
+          </div>
+
+        </section>
+
+      )}
+
+
+      {/* =========================================
+          ADMINISTRAÇÃO
+          SOMENTE ADMINISTRADOR
+          ========================================= */}
+
+      {ehAdministrador && (
+
+        <section className="dashboard-section">
+
+          <div className="dashboard-section-header">
+
+            <div>
+
+              <h2>
+                Administração
+              </h2>
+
+              <p>
+                Informações administrativas
+                do sistema.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="dashboard-cards">
+
+            <Card
+              titulo="Usuários ativos"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .usuarios_ativos
+              }
+              icone="👥"
+            />
+
+
+            <Card
+              titulo="Administradores"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .usuarios_por_perfil
+                      .administradores
+              }
+              icone="🛡️"
+            />
+
+
+            <Card
+              titulo="Gerentes"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .usuarios_por_perfil
+                      .gerentes
+              }
+              icone="📋"
+            />
+
+
+            <Card
+              titulo="Funcionários"
+              valor={
+                carregando
+                  ? "..."
+                  : resumo
+                      .usuarios_por_perfil
+                      .funcionarios
+              }
+              icone="👤"
+            />
+
+          </div>
+
+        </section>
+
+      )}
 
     </div>
   );
@@ -210,15 +706,16 @@ function Dashboard() {
 
 
 /*
- * Componente reutilizado pelos cards do Dashboard.
+ * Card reutilizável do Dashboard.
  *
- * Quando onClick é informado, o card também funciona
- * como um atalho para outra área do sistema.
+ * Quando onClick é informado, o componente também
+ * funciona como atalho para a respectiva área.
  */
 function Card({
   titulo,
   valor,
   icone,
+  textoLink,
   onClick,
 }) {
 
@@ -249,7 +746,17 @@ function Card({
   return (
 
     <div
-      onClick={onClick}
+      className={
+        clicavel
+          ? "dashboard-card dashboard-card-clicavel"
+          : "dashboard-card"
+      }
+
+      onClick={
+        clicavel
+          ? onClick
+          : undefined
+      }
 
       onKeyDown={
         tratarTeclado
@@ -266,77 +773,28 @@ function Card({
           ? 0
           : undefined
       }
-
-      style={{
-        background: "#ffffff",
-
-        padding: "22px",
-
-        borderRadius: "12px",
-
-        boxShadow:
-          "0 2px 8px rgba(0,0,0,0.05)",
-
-        cursor:
-          clicavel
-            ? "pointer"
-            : "default",
-
-        transition:
-          "transform 0.15s ease, box-shadow 0.15s ease",
-      }}
     >
 
-      <div
-        style={{
-          fontSize: "28px",
-          marginBottom: "15px",
-        }}
-      >
+      <div className="dashboard-card-icon">
         {icone}
       </div>
 
 
-      <div
-        style={{
-          fontSize: "28px",
-
-          fontWeight: "bold",
-
-          color: "#1f2937",
-        }}
-      >
+      <div className="dashboard-card-value">
         {valor}
       </div>
 
 
-      <div
-        style={{
-          marginTop: "5px",
-
-          color: "#6b7280",
-
-          fontSize: "13px",
-        }}
-      >
+      <div className="dashboard-card-title">
         {titulo}
       </div>
 
 
-      {clicavel && (
+      {clicavel &&
+        textoLink && (
 
-        <div
-          style={{
-            marginTop: "10px",
-
-            color: "#4b5563",
-
-            fontSize: "12px",
-
-            fontWeight: "600",
-          }}
-        >
-          Ver produtos →
+        <div className="dashboard-card-link">
+          {textoLink}
         </div>
 
       )}
