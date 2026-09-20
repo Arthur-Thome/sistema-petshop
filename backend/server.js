@@ -13,6 +13,8 @@ const produtoRoutes = require("./src/routes/produtoRoutes");
 const estoqueRoutes = require("./src/routes/estoqueRoutes");
 const crecheRoutes = require("./src/routes/crecheRoutes");
 const hotelRoutes = require("./src/routes/hotelRoutes");
+const banhoTosaRoutes = require("./src/routes/banhoTosaRoutes");
+const servicoRoutes = require("./src/routes/servicoRoutes");
 const path = require("path");
 
 const app = express();
@@ -48,6 +50,8 @@ app.use("/api/produtos", produtoRoutes);
 app.use("/api/estoque", estoqueRoutes);
 app.use("/api/creche", crecheRoutes);
 app.use("/api/hotel", hotelRoutes);
+app.use("/api/banho-tosa", banhoTosaRoutes);
+app.use("/api/servicos", servicoRoutes);
 
 
 

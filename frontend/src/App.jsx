@@ -31,6 +31,16 @@ import CheckoutHotel from "./pages/CheckoutHotel";
 import CancelarReservaHotel from "./pages/CancelarReservaHotel";
 import HistoricoHotel from "./pages/HistoricoHotel";
 import DetalhesHotel from "./pages/DetalhesHotel";
+import BanhoTosa from "./pages/BanhoTosa";
+import NovoAgendamentoBanhoTosa from "./pages/NovoAgendamentoBanhoTosa";
+import DetalhesBanhoTosa from "./pages/DetalhesBanhoTosa";
+import ServicosBanhoTosa from "./pages/ServicosBanhoTosa";
+import FormularioServicoBanhoTosa from "./pages/FormularioServicoBanhoTosa";
+import HistoricoBanhoTosa from "./pages/HistoricoBanhoTosa";
+import CancelarBanhoTosa from "./pages/CancelarBanhoTosa";
+import FinalizarBanhoTosa from "./pages/FinalizarBanhoTosa";
+import PagamentoBanhoTosa from "./pages/PagamentoBanhoTosa";
+import ComprovanteBanhoTosa from "./pages/ComprovanteBanhoTosa";
 
 function App() {
   return (
@@ -155,9 +165,57 @@ function App() {
 
           <Route
             path="/banho-tosa"
-            element={
-              <PaginaEmConstrucao titulo="Banho e Tosa" />
-            }
+            element={<BanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/novo"
+            element={<NovoAgendamentoBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/:id"
+            element={<DetalhesBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/servicos"
+            element={<ServicosBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/servicos/novo"
+            element={<FormularioServicoBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/servicos/:id/editar"
+            element={<FormularioServicoBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/historico"
+            element={<HistoricoBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/:id/cancelar"
+            element={<CancelarBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/:id/finalizar"
+            element={<FinalizarBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/:id/pagamento"
+            element={<PagamentoBanhoTosa />}
+          />
+
+          <Route
+            path="/banho-tosa/:id/comprovante"
+            element={<ComprovanteBanhoTosa />}
           />
 
           <Route

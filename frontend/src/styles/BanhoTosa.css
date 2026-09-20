@@ -1,0 +1,1885 @@
+/*
+ * Telas do módulo Banho e Tosa.
+ *
+ * O layout segue o mesmo padrão visual utilizado
+ * na Creche para manter consistência no sistema.
+ *
+ * Os estilos dos botões são fornecidos pelas classes
+ * globais primary-button e secondary-button.
+ */
+
+.banho-tosa-page {
+  width: 100%;
+}
+
+
+/*
+ * Cabeçalho.
+ */
+.banho-tosa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+.banho-tosa-header h1 {
+  margin: 0;
+
+  color: #1f2937;
+}
+
+.banho-tosa-header p {
+  margin: 6px 0 0;
+
+  color: #6b7280;
+}
+
+.banho-tosa-header-acoes {
+  display: flex;
+
+  gap: 10px;
+
+  flex-wrap: wrap;
+}
+
+
+/*
+ * Resumo operacional.
+ *
+ * Mantemos dois indicadores separados para que
+ * seja possível visualizar rapidamente quantos
+ * pets estão aguardando e quantos estão sendo
+ * atendidos.
+ */
+.banho-tosa-resumos {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+
+  margin-bottom: 20px;
+}
+
+.banho-tosa-resumo {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 18px 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.banho-tosa-resumo span {
+  color: #6b7280;
+
+  font-weight: 500;
+}
+
+.banho-tosa-resumo strong {
+  font-size: 28px;
+
+  color: #1f2937;
+}
+
+
+/*
+ * Busca rápida.
+ */
+.banho-tosa-busca {
+  margin-bottom: 20px;
+}
+
+.banho-tosa-busca input {
+  width: 100%;
+  max-width: 500px;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  font-size: 14px;
+}
+
+.banho-tosa-busca input:focus {
+  outline: none;
+
+  border-color: #6b7280;
+}
+
+
+/*
+ * Grid dos atendimentos.
+ */
+.banho-tosa-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(320px, 1fr)
+    );
+
+  gap: 18px;
+}
+
+
+/*
+ * Card individual do atendimento.
+ */
+.banho-tosa-card {
+  background: #ffffff;
+
+  padding: 20px;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/*
+ * Cabeçalho do card.
+ */
+.banho-tosa-card-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+.banho-tosa-card-topo h3 {
+  margin: 0 0 5px;
+
+  color: #1f2937;
+}
+
+.banho-tosa-card-topo div > span {
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+/*
+ * Indicador de status.
+ */
+.banho-tosa-status {
+  padding: 5px 9px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.banho-tosa-status-agendado {
+  background: #f3f4f6;
+
+  color: #374151;
+}
+
+.banho-tosa-status-atendimento {
+  background: #fef3c7;
+
+  color: #92400e;
+}
+
+.banho-tosa-status-finalizado {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+.banho-tosa-status-cancelado {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+/*
+ * Informações principais do atendimento.
+ */
+.banho-tosa-card-info {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 15px;
+
+  margin-top: 17px;
+}
+
+.banho-tosa-card-info div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.banho-tosa-card-info span,
+.banho-tosa-observacao span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.banho-tosa-card-info strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Observações do agendamento.
+ */
+.banho-tosa-observacao {
+  margin-top: 17px;
+
+  padding: 12px;
+
+  background: #f9fafb;
+
+  border-radius: 7px;
+}
+
+.banho-tosa-observacao p {
+  margin: 5px 0 0;
+
+  color: #374151;
+
+  font-size: 14px;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+ * Ações do card.
+ *
+ * Os botões mantêm as classes globais do sistema.
+ */
+.banho-tosa-card-acoes {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+
+/*
+ * Estados da página.
+ */
+.banho-tosa-mensagem,
+.banho-tosa-vazio,
+.banho-tosa-erro {
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.banho-tosa-vazio {
+  text-align: center;
+}
+
+.banho-tosa-vazio h3 {
+  margin-top: 0;
+
+  color: #374151;
+}
+
+.banho-tosa-vazio p {
+  margin-bottom: 0;
+
+  color: #6b7280;
+}
+
+.banho-tosa-erro {
+  margin-bottom: 20px;
+
+  color: #991b1b;
+}
+
+
+/*
+ * Card utilizado no formulário de novo agendamento.
+ */
+.banho-tosa-form-card {
+  width: 100%;
+  max-width: 750px;
+
+  box-sizing: border-box;
+
+  padding: 22px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/*
+ * Campos do formulário.
+ */
+.banho-tosa-form-campo {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  margin-bottom: 18px;
+}
+
+.banho-tosa-form-campo label {
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.banho-tosa-form-campo input,
+.banho-tosa-form-campo select,
+.banho-tosa-form-campo textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #374151;
+
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.banho-tosa-form-campo input:focus,
+.banho-tosa-form-campo select:focus,
+.banho-tosa-form-campo textarea:focus {
+  outline: none;
+
+  border-color: #6b7280;
+}
+
+.banho-tosa-form-campo textarea {
+  min-height: 110px;
+
+  resize: vertical;
+}
+
+
+/*
+ * Ações do formulário.
+ */
+.banho-tosa-form-acoes {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 22px;
+}
+
+/*
+ * Lista de serviços disponíveis no novo agendamento.
+ *
+ * Cada serviço funciona como uma área clicável,
+ * facilitando o uso dos checkboxes.
+ */
+.banho-tosa-servicos-lista {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+
+/*
+ * O label envolve todo o serviço para que o usuário
+ * possa clicar em qualquer ponto do card.
+ */
+.banho-tosa-servico-item {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 12px;
+
+  padding: 14px;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+
+.banho-tosa-servico-item:hover {
+  background: #f9fafb;
+}
+
+
+/*
+ * Destaca visualmente os serviços selecionados
+ * sem alterar o padrão geral do sistema.
+ */
+.banho-tosa-servico-item.selecionado {
+  border-color: #6b7280;
+
+  background: #f9fafb;
+}
+
+
+.banho-tosa-servico-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+
+  margin-top: 2px;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+}
+
+
+.banho-tosa-servico-conteudo {
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+.banho-tosa-servico-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+
+.banho-tosa-servico-topo strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+.banho-tosa-servico-conteudo p {
+  margin:
+    6px 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.banho-tosa-servico-conteudo > span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+/*
+ * Resumo financeiro antes da confirmação.
+ */
+.banho-tosa-resumo-agendamento {
+  margin-bottom: 22px;
+
+  padding: 18px;
+
+  background: #f9fafb;
+
+  border-radius: 8px;
+}
+
+
+.banho-tosa-resumo-agendamento h3 {
+  margin:
+    0 0 15px;
+
+  color: #374151;
+
+  font-size: 16px;
+}
+
+
+.banho-tosa-resumo-servicos {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+
+.banho-tosa-resumo-linha,
+.banho-tosa-resumo-duracao,
+.banho-tosa-resumo-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+
+.banho-tosa-resumo-linha {
+  color: #4b5563;
+
+  font-size: 14px;
+}
+
+
+.banho-tosa-resumo-duracao {
+  padding-top: 12px;
+  margin-top: 12px;
+
+  border-top:
+    1px solid #e5e7eb;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.banho-tosa-resumo-total {
+  padding-top: 14px;
+  margin-top: 14px;
+
+  border-top:
+    1px solid #d1d5db;
+
+  color: #1f2937;
+}
+
+
+.banho-tosa-resumo-total strong {
+  font-size: 20px;
+}
+
+
+/*
+ * Utilizado quando ainda não existem serviços
+ * disponíveis para o atendimento.
+ */
+.banho-tosa-sem-servicos {
+  padding: 18px;
+
+  background: #f9fafb;
+
+  border-radius: 8px;
+
+  text-align: center;
+}
+
+
+.banho-tosa-sem-servicos p {
+  margin:
+    0 0 12px;
+
+  color: #6b7280;
+}
+
+/*
+ * Cards utilizados na visualização completa
+ * de um atendimento de Banho e Tosa.
+ */
+.banho-tosa-detalhes-card {
+  padding: 20px;
+  margin-bottom: 18px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+.banho-tosa-detalhes-card h2 {
+  margin: 0 0 18px;
+
+  color: #1f2937;
+
+  font-size: 18px;
+}
+
+
+/*
+ * Cabeçalho do atendimento.
+ */
+.banho-tosa-detalhes-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-detalhes-topo h2 {
+  margin: 0 0 5px;
+}
+
+
+.banho-tosa-detalhes-topo p {
+  margin: 0;
+
+  color: #6b7280;
+}
+
+
+/*
+ * Informações do pet, tutor e atendimento.
+ */
+.banho-tosa-detalhes-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 20px;
+}
+
+
+.banho-tosa-detalhes-grid div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.banho-tosa-detalhes-grid span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-detalhes-grid strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Serviços contratados.
+ */
+.banho-tosa-detalhes-servicos {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.banho-tosa-detalhes-servico {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 13px 0;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-detalhes-servico > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.banho-tosa-detalhes-servico span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-detalhes-servico strong {
+  color: #374151;
+}
+
+
+/*
+ * Valor total do atendimento.
+ */
+.banho-tosa-detalhes-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-top: 18px;
+  margin-top: 5px;
+
+  color: #1f2937;
+}
+
+
+.banho-tosa-detalhes-total strong {
+  font-size: 22px;
+}
+
+
+/*
+ * Observações preservam as quebras de linha
+ * digitadas pelo funcionário.
+ */
+.banho-tosa-detalhes-observacao {
+  margin: 0;
+
+  color: #374151;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+ * Ações operacionais do atendimento.
+ *
+ * O visual dos botões continua vindo
+ * das classes globais.
+ */
+.banho-tosa-detalhes-acoes {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+/*
+ * Catálogo de serviços do Banho e Tosa.
+ */
+.banho-tosa-servicos-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(320px, 1fr));
+
+  gap: 18px;
+}
+
+
+.banho-tosa-servico-card {
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+.banho-tosa-servico-card-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-servico-card-topo h3 {
+  margin: 0 0 7px;
+
+  color: #1f2937;
+}
+
+
+.banho-tosa-servico-valor {
+  color: #1f2937;
+
+  font-size: 18px;
+
+  white-space: nowrap;
+}
+
+
+.banho-tosa-servico-status {
+  display: inline-block;
+
+  padding: 4px 8px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.banho-tosa-servico-status.ativo {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+
+.banho-tosa-servico-status.inativo {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+.banho-tosa-servico-descricao {
+  margin: 15px 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+  white-space: pre-wrap;
+}
+
+
+.banho-tosa-servico-dados {
+  margin-top: 15px;
+}
+
+
+.banho-tosa-servico-dados div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.banho-tosa-servico-dados span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-servico-dados strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Permite posicionar campos relacionados lado a lado,
+ * como valor e duração.
+ */
+.banho-tosa-form-linha {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+/*
+ * Resumos exibidos antes de operações importantes,
+ * como cancelamento e finalização.
+ */
+.banho-tosa-cancelamento-resumo,
+.banho-tosa-finalizacao-resumo {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 18px;
+
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-finalizacao-resumo {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+
+.banho-tosa-cancelamento-resumo div,
+.banho-tosa-finalizacao-resumo div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.banho-tosa-cancelamento-resumo span,
+.banho-tosa-finalizacao-resumo span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-cancelamento-resumo strong,
+.banho-tosa-finalizacao-resumo strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+/*
+ * Resumo apresentado antes da confirmação
+ * manual de um pagamento.
+ */
+.banho-tosa-pagamento-resumo {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 20px;
+
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-pagamento-resumo > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.banho-tosa-pagamento-resumo span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-pagamento-resumo strong {
+  color: #374151;
+}
+
+
+.banho-tosa-pagamento-valor {
+  font-size: 22px;
+}
+
+/*
+ * Comprovante interno do atendimento.
+ *
+ * O conteúdo desta área será reutilizado posteriormente
+ * para gerar a versão em PDF e imagem.
+ */
+.banho-tosa-comprovante {
+  max-width: 850px;
+
+  margin: 0 auto;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.06);
+
+  overflow: hidden;
+}
+
+
+.banho-tosa-comprovante-cabecalho {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  padding: 25px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-comprovante-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 50px;
+  height: 50px;
+
+  background: #f3f4f6;
+
+  border-radius: 50%;
+
+  font-size: 25px;
+}
+
+
+.banho-tosa-comprovante-cabecalho h2 {
+  margin: 0 0 4px;
+
+  color: #1f2937;
+}
+
+
+.banho-tosa-comprovante-cabecalho span {
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.banho-tosa-comprovante-numero {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  margin-left: auto;
+
+  text-align: right;
+}
+
+
+.banho-tosa-comprovante-numero strong {
+  color: #1f2937;
+
+  font-size: 20px;
+}
+
+
+.banho-tosa-comprovante-secao {
+  padding: 22px 25px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-comprovante-secao h3 {
+  margin: 0 0 17px;
+
+  color: #374151;
+
+  font-size: 15px;
+}
+
+
+.banho-tosa-comprovante-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+
+.banho-tosa-comprovante-grid > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.banho-tosa-comprovante-grid span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-comprovante-grid strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+.banho-tosa-comprovante-tabela-cabecalho,
+.banho-tosa-comprovante-tabela-linha {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr) 120px 120px;
+
+  gap: 15px;
+
+  align-items: center;
+}
+
+
+.banho-tosa-comprovante-tabela-cabecalho {
+  padding-bottom: 9px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-comprovante-tabela-cabecalho span:last-child,
+.banho-tosa-comprovante-tabela-linha > :last-child {
+  text-align: right;
+}
+
+
+.banho-tosa-comprovante-tabela-linha {
+  padding: 12px 0;
+
+  border-top:
+    1px solid #f3f4f6;
+
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+.banho-tosa-comprovante-total {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 30px;
+
+  padding-top: 18px;
+  margin-top: 5px;
+
+  border-top:
+    1px solid #d1d5db;
+}
+
+
+.banho-tosa-comprovante-total span {
+  color: #6b7280;
+}
+
+
+.banho-tosa-comprovante-total strong {
+  color: #1f2937;
+
+  font-size: 24px;
+}
+
+
+.banho-tosa-comprovante-observacao {
+  margin: 0;
+
+  color: #374151;
+
+  white-space: pre-wrap;
+}
+
+
+.banho-tosa-comprovante-rodape {
+  padding: 20px 25px;
+
+  text-align: center;
+
+  background: #f9fafb;
+}
+
+
+.banho-tosa-comprovante-rodape p {
+  margin: 0 0 5px;
+
+  color: #4b5563;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-comprovante-rodape span {
+  color: #9ca3af;
+
+  font-size: 11px;
+}
+
+/*
+ * Área de cobrança Pix exibida no comprovante
+ * enquanto o pagamento estiver pendente.
+ */
+.banho-tosa-pix {
+  margin-top: 25px;
+
+  padding-top: 22px;
+
+  border-top:
+    1px solid #e5e7eb;
+}
+
+
+.banho-tosa-pix-titulo {
+  text-align: center;
+
+  margin-bottom: 20px;
+}
+
+
+.banho-tosa-pix-titulo h4 {
+  margin: 0 0 6px;
+
+  color: #1f2937;
+
+  font-size: 16px;
+}
+
+
+.banho-tosa-pix-titulo p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.banho-tosa-pix-conteudo {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 35px;
+
+  margin-bottom: 22px;
+}
+
+
+.banho-tosa-pix-qrcode {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px;
+
+  background: #ffffff;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius: 10px;
+}
+
+
+.banho-tosa-pix-qrcode img {
+  display: block;
+
+  width: 220px;
+  height: 220px;
+}
+
+
+.banho-tosa-pix-informacoes {
+  display: flex;
+  flex-direction: column;
+
+  gap: 18px;
+}
+
+
+.banho-tosa-pix-informacoes > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.banho-tosa-pix-informacoes span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.banho-tosa-pix-informacoes strong {
+  color: #374151;
+}
+
+
+.banho-tosa-pix-valor {
+  font-size: 24px;
+
+  color: #1f2937 !important;
+}
+
+
+.banho-tosa-pix-copia-cola {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+
+.banho-tosa-pix-copia-cola label {
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+.banho-tosa-pix-copia-cola textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 12px;
+
+  resize: none;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  background: #f9fafb;
+
+  color: #4b5563;
+
+  font-family: monospace;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+
+.banho-tosa-pix-copia-cola button {
+  align-self: flex-end;
+}
+
+
+
+
+/*
+ * Adaptação para telas menores.
+ */
+@media (max-width: 700px) {
+
+  .banho-tosa-header {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .banho-tosa-header-acoes {
+    width: 100%;
+  }
+
+  .banho-tosa-header-acoes button {
+    flex: 1;
+  }
+
+  .banho-tosa-resumos {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-card-info {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-card-acoes {
+    flex-direction: column;
+  }
+
+  .banho-tosa-form-card {
+    max-width: 100%;
+  }
+
+  .banho-tosa-form-acoes {
+    flex-direction: column;
+  }
+
+    .banho-tosa-servico-topo {
+    align-items: flex-start;
+    flex-direction: column;
+
+    gap: 4px;
+  }
+
+  .banho-tosa-resumo-linha,
+  .banho-tosa-resumo-duracao,
+  .banho-tosa-resumo-total {
+    align-items: flex-start;
+  }
+
+    .banho-tosa-detalhes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-detalhes-topo {
+    flex-direction: column;
+  }
+
+  .banho-tosa-detalhes-acoes {
+    flex-direction: column;
+  }
+
+    .banho-tosa-servicos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-servico-card-topo {
+    flex-direction: column;
+  }
+
+  .banho-tosa-form-linha {
+    grid-template-columns: 1fr;
+  }
+
+    .banho-tosa-cancelamento-resumo,
+  .banho-tosa-finalizacao-resumo {
+    grid-template-columns: 1fr;
+  }
+
+    .banho-tosa-pagamento-resumo {
+    grid-template-columns: 1fr;
+  }
+
+    .banho-tosa-comprovante-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-comprovante-cabecalho {
+    align-items: flex-start;
+  }
+
+  .banho-tosa-comprovante-numero {
+    margin-left: 0;
+  }
+
+  .banho-tosa-comprovante-tabela-cabecalho,
+  .banho-tosa-comprovante-tabela-linha {
+    grid-template-columns:
+      minmax(0, 1fr) 70px 90px;
+  }
+
+    .banho-tosa-pix-conteudo {
+    flex-direction: column;
+
+    gap: 18px;
+  }
+
+
+  .banho-tosa-pix-informacoes {
+    width: 100%;
+
+    text-align: center;
+  }
+
+
+  .banho-tosa-pix-qrcode img {
+    width: 190px;
+    height: 190px;
+  }
+
+
+  .banho-tosa-pix-copia-cola button {
+    align-self: stretch;
+  }
+
+}
+
+/*
+ * Versão compacta do comprovante para impressão/PDF.
+ *
+ * O objetivo é manter o comprovante completo,
+ * inclusive o QR Code Pix, em uma única página A4.
+ */
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 7mm;
+  }
+
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: #ffffff !important;
+  }
+
+
+  /*
+   * Elementos do sistema que não pertencem
+   * ao comprovante.
+   */
+  .sidebar,
+  .banho-tosa-header {
+    display: none !important;
+  }
+
+
+  .app-layout {
+    display: block !important;
+  }
+
+
+  .main-content {
+    width: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+
+  .banho-tosa-page {
+    width: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+
+  /*
+   * Remove efeitos visuais desnecessários
+   * no documento impresso.
+   */
+  .banho-tosa-comprovante {
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+
+    box-shadow: none !important;
+
+    font-size: 15px;
+  }
+
+
+  /* Cabeçalho mais compacto. */
+  .banho-tosa-comprovante-cabecalho {
+    gap: 10px;
+
+    padding: 10px 14px;
+  }
+
+
+  .banho-tosa-comprovante-logo {
+    width: 36px;
+    height: 36px;
+
+    font-size: 18px;
+  }
+
+
+  .banho-tosa-comprovante-cabecalho h2 {
+    margin: 0 0 2px;
+
+    font-size: 19px;
+  }
+
+
+  .banho-tosa-comprovante-cabecalho span {
+    font-size: 11px;
+  }
+
+
+  .banho-tosa-comprovante-numero strong {
+    font-size: 18px;
+  }
+
+
+  /*
+   * Reduzimos principalmente os espaçamentos
+   * verticais das seções.
+   */
+  .banho-tosa-comprovante-secao {
+    padding: 9px 14px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+  .banho-tosa-comprovante-secao h3 {
+    margin: 0 0 7px;
+
+    font-size: 14px;
+  }
+
+
+  .banho-tosa-comprovante-grid {
+    gap: 7px 16px;
+  }
+
+
+  .banho-tosa-comprovante-grid span {
+    font-size: 10px;
+  }
+
+
+  .banho-tosa-comprovante-grid strong {
+    font-size: 13px;
+  }
+
+
+  /* Tabela dos serviços. */
+  .banho-tosa-comprovante-tabela-cabecalho {
+    padding-bottom: 4px;
+
+    font-size: 10px;
+  }
+
+
+  .banho-tosa-comprovante-tabela-linha {
+    padding: 5px 0;
+
+    font-size: 12px;
+  }
+
+
+  .banho-tosa-comprovante-total {
+    gap: 20px;
+
+    padding-top: 7px;
+    margin-top: 2px;
+  }
+
+
+  .banho-tosa-comprovante-total strong {
+    font-size: 19px;
+  }
+
+
+  /*
+   * Pix fica propositalmente mais compacto
+   * para evitar a criação de uma segunda página.
+   */
+  .banho-tosa-pix {
+    margin-top: 9px;
+
+    padding-top: 8px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+  .banho-tosa-pix-titulo {
+    margin-bottom: 7px;
+  }
+
+
+  .banho-tosa-pix-titulo h4 {
+    margin-bottom: 2px;
+
+    font-size: 14px;
+  }
+
+
+  .banho-tosa-pix-titulo p {
+    font-size: 10px;
+  }
+
+
+  .banho-tosa-pix-conteudo {
+    gap: 18px;
+
+    margin-bottom: 7px;
+  }
+
+
+  /*
+   * 125px continua sendo suficiente para o QR
+   * permanecer legível, mas ocupa bem menos altura.
+   */
+  .banho-tosa-pix-qrcode {
+    padding: 5px;
+  }
+
+
+  .banho-tosa-pix-qrcode img {
+    width: 145px !important;
+    height: 145px !important;
+  }
+
+
+  .banho-tosa-pix-informacoes {
+    gap: 8px;
+  }
+
+
+  .banho-tosa-pix-informacoes span {
+    font-size: 10px;
+  }
+
+
+  .banho-tosa-pix-informacoes strong {
+    font-size: 13px;
+  }
+
+
+  .banho-tosa-pix-valor {
+    font-size: 20px !important;
+  }
+
+
+  /*
+   * Mantemos o Copia e Cola no PDF,
+   * porém em uma caixa menor.
+   */
+  .banho-tosa-pix-copia-cola {
+    gap: 4px;
+  }
+
+
+  .banho-tosa-pix-copia-cola label {
+    font-size: 9px;
+  }
+
+
+  .banho-tosa-pix-copia-cola textarea {
+    height: 42px !important;
+
+    padding: 5px;
+
+    overflow: hidden;
+
+    resize: none;
+
+    font-size: 7px;
+
+    line-height: 1.15;
+  }
+
+
+  /*
+   * O botão não deve fazer parte do PDF.
+   */
+  .banho-tosa-pix-copia-cola button {
+    display: none !important;
+  }
+
+
+  /* Observações também ficam compactas. */
+  .banho-tosa-comprovante-observacao {
+    font-size: 11px;
+
+    line-height: 1.25;
+  }
+
+
+  /* Rodapé menor. */
+  .banho-tosa-comprovante-rodape {
+    padding: 7px 14px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+  .banho-tosa-comprovante-rodape p {
+    margin-bottom: 2px;
+
+    font-size: 9px;
+  }
+
+
+  .banho-tosa-comprovante-rodape span {
+    font-size: 8px;
+  }
+}
