@@ -45,6 +45,8 @@ import Administracao from "./pages/Administracao";
 import RotaAdministrador from "./components/RotaAdministrador";
 import Auditoria from "./pages/Auditoria";
 import DetalhesAuditoria from "./pages/DetalhesAuditoria";
+import EsqueciSenha from "./pages/EsqueciSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 
 function App() {
   return (
@@ -58,6 +60,16 @@ function App() {
         <Route
           path="/login"
           element={<Login />}
+        />
+
+        <Route
+          path="/esqueci-senha"
+          element={<EsqueciSenha />}
+        />
+
+        <Route
+          path="/redefinir-senha"
+          element={<RedefinirSenha />}
         />
 
         <Route

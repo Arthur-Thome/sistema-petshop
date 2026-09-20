@@ -95,7 +95,7 @@ function Login() {
         <button
           className="forgot-password"
           type="button"
-          onClick={() => alert("Recuperação de senha será implementada posteriormente.")}
+          onClick={() => navigate("/esqueci-senha")}
         >
           Esqueci minha senha
         </button>

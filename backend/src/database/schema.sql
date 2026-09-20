@@ -9,6 +9,37 @@ CREATE TABLE IF NOT EXISTS usuarios (
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+/*
+ * Tokens utilizados no processo de recuperação de senha.
+ *
+ * O token original enviado por e-mail nunca é armazenado.
+ * Apenas seu hash SHA-256 permanece no banco.
+ */
+CREATE TABLE IF NOT EXISTS recuperacoes_senha (
+    id SERIAL PRIMARY KEY,
+
+    usuario_id INTEGER NOT NULL,
+
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+
+    expira_em TIMESTAMP NOT NULL,
+
+    utilizado_em TIMESTAMP NULL,
+
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_recuperacoes_senha_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_recuperacoes_senha_usuario
+ON recuperacoes_senha(usuario_id);
+
+CREATE INDEX IF NOT EXISTS idx_recuperacoes_senha_expira
+ON recuperacoes_senha(expira_em);
+
 CREATE TABLE IF NOT EXISTS logs (
     id BIGSERIAL PRIMARY KEY,
     usuario_id INTEGER,
