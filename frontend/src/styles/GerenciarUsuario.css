@@ -1,0 +1,589 @@
+/*
+ * =====================================================
+ * GERENCIAMENTO DE USUÁRIO
+ * =====================================================
+ */
+
+.gerenciar-usuario-page {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 24px 30px 50px;
+}
+
+
+/*
+ * =====================================================
+ * NAVEGAÇÃO
+ * =====================================================
+ */
+
+.gerenciar-usuario-navegacao {
+  margin-bottom: 25px;
+}
+
+
+/*
+ * =====================================================
+ * IDENTIDADE DA CONTA
+ * =====================================================
+ */
+
+.gerenciar-usuario-cabecalho {
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+
+  padding: 25px 0;
+
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+.gerenciar-usuario-avatar {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 62px;
+  height: 62px;
+
+  flex-shrink: 0;
+
+  background: #1f2937;
+
+  border-radius: 50%;
+
+  color: #ffffff;
+
+  font-size: 23px;
+  font-weight: 700;
+}
+
+
+.gerenciar-usuario-identidade {
+  flex: 1;
+}
+
+
+.gerenciar-usuario-identidade > span {
+  color: #9ca3af;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+}
+
+
+.gerenciar-usuario-identidade h1 {
+  margin: 4px 0;
+
+  color: #1f2937;
+
+  font-size: 27px;
+}
+
+
+.gerenciar-usuario-identidade p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.gerenciar-usuario-status {
+  padding: 7px 11px;
+
+  border-radius: 20px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+.gerenciar-usuario-status-ativo {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+
+.gerenciar-usuario-status-inativo {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+/*
+ * =====================================================
+ * RESUMO
+ * =====================================================
+ */
+
+.gerenciar-usuario-resumo {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  margin: 20px 0 30px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 10px;
+}
+
+
+.gerenciar-usuario-resumo div {
+  padding: 16px 18px;
+
+  border-right: 1px solid #e5e7eb;
+}
+
+
+.gerenciar-usuario-resumo div:last-child {
+  border-right: none;
+}
+
+
+.gerenciar-usuario-resumo span,
+.gerenciar-usuario-resumo strong {
+  display: block;
+}
+
+
+.gerenciar-usuario-resumo span {
+  margin-bottom: 5px;
+
+  color: #9ca3af;
+
+  font-size: 10px;
+
+  text-transform: uppercase;
+}
+
+
+.gerenciar-usuario-resumo strong {
+  color: #374151;
+
+  font-size: 13px;
+}
+
+
+/*
+ * =====================================================
+ * MENSAGENS
+ * =====================================================
+ */
+
+.gerenciar-usuario-mensagem {
+  margin-bottom: 20px;
+
+  padding: 12px 15px;
+
+  border-radius: 8px;
+
+  font-size: 13px;
+}
+
+
+.gerenciar-usuario-erro {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+.gerenciar-usuario-sucesso {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+
+/*
+ * =====================================================
+ * PAINÉIS ADMINISTRATIVOS
+ * =====================================================
+ */
+
+.gerenciar-usuario-paineis {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+
+.gerenciar-usuario-painel {
+  padding: 22px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.03);
+}
+
+
+.gerenciar-usuario-painel-senha {
+  grid-column: 1 / -1;
+}
+
+
+.gerenciar-usuario-painel-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+
+.gerenciar-usuario-indice {
+  color: #9ca3af;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+.gerenciar-usuario-painel h2 {
+  margin: 4px 0 0;
+
+  color: #1f2937;
+
+  font-size: 17px;
+}
+
+
+.gerenciar-usuario-tag {
+  padding: 4px 7px;
+
+  background: #f3f4f6;
+
+  border-radius: 5px;
+
+  color: #6b7280;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+}
+
+
+.gerenciar-usuario-painel > p {
+  min-height: 38px;
+
+  margin: 12px 0 20px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+}
+
+
+.gerenciar-usuario-painel select,
+.gerenciar-usuario-painel input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 10px 11px;
+
+  background: #ffffff;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  color: #1f2937;
+
+  font-size: 13px;
+
+  outline: none;
+}
+
+
+.gerenciar-usuario-painel select:focus,
+.gerenciar-usuario-painel input:focus {
+  border-color: #6b7280;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(107, 114, 128, 0.12);
+}
+
+
+.gerenciar-usuario-painel > button {
+  margin-top: 18px;
+}
+
+/*
+ * =====================================================
+ * DADOS DA CONTA
+ * =====================================================
+ *
+ * Este painel ocupa toda a largura para separar os
+ * dados cadastrais das configurações de acesso.
+ */
+
+.gerenciar-usuario-painel-dados {
+  grid-column: 1 / -1;
+
+  border-left: 4px solid #374151;
+}
+
+
+.gerenciar-usuario-dados-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1.3fr);
+
+  gap: 18px;
+}
+
+
+.gerenciar-usuario-campo {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+
+.gerenciar-usuario-campo label {
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.gerenciar-usuario-dados-acoes {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-top: 18px;
+
+  padding-top: 18px;
+
+  border-top: 1px solid #f3f4f6;
+}
+
+
+/*
+ * =====================================================
+ * ESTADO DA CONTA
+ * =====================================================
+ */
+
+.gerenciar-usuario-estado {
+  padding: 10px 12px;
+
+  background: #f9fafb;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 7px;
+}
+
+
+.gerenciar-usuario-estado span,
+.gerenciar-usuario-estado strong {
+  display: block;
+}
+
+
+.gerenciar-usuario-estado span {
+  color: #9ca3af;
+
+  font-size: 10px;
+}
+
+
+.gerenciar-usuario-estado strong {
+  margin-top: 3px;
+
+  color: #374151;
+
+  font-size: 13px;
+}
+
+
+.gerenciar-usuario-botao-perigo {
+  padding: 10px 14px;
+
+  background: #ffffff;
+
+  border: 1px solid #fecaca;
+
+  border-radius: 7px;
+
+  color: #b91c1c;
+
+  cursor: pointer;
+
+  font-weight: 600;
+}
+
+
+.gerenciar-usuario-botao-perigo:hover {
+  background: #fef2f2;
+}
+
+
+/*
+ * =====================================================
+ * REDEFINIÇÃO DE SENHA
+ * =====================================================
+ */
+
+.gerenciar-usuario-senha-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+
+.gerenciar-usuario-senha-grid label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.gerenciar-usuario-input-senha {
+  display: flex;
+}
+
+
+.gerenciar-usuario-input-senha input {
+  border-radius: 7px 0 0 7px;
+}
+
+
+.gerenciar-usuario-input-senha button {
+  padding: 0 12px;
+
+  background: #f9fafb;
+
+  border: 1px solid #d1d5db;
+  border-left: none;
+
+  border-radius: 0 7px 7px 0;
+
+  color: #4b5563;
+
+  cursor: pointer;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+.gerenciar-usuario-ajuda {
+  display: block;
+
+  margin-top: 8px;
+
+  color: #9ca3af;
+
+  font-size: 11px;
+}
+
+
+/*
+ * =====================================================
+ * RESPONSIVIDADE
+ * =====================================================
+ */
+
+@media (max-width: 800px) {
+
+  .gerenciar-usuario-page {
+    padding: 20px;
+  }
+
+
+  .gerenciar-usuario-resumo,
+  .gerenciar-usuario-paineis,
+  .gerenciar-usuario-senha-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .gerenciar-usuario-resumo div {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+
+  .gerenciar-usuario-resumo div:last-child {
+    border-bottom: none;
+  }
+
+
+  .gerenciar-usuario-painel-senha {
+    grid-column: auto;
+  }
+
+}
+
+
+@media (max-width: 550px) {
+
+  .gerenciar-usuario-cabecalho {
+    align-items: flex-start;
+
+    flex-wrap: wrap;
+  }
+
+
+  .gerenciar-usuario-identidade {
+    min-width: 180px;
+  }
+
+  .gerenciar-usuario-painel-dados {
+    grid-column: auto;
+  }
+
+
+  .gerenciar-usuario-dados-grid {
+    grid-template-columns: 1fr;
+  }
+
+}

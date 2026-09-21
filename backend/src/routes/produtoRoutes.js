@@ -81,8 +81,8 @@ router.patch(
     "administrador",
     "gerente"
   ),
-  alterarStatusProduto,
-  confirmarOperacaoCritica
+  confirmarOperacaoCritica,
+  alterarStatusProduto
 );
 
 module.exports = router;

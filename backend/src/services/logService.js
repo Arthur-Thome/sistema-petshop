@@ -10,16 +10,44 @@ const pool = require("../database/connection");
  * remove as informações sensíveis antes do INSERT.
  */
 const CAMPOS_SENSIVEIS = [
+  /*
+   * Senhas utilizadas pela aplicação.
+   */
   "senha",
   "senha_hash",
-  "password",
-  "token",
-  "jwt",
-  "authorization",
-  "confirmacao_senha",
-  "senha_confirmacao",
   "senha_atual",
   "nova_senha",
+  "senha_confirmacao",
+  "confirmacao_senha",
+  "confirm_password",
+
+  /*
+   * Variações em inglês que podem aparecer
+   * futuramente em integrações ou bibliotecas.
+   */
+  "password",
+  "password_hash",
+
+  /*
+   * Tokens de autenticação, recuperação de senha
+   * e possíveis integrações futuras.
+   */
+  "token",
+  "token_hash",
+  "access_token",
+  "refresh_token",
+  "jwt",
+  "jwt_secret",
+  "authorization",
+
+  /*
+   * Credenciais armazenadas em variáveis de ambiente.
+   * Estes nomes são protegidos preventivamente caso
+   * algum objeto de configuração seja enviado ao log.
+   */
+  "email_password",
+  "db_password",
+  "admin_senha",
 ];
 
 
@@ -67,7 +95,9 @@ function removerDadosSensiveis(valor) {
   ) {
 
     const chaveNormalizada =
-      chave.toLowerCase();
+      chave
+        .trim()
+        .toLowerCase();
 
 
     /*

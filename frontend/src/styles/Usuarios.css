@@ -1,0 +1,247 @@
+/*
+ * =====================================================
+ * USUÁRIOS - ADMINISTRAÇÃO
+ * =====================================================
+ */
+
+.usuarios-page {
+  width: 100%;
+  box-sizing: border-box;
+
+  /*
+   * Mantém o conteúdo afastado das extremidades da área principal,
+   * seguindo o espaçamento visual utilizado nas demais páginas.
+   */
+  padding: 24px 30px;
+}
+
+
+.usuarios-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+
+.usuarios-topo h1 {
+  margin: 20px 0 0;
+
+  color: #1f2937;
+
+  font-size: 28px;
+}
+
+
+.usuarios-topo p {
+  margin: 8px 0 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+
+/*
+ * =====================================================
+ * CARD
+ * =====================================================
+ */
+
+.usuarios-card {
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.04);
+}
+
+
+.usuarios-card > p {
+  padding: 22px;
+
+  margin: 0;
+
+  color: #6b7280;
+}
+
+
+/*
+ * =====================================================
+ * TABELA
+ * =====================================================
+ */
+
+.usuarios-tabela-container {
+  width: 100%;
+
+  overflow-x: auto;
+}
+
+
+.usuarios-tabela {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+
+.usuarios-tabela th,
+.usuarios-tabela td {
+  padding: 15px 18px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  text-align: left;
+
+  font-size: 13px;
+}
+
+
+.usuarios-tabela th {
+  background: #f9fafb;
+
+  color: #4b5563;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+}
+
+
+.usuarios-tabela td {
+  color: #374151;
+}
+
+
+.usuarios-tabela tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+.usuarios-tabela tbody tr:hover {
+  background: #f9fafb;
+}
+
+
+/*
+ * =====================================================
+ * STATUS
+ * =====================================================
+ */
+
+.usuarios-status {
+  display: inline-block;
+
+  padding: 5px 9px;
+
+  border-radius: 12px;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+.usuarios-status-ativo {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+
+.usuarios-status-inativo {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+/*
+ * =====================================================
+ * AÇÕES E MENSAGENS
+ * =====================================================
+ */
+
+.usuarios-acao {
+  padding: 7px 10px;
+
+  background: transparent;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 6px;
+
+  color: #374151;
+
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.usuarios-acao:hover {
+  background: #f3f4f6;
+}
+
+
+.usuarios-vazio {
+  padding: 30px !important;
+
+  color: #6b7280 !important;
+
+  text-align: center !important;
+}
+
+
+.usuarios-mensagem {
+  margin-bottom: 20px;
+
+  padding: 12px 15px;
+
+  border-radius: 8px;
+
+  font-size: 13px;
+}
+
+
+.usuarios-mensagem-erro {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+/*
+ * =====================================================
+ * RESPONSIVIDADE
+ * =====================================================
+ */
+
+@media (max-width: 700px) {
+
+  .usuarios-page {
+    padding: 20px;
+  }
+
+  .usuarios-topo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .usuarios-topo .primary-button {
+    width: 100%;
+  }
+
+}

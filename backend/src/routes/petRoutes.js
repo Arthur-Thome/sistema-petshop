@@ -19,6 +19,10 @@ const confirmarOperacaoCritica = require(
   "../middleware/confirmacaoCriticaMiddleware"
 );
 
+const uploadPet = require(
+  "../middleware/uploadPetMiddleware"
+);
+
 // Converte erros de upload em respostas amigáveis para o frontend.
 function receberFotoPet(req, res, next) {
   uploadPet.single("foto")(
@@ -52,10 +56,6 @@ function receberFotoPet(req, res, next) {
   );
 }
 
-const uploadPet = require(
-  "../middleware/uploadPetMiddleware"
-);
-
 const router = express.Router();
 
 
@@ -67,9 +67,6 @@ router.get(
   "/tutor/:tutorId",
   listarPetsPorTutor
 );
-
-router.get("/", listarPets);
-router.get("/:id", buscarPetPorId);
 
 // Consultas.
 router.get("/", listarPets);

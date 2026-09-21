@@ -24,7 +24,26 @@ async function buscarResumo(req, res) {
   try {
     const perfil = req.usuario.perfil;
 
+    /*
+    * O Dashboard trabalha somente com os três perfis
+    * reconhecidos pelo sistema.
+    *
+    * Caso um perfil inválido chegue até este ponto por
+    * inconsistência no banco, negamos o acesso em vez
+    * de conceder permissões por padrão.
+    */
+    const perfisPermitidos = [
+      "funcionario",
+      "gerente",
+      "administrador",
+    ];
 
+    if (!perfisPermitidos.includes(perfil)) {
+      return res.status(403).json({
+        mensagem:
+          "Perfil sem permissão para acessar o Dashboard.",
+      });
+    }
     /*
      * =====================================================
      * INDICADORES OPERACIONAIS

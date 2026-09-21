@@ -5,6 +5,9 @@ const {
   listarUsuarios,
   alterarPerfil,
   alterarStatus,
+  redefinirSenhaUsuario,
+  buscarUsuarioPorId,
+  alterarDadosUsuario,
 } = require("../controllers/usuarioController");
 
 const confirmarOperacaoCritica = require(
@@ -18,10 +21,36 @@ const router = express.Router();
 
 router.use(autenticar);
 
+/*
+ * A administração de usuários contém informações e ações
+ * sensíveis do sistema e é exclusiva do administrador.
+ */
 router.get(
   "/",
-  permitirPerfis("administrador", "gerente"),
+  permitirPerfis("administrador"),
   listarUsuarios
+);
+
+/*
+ * Os detalhes administrativos de uma conta são acessíveis
+ * somente pelo administrador.
+ */
+router.get(
+  "/:id",
+  permitirPerfis("administrador"),
+  buscarUsuarioPorId
+);
+
+/*
+ * Nome e e-mail fazem parte da identidade da conta.
+ * A alteração é exclusiva do administrador e exige
+ * nova confirmação da senha administrativa.
+ */
+router.patch(
+  "/:id",
+  permitirPerfis("administrador"),
+  confirmarOperacaoCritica,
+  alterarDadosUsuario
 );
 
 router.post(
@@ -44,4 +73,17 @@ router.patch(
   alterarStatus
 );
 
+
+/*
+ * Somente administradores podem redefinir senhas diretamente.
+ *
+ * Além da sessão autenticada, exigimos novamente a senha do
+ * administrador através da confirmação de operação crítica.
+ */
+router.patch(
+  "/:id/senha",
+  permitirPerfis("administrador"),
+  confirmarOperacaoCritica,
+  redefinirSenhaUsuario
+);
 module.exports = router;

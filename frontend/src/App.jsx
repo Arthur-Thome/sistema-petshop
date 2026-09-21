@@ -47,6 +47,9 @@ import Auditoria from "./pages/Auditoria";
 import DetalhesAuditoria from "./pages/DetalhesAuditoria";
 import EsqueciSenha from "./pages/EsqueciSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import Usuarios from "./pages/Usuarios";
+import FormularioUsuario from "./pages/FormularioUsuario";
+import GerenciarUsuario from "./pages/GerenciarUsuario";
 
 function App() {
   return (
@@ -285,7 +288,36 @@ function App() {
               </RotaAdministrador>
             }
           />
+
+          <Route
+            path="/administracao/usuarios"
+            element={
+              <RotaAdministrador>
+                <Usuarios />
+              </RotaAdministrador>
+            }
+          />
+
+          <Route
+            path="/administracao/usuarios/novo"
+            element={
+              <RotaAdministrador>
+                <FormularioUsuario />
+              </RotaAdministrador>
+            }
+          />
+
+          <Route
+            path="/administracao/usuarios/:id"
+            element={
+              <RotaAdministrador>
+                <GerenciarUsuario />
+              </RotaAdministrador>
+            }
+          />
+
         </Route>
+
 
         <Route
           path="*"

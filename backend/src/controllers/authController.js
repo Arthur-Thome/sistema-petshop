@@ -4,13 +4,23 @@ const pool = require("../database/connection");
 const crypto = require("crypto");
 const { registrarLog } = require("../services/logService");
 const { enviarEmail } = require("../services/emailService");
+const {
+  validarSenha,
+} = require("../utils/validarSenha");
 
 
 // Autentica o usuário e gera um JWT quando as credenciais
 // estiverem corretas e a conta estiver ativa.
 async function login(req, res) {
   try {
-    const { email, senha } = req.body;
+    let {
+      email,
+      senha,
+    } = req.body;
+
+    email = email
+      ?.trim()
+      .toLowerCase();
 
     if (!email || !senha) {
       return res.status(400).json({
@@ -18,8 +28,15 @@ async function login(req, res) {
       });
     }
 
+    if (email.length > 255) {
+      return res.status(400).json({
+        mensagem:
+          "O e-mail deve possuir no máximo 255 caracteres.",
+      });
+    }
+
     const resultado = await pool.query(
-      `SELECT id, nome, email, senha_hash, perfil, ativo
+      `SELECT id, nome, email, senha_hash, perfil, ativo, versao_sessao
        FROM usuarios
        WHERE LOWER(email) = LOWER($1)`,
       [email]
@@ -51,16 +68,20 @@ async function login(req, res) {
         mensagem: "E-mail ou senha inválidos.",
       });
     }
-    // O token contém apenas informações necessárias para identificar
-    // a sessão. Dados sensíveis não devem ser colocados no JWT.
+    /*
+    * A versão da sessão permite invalidar JWTs já emitidos.
+    * Se ela mudar no banco, tokens antigos deixam de ser aceitos.
+    */
     const token = jwt.sign(
       {
         id: usuario.id,
         perfil: usuario.perfil,
+        versaoSessao: usuario.versao_sessao,
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: process.env.JWT_EXPIRES_IN || "8h",
+        expiresIn:
+          process.env.JWT_EXPIRES_IN || "8h",
       }
     );
     // Registra o login bem-sucedido para fins de auditoria.
@@ -100,11 +121,24 @@ async function login(req, res) {
  */
 async function solicitarRecuperacaoSenha(req, res) {
   try {
-    const { email } = req.body;
+    let {
+      email,
+    } = req.body;
+
+    email = email
+      ?.trim()
+      .toLowerCase();
 
     if (!email) {
       return res.status(400).json({
         mensagem: "E-mail é obrigatório.",
+      });
+    }
+
+    if (email.length > 255) {
+      return res.status(400).json({
+        mensagem:
+          "O e-mail deve possuir no máximo 255 caracteres.",
       });
     }
 
@@ -115,7 +149,7 @@ async function solicitarRecuperacaoSenha(req, res) {
       `SELECT id, nome, email, ativo
        FROM usuarios
        WHERE LOWER(email) = LOWER($1)`,
-      [email.trim()]
+      [email]
     );
 
     /*
@@ -317,23 +351,20 @@ async function redefinirSenha(req, res) {
       nova_senha,
     } = req.body;
 
+    const validacaoSenha =
+      validarSenha(nova_senha);
+
+    if (!validacaoSenha.valida) {
+      return res.status(400).json({
+        mensagem:
+          validacaoSenha.mensagem,
+      });
+    }
+
     if (!token || !nova_senha) {
       return res.status(400).json({
         mensagem:
           "Token e nova senha são obrigatórios.",
-      });
-    }
-
-    /*
-     * Regra inicial de segurança para as senhas.
-     *
-     * Uma validação geral de política de senhas será
-     * revisada novamente na etapa de segurança.
-     */
-    if (nova_senha.length < 8) {
-      return res.status(400).json({
-        mensagem:
-          "A nova senha deve possuir pelo menos 8 caracteres.",
       });
     }
 
@@ -408,12 +439,18 @@ async function redefinirSenha(req, res) {
         12
       );
 
+    /*
+    * Além de trocar a senha, incrementamos a versão da sessão.
+    * Todos os JWTs emitidos anteriormente para este usuário
+    * passam a ser inválidos imediatamente.
+    */
     await client.query(
       `UPDATE usuarios
-       SET
-         senha_hash = $1,
-         atualizado_em = CURRENT_TIMESTAMP
-       WHERE id = $2`,
+      SET
+        senha_hash = $1,
+        versao_sessao = versao_sessao + 1,
+        atualizado_em = CURRENT_TIMESTAMP
+      WHERE id = $2`,
       [
         novoHash,
         recuperacao.usuario_id,

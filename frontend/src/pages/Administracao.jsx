@@ -35,33 +35,47 @@ function Administracao() {
          * A gestão completa de usuários será ampliada
          * nas próximas etapas.
          */}
+        {/* Área exclusiva para administração das contas do sistema. */}
         <div
-          className="administracao-card administracao-card-desabilitado"
-        >
+          className="administracao-card administracao-card-clicavel"
+          onClick={() =>
+            navigate(
+              "/administracao/usuarios"
+            )
+          }
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter" ||
+              event.key === " "
+            ) {
+              event.preventDefault();
 
+              navigate(
+                "/administracao/usuarios"
+              );
+            }
+          }}
+        >
           <div className="administracao-card-icone">
             👥
           </div>
 
-
           <div className="administracao-card-conteudo">
-
             <h2>
               Usuários
             </h2>
 
             <p>
-              Gerenciamento de usuários,
-              perfis e acessos ao sistema.
+              Gerencie usuários,
+              perfis, acessos e senhas.
             </p>
 
-
-            <span className="administracao-em-breve">
-              Em breve
+            <span className="administracao-card-link">
+              Gerenciar usuários →
             </span>
-
           </div>
-
         </div>
 
 

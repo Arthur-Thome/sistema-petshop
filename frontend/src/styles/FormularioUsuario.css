@@ -1,0 +1,363 @@
+/*
+ * =====================================================
+ * FORMULÁRIO DE USUÁRIO
+ * =====================================================
+ */
+
+.formulario-usuario-page {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 24px 30px 50px;
+}
+
+
+/*
+ * =====================================================
+ * INTRODUÇÃO
+ * =====================================================
+ */
+
+.formulario-usuario-introducao {
+  max-width: 700px;
+
+  margin-top: 30px;
+  margin-bottom: 35px;
+}
+
+
+.formulario-usuario-etiqueta {
+  color: #6b7280;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+}
+
+
+.formulario-usuario-introducao h1 {
+  margin: 8px 0;
+
+  color: #1f2937;
+
+  font-size: 30px;
+}
+
+
+.formulario-usuario-introducao p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/*
+ * =====================================================
+ * CONTAINER
+ * =====================================================
+ */
+
+.formulario-usuario-container {
+  max-width: 950px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.04);
+}
+
+
+/*
+ * =====================================================
+ * SEÇÕES
+ * =====================================================
+ */
+
+.formulario-usuario-secao {
+  display: grid;
+
+  grid-template-columns: 70px 1fr;
+
+  padding: 28px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+.formulario-usuario-secao-numero {
+  color: #9ca3af;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+.formulario-usuario-secao-conteudo h2 {
+  margin: 0;
+
+  color: #1f2937;
+
+  font-size: 17px;
+}
+
+
+.formulario-usuario-secao-conteudo > p {
+  margin: 6px 0 22px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+/*
+ * =====================================================
+ * CAMPOS
+ * =====================================================
+ */
+
+.formulario-usuario-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+
+.formulario-usuario-campo {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+
+.formulario-usuario-campo label {
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.formulario-usuario-campo input,
+.formulario-usuario-campo select {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 12px;
+
+  background: #ffffff;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  color: #1f2937;
+
+  font-size: 13px;
+
+  outline: none;
+}
+
+
+.formulario-usuario-campo input:focus,
+.formulario-usuario-campo select:focus {
+  border-color: #6b7280;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(107, 114, 128, 0.12);
+}
+
+
+/*
+ * =====================================================
+ * PERFIS
+ * =====================================================
+ */
+
+.formulario-usuario-perfis {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-top: 16px;
+}
+
+
+.formulario-usuario-perfis div {
+  padding: 12px;
+
+  background: #f9fafb;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 8px;
+}
+
+
+.formulario-usuario-perfis strong,
+.formulario-usuario-perfis span {
+  display: block;
+}
+
+
+.formulario-usuario-perfis strong {
+  color: #374151;
+
+  font-size: 12px;
+}
+
+
+.formulario-usuario-perfis span {
+  margin-top: 4px;
+
+  color: #6b7280;
+
+  font-size: 11px;
+
+  line-height: 1.4;
+}
+
+
+/*
+ * =====================================================
+ * SENHA
+ * =====================================================
+ */
+
+.formulario-usuario-senha {
+  display: flex;
+}
+
+
+.formulario-usuario-senha input {
+  border-radius: 7px 0 0 7px;
+}
+
+
+.formulario-usuario-senha button {
+  padding: 0 12px;
+
+  background: #f9fafb;
+
+  border: 1px solid #d1d5db;
+  border-left: none;
+
+  border-radius: 0 7px 7px 0;
+
+  color: #4b5563;
+
+  cursor: pointer;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+.formulario-usuario-ajuda {
+  display: block;
+
+  margin-top: 10px;
+
+  color: #9ca3af;
+
+  font-size: 11px;
+}
+
+
+/*
+ * =====================================================
+ * MENSAGEM DE ERRO
+ * =====================================================
+ */
+
+.formulario-usuario-erro {
+  margin: 20px 28px 0;
+
+  padding: 12px 14px;
+
+  background: #fee2e2;
+
+  border-radius: 7px;
+
+  color: #991b1b;
+
+  font-size: 13px;
+}
+
+
+/*
+ * =====================================================
+ * AÇÕES
+ * =====================================================
+ */
+
+.formulario-usuario-acoes {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding: 22px 28px;
+}
+
+
+/*
+ * =====================================================
+ * RESPONSIVIDADE
+ * =====================================================
+ */
+
+@media (max-width: 750px) {
+
+  .formulario-usuario-page {
+    padding: 20px;
+  }
+
+
+  .formulario-usuario-secao {
+    grid-template-columns: 1fr;
+
+    gap: 12px;
+
+    padding: 22px;
+  }
+
+
+  .formulario-usuario-grid,
+  .formulario-usuario-perfis {
+    grid-template-columns: 1fr;
+  }
+
+
+  .formulario-usuario-acoes {
+    flex-direction: column-reverse;
+  }
+
+
+  .formulario-usuario-acoes button {
+    width: 100%;
+  }
+
+}

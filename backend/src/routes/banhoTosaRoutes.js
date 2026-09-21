@@ -64,8 +64,20 @@ router.patch(
   cancelarAgendamento
 );
 
+/*
+ * A confirmação manual de pagamento altera uma
+ * informação financeira do atendimento.
+ *
+ * Funcionários podem consultar o atendimento e gerar
+ * o Pix, mas somente gerente e administrador podem
+ * registrar manualmente o pagamento como recebido.
+ */
 router.patch(
   "/:id/pagamento",
+  permitirPerfis(
+    "administrador",
+    "gerente"
+  ),
   confirmarPagamento
 );
 

@@ -34,7 +34,7 @@ async function autenticar(req, res, next) {
 
     // O banco é a fonte atual da situação e das permissões do usuário.
     const resultado = await pool.query(
-      `SELECT id, nome, email, perfil, ativo
+      `SELECT id, nome, email, perfil, ativo, versao_sessao
        FROM usuarios
        WHERE id = $1`,
       [decoded.id]
@@ -51,6 +51,20 @@ async function autenticar(req, res, next) {
     if (!usuario.ativo) {
       return res.status(403).json({
         mensagem: "Usuário desativado.",
+      });
+    }
+
+    /*
+    * Tokens emitidos antes de uma alteração de segurança
+    * deixam de ser aceitos quando a versão da sessão muda.
+    */
+    if (
+      decoded.versaoSessao !==
+      usuario.versao_sessao
+    ) {
+      return res.status(401).json({
+        mensagem:
+          "Sua sessão não é mais válida. Faça login novamente.",
       });
     }
 

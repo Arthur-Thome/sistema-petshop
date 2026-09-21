@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     senha_hash VARCHAR(255) NOT NULL,
     perfil VARCHAR(30) NOT NULL DEFAULT 'funcionario',
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    -- Incrementada quando todas as sessões existentes precisam ser invalidadas.
+    versao_sessao INTEGER NOT NULL DEFAULT 1,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
