@@ -1883,3 +1883,42 @@
     font-size: 8px;
   }
 }
+
+/*
+ * Indica quando a página foi aberta pelo atalho
+ * "Banho e Tosa hoje" do Dashboard.
+ */
+.banho-tosa-filtro-ativo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.banho-tosa-filtro-ativo div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.banho-tosa-filtro-ativo strong {
+  color: #344054;
+}
+
+.banho-tosa-filtro-ativo span {
+  font-size: 13px;
+  color: #667085;
+}
+
+.banho-tosa-filtro-ativo button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 22px;
+  color: #667085;
+}

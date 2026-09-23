@@ -1,0 +1,431 @@
+.pagamentos-page {
+  width: 100%;
+}
+
+
+/*
+ * Mantemos a identificação da área administrativa,
+ * mas a composição é diferente do Histórico de Estoque.
+ */
+.pagamentos-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.pagamentos-header h1 {
+  margin: 6px 0;
+}
+
+.pagamentos-header p {
+  margin: 0;
+  color: #667085;
+}
+
+.pagamentos-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #667085;
+}
+
+
+/*
+ * O resumo financeiro funciona como uma faixa horizontal.
+ * Isso diferencia a página da estrutura lateral utilizada
+ * pelo Histórico Geral de Estoque.
+ */
+.pagamentos-resumo {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 0.7fr)
+    minmax(240px, 1fr)
+    minmax(320px, 1.5fr);
+  margin-bottom: 24px;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.pagamentos-resumo-principal,
+.pagamentos-resumo-secundario {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 120px;
+  padding: 22px;
+  border-right: 1px solid #e4e7ec;
+}
+
+.pagamentos-resumo-principal {
+  background: #f9fafb;
+}
+
+.pagamentos-resumo span,
+.pagamentos-resumo small {
+  color: #667085;
+}
+
+.pagamentos-resumo span {
+  font-size: 13px;
+}
+
+.pagamentos-resumo small {
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.pagamentos-resumo-principal strong {
+  margin-top: 5px;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.pagamentos-resumo-secundario strong {
+  margin-top: 5px;
+  font-size: 24px;
+  color: #101828;
+}
+
+
+.pagamentos-busca {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px;
+}
+
+.pagamentos-busca label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.pagamentos-busca-controles {
+  display: flex;
+  gap: 8px;
+}
+
+.pagamentos-busca input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #101828;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.pagamentos-busca input:focus {
+  outline: none;
+  border-color: #98a2b3;
+}
+
+
+.pagamentos-erro {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #fecdca;
+  border-radius: 10px;
+  background: #fef3f2;
+  color: #b42318;
+}
+
+
+.pagamentos-conteudo {
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.pagamentos-conteudo-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.pagamentos-conteudo-topo h2 {
+  margin: 0 0 5px;
+}
+
+.pagamentos-conteudo-topo p {
+  margin: 0;
+  color: #667085;
+}
+
+.pagamentos-conteudo-topo > span {
+  white-space: nowrap;
+  font-size: 13px;
+  color: #667085;
+}
+
+
+/*
+ * Cada cobrança é apresentada como uma ficha horizontal,
+ * evitando repetir o padrão de tabela do estoque.
+ */
+.pagamentos-lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.pagamento-card {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1.1fr)
+    minmax(260px, 1.4fr)
+    minmax(200px, 1fr)
+    minmax(150px, 0.7fr)
+    auto;
+  align-items: center;
+  gap: 22px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.pagamento-card:last-child {
+  border-bottom: 0;
+}
+
+.pagamento-card:hover {
+  background: #fcfcfd;
+}
+
+
+.pagamento-card-identificacao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagamento-pet-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 12px;
+  background: #f2f4f7;
+  font-size: 20px;
+}
+
+.pagamento-card-identificacao span,
+.pagamento-card-detalhes span,
+.pagamento-card-servicos > span,
+.pagamento-card-financeiro > span:first-child {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #667085;
+}
+
+.pagamento-card-identificacao h3 {
+  margin: 0;
+  color: #101828;
+}
+
+.pagamento-card-identificacao p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #667085;
+}
+
+
+.pagamento-card-detalhes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.pagamento-card-detalhes strong {
+  display: block;
+  font-size: 13px;
+  color: #344054;
+}
+
+
+.pagamento-card-servicos p {
+  margin: 0;
+  line-height: 1.45;
+  color: #475467;
+}
+
+
+.pagamento-card-financeiro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.pagamento-card-financeiro strong {
+  margin-bottom: 7px;
+  font-size: 18px;
+  color: #101828;
+}
+
+.pagamento-status {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fffaeb;
+  color: #b54708;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.pagamento-card-acao {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pagamento-card-acao button {
+  white-space: nowrap;
+}
+
+
+.pagamentos-estado,
+.pagamentos-vazio {
+  padding: 54px 24px;
+  text-align: center;
+  color: #667085;
+}
+
+.pagamentos-vazio h3 {
+  margin: 12px 0 6px;
+  color: #344054;
+}
+
+.pagamentos-vazio p {
+  margin: 0;
+}
+
+.pagamentos-vazio-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #ecfdf3;
+  color: #027a48;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+
+.pagamentos-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-top: 1px solid #e4e7ec;
+}
+
+.pagamentos-paginacao span {
+  font-size: 14px;
+  color: #667085;
+}
+
+.pagamentos-paginacao button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+
+@media (max-width: 1250px) {
+  .pagamento-card {
+    grid-template-columns:
+      1fr 1.5fr 1fr;
+  }
+
+  .pagamento-card-servicos {
+    grid-column: 1 / 3;
+  }
+
+  .pagamento-card-acao {
+    grid-column: 3;
+  }
+}
+
+
+@media (max-width: 1000px) {
+  .pagamentos-resumo {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pagamentos-resumo-secundario {
+    border-right: 0;
+  }
+
+  .pagamentos-busca {
+    grid-column: 1 / -1;
+    border-top: 1px solid #e4e7ec;
+  }
+}
+
+
+@media (max-width: 750px) {
+  .pagamentos-header {
+    flex-direction: column;
+  }
+
+  .pagamentos-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .pagamentos-resumo-principal,
+  .pagamentos-resumo-secundario {
+    border-right: 0;
+    border-bottom: 1px solid #e4e7ec;
+  }
+
+  .pagamentos-busca {
+    grid-column: auto;
+    border-top: 0;
+  }
+
+  .pagamentos-busca-controles {
+    flex-direction: column;
+  }
+
+  .pagamentos-conteudo-topo {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pagamento-card {
+    grid-template-columns: 1fr;
+  }
+
+  .pagamento-card-detalhes {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pagamento-card-servicos,
+  .pagamento-card-acao {
+    grid-column: auto;
+  }
+
+  .pagamento-card-acao {
+    justify-content: flex-start;
+  }
+
+  .pagamentos-paginacao {
+    flex-direction: column;
+  }
+}

@@ -51,14 +51,23 @@ import Usuarios from "./pages/Usuarios";
 import FormularioUsuario from "./pages/FormularioUsuario";
 import GerenciarUsuario from "./pages/GerenciarUsuario";
 import HistoricoEstoque from "./pages/HistoricoEstoque";
+import PagamentosPendentes from "./pages/PagamentosPendentes";
+import RotaAdministrativo from "./components/RotaAdministrativo";
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         <Route
           path="/"
-          element={<Navigate to="/dashboard" replace />}
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
         />
 
         <Route
@@ -76,6 +85,7 @@ function App() {
           element={<RedefinirSenha />}
         />
 
+
         <Route
           element={
             <RotaProtegida>
@@ -83,10 +93,12 @@ function App() {
             </RotaProtegida>
           }
         >
+
           <Route
             path="/dashboard"
             element={<Dashboard />}
           />
+
 
           <Route
             path="/tutores"
@@ -108,6 +120,7 @@ function App() {
             element={<FormularioTutor />}
           />
 
+
           <Route
             path="pets"
             element={<Pets />}
@@ -128,6 +141,7 @@ function App() {
             element={<FormularioPet />}
           />
 
+
           <Route
             path="/creche"
             element={<Creche />}
@@ -147,6 +161,7 @@ function App() {
             path="creche/historico"
             element={<HistoricoCreche />}
           />
+
 
           <Route
             path="/hotel"
@@ -183,6 +198,7 @@ function App() {
             element={<DetalhesHotel />}
           />
 
+
           <Route
             path="/banho-tosa"
             element={<BanhoTosa />}
@@ -190,7 +206,9 @@ function App() {
 
           <Route
             path="/banho-tosa/novo"
-            element={<NovoAgendamentoBanhoTosa />}
+            element={
+              <NovoAgendamentoBanhoTosa />
+            }
           />
 
           <Route
@@ -205,12 +223,16 @@ function App() {
 
           <Route
             path="/banho-tosa/servicos/novo"
-            element={<FormularioServicoBanhoTosa />}
+            element={
+              <FormularioServicoBanhoTosa />
+            }
           />
 
           <Route
             path="/banho-tosa/servicos/:id/editar"
-            element={<FormularioServicoBanhoTosa />}
+            element={
+              <FormularioServicoBanhoTosa />
+            }
           />
 
           <Route
@@ -238,6 +260,7 @@ function App() {
             element={<ComprovanteBanhoTosa />}
           />
 
+
           <Route
             path="produtos"
             element={<Produtos />}
@@ -259,18 +282,46 @@ function App() {
           />
 
           <Route
-            path="produtos/:id/historico"
-            element={<HistoricoEstoque />}
-          />
-
-          <Route
             path="produtos/:id/editar"
             element={<FormularioProduto />}
           />
 
+
+          {/*
+           * Área administrativa operacional.
+           *
+           * Administrador e Gerente possuem acesso.
+           * A proteção visual complementa a proteção
+           * existente nas respectivas rotas do backend.
+           */}
+          <Route
+            path="/administrativo/estoque"
+            element={
+              <RotaAdministrativo>
+                <HistoricoEstoque />
+              </RotaAdministrativo>
+            }
+          />
+
+          <Route
+            path="/administrativo/pagamentos-pendentes"
+            element={
+              <RotaAdministrativo>
+                <PagamentosPendentes />
+              </RotaAdministrativo>
+            }
+          />
+
+
+          {/*
+           * Administração sensível do sistema.
+           *
+           * Esta área permanece exclusiva para
+           * Administradores.
+           */}
           <Route
             path="/administracao"
-             element={
+            element={
               <RotaAdministrador>
                 <Administracao />
               </RotaAdministrador>
@@ -327,11 +378,18 @@ function App() {
 
         <Route
           path="*"
-          element={<Navigate to="/dashboard" replace />}
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
         />
+
       </Routes>
     </BrowserRouter>
   );
 }
+
 
 export default App;

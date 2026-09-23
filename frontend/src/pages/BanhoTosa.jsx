@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import api from "../services/api";
 
@@ -8,6 +15,9 @@ import "../styles/BanhoTosa.css";
 
 function BanhoTosa() {
   const navigate = useNavigate();
+
+  const [searchParams, setSearchParams] =
+    useSearchParams();
 
   const [atendimentos, setAtendimentos] =
     useState([]);
@@ -20,6 +30,15 @@ function BanhoTosa() {
 
   const [erro, setErro] =
     useState("");
+
+
+  /*
+   * O filtro vindo pela URL permite que atalhos externos,
+   * como o Dashboard, abram esta mesma página mostrando
+   * somente os atendimentos relevantes.
+   */
+  const filtro =
+    searchParams.get("filtro");
 
 
   /*
@@ -132,6 +151,48 @@ function BanhoTosa() {
 
 
   /*
+   * Compara ano, mês e dia no horário local do navegador.
+   *
+   * Evitamos comparar somente a parte YYYY-MM-DD de uma
+   * string ISO porque isso poderia gerar diferença de data
+   * devido ao fuso horário.
+   */
+  function ehHoje(data) {
+    if (!data) {
+      return false;
+    }
+
+
+    const dataAtendimento =
+      new Date(data);
+
+    if (
+      Number.isNaN(
+        dataAtendimento.getTime()
+      )
+    ) {
+      return false;
+    }
+
+
+    const hoje =
+      new Date();
+
+
+    return (
+      dataAtendimento.getFullYear() ===
+        hoje.getFullYear() &&
+
+      dataAtendimento.getMonth() ===
+        hoje.getMonth() &&
+
+      dataAtendimento.getDate() ===
+        hoje.getDate()
+    );
+  }
+
+
+  /*
    * Retorna os nomes dos vários serviços
    * vinculados ao mesmo atendimento.
    */
@@ -151,12 +212,25 @@ function BanhoTosa() {
 
 
   /*
-   * Permite localizar pelo pet, tutor ou
-   * por qualquer um dos serviços selecionados.
+   * Primeiro aplicamos o filtro funcional vindo pela URL.
+   * Depois aplicamos a pesquisa digitada pelo usuário.
+   *
+   * Assim "/banho-tosa?filtro=hoje" continua permitindo
+   * pesquisar somente dentro dos atendimentos de hoje.
    */
   const atendimentosFiltrados =
     atendimentos.filter(
       (atendimento) => {
+
+        if (
+          filtro === "hoje" &&
+          !ehHoje(
+            atendimento.agendado_para
+          )
+        ) {
+          return false;
+        }
+
 
         const termo =
           busca
@@ -196,8 +270,24 @@ function BanhoTosa() {
     );
 
 
+  /*
+   * Os resumos acompanham o filtro atual da página.
+   * Ao entrar pelo Dashboard com filtro=hoje, os números
+   * passam a representar somente os registros de hoje.
+   */
+  const atendimentosDoContexto =
+    filtro === "hoje"
+      ? atendimentos.filter(
+          (atendimento) =>
+            ehHoje(
+              atendimento.agendado_para
+            )
+        )
+      : atendimentos;
+
+
   const totalAgendados =
-    atendimentos.filter(
+    atendimentosDoContexto.filter(
       (atendimento) =>
         atendimento.status ===
         "AGENDADO"
@@ -205,11 +295,20 @@ function BanhoTosa() {
 
 
   const totalEmAtendimento =
-    atendimentos.filter(
+    atendimentosDoContexto.filter(
       (atendimento) =>
         atendimento.status ===
         "EM_ATENDIMENTO"
     ).length;
+
+
+  function limparFiltroHoje() {
+    /*
+     * Removemos apenas o filtro da URL.
+     * A busca digitada permanece intacta.
+     */
+    setSearchParams({});
+  }
 
 
   return (
@@ -218,16 +317,32 @@ function BanhoTosa() {
       <div className="banho-tosa-header">
 
         <div>
-          <h1>Banho e Tosa</h1>
+          <h1>
+            {filtro === "hoje"
+              ? "Banho e Tosa de Hoje"
+              : "Banho e Tosa"}
+          </h1>
 
           <p>
-            Acompanhe os agendamentos e
-            atendimentos em andamento.
+            {filtro === "hoje"
+              ? "Atendimentos ativos agendados para hoje."
+              : "Acompanhe os agendamentos e atendimentos em andamento."}
           </p>
         </div>
 
 
         <div className="banho-tosa-header-acoes">
+
+          {filtro === "hoje" && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={limparFiltroHoje}
+            >
+              Ver Todos
+            </button>
+          )}
+
 
           <button
             type="button"
@@ -257,6 +372,30 @@ function BanhoTosa() {
         </div>
 
       </div>
+
+
+      {filtro === "hoje" && (
+        <div className="banho-tosa-filtro-ativo">
+          <div>
+            <strong>
+              Exibindo somente hoje
+            </strong>
+
+            <span>
+              Os resultados abaixo estão
+              filtrados pela data do
+              agendamento.
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={limparFiltroHoje}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
 
       <div className="banho-tosa-resumos">
@@ -333,7 +472,9 @@ function BanhoTosa() {
           <p>
             {busca
               ? "Nenhum atendimento corresponde à pesquisa."
-              : "Não existem agendamentos ou atendimentos em andamento."}
+              : filtro === "hoje"
+                ? "Não existem atendimentos ativos agendados para hoje."
+                : "Não existem agendamentos ou atendimentos em andamento."}
           </p>
 
         </div>

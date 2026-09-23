@@ -12,6 +12,10 @@ const TIPOS_MOVIMENTACAO = [
   "AJUSTE_SAIDA",
 ];
 
+const LIMITE_BUSCA = 100;
+const LIMITE_MOTIVO = 1000;
+const LIMITE_MAXIMO_POR_PAGINA = 100;
+
 
 /*
  * Toda alteração de quantidade deve passar por este
@@ -22,10 +26,6 @@ async function movimentarEstoque(
   req,
   res
 ) {
-  /*
-   * Validamos os dados antes de reservar uma conexão
-   * exclusiva do pool para a transação.
-   */
   const produtoId =
     Number(req.params.produtoId);
 
@@ -86,10 +86,6 @@ async function movimentarEstoque(
   }
 
 
-  /*
-   * O motivo é opcional, porém quando informado precisa
-   * ser texto e possuir tamanho controlado.
-   */
   let motivoNormalizado = null;
 
   if (
@@ -109,11 +105,12 @@ async function movimentarEstoque(
 
     if (
       motivoNormalizado &&
-      motivoNormalizado.length > 1000
+      motivoNormalizado.length >
+        LIMITE_MOTIVO
     ) {
       return res.status(400).json({
         mensagem:
-          "O motivo deve possuir no máximo 1000 caracteres.",
+          `O motivo deve possuir no máximo ${LIMITE_MOTIVO} caracteres.`,
       });
     }
   }
@@ -127,11 +124,8 @@ async function movimentarEstoque(
 
 
     /*
-     * FOR UPDATE bloqueia o registro enquanto a
-     * movimentação estiver sendo calculada.
-     *
-     * Isso impede duas requisições simultâneas de
-     * utilizarem a mesma quantidade inicial.
+     * O bloqueio garante que duas movimentações simultâneas
+     * não utilizem a mesma quantidade inicial.
      */
     const resultadoProduto =
       await client.query(
@@ -149,9 +143,7 @@ async function movimentarEstoque(
       resultadoProduto.rows.length ===
       0
     ) {
-      await client.query(
-        "ROLLBACK"
-      );
+      await client.query("ROLLBACK");
 
       return res.status(404).json({
         mensagem:
@@ -165,9 +157,7 @@ async function movimentarEstoque(
 
 
     if (!produto.ativo) {
-      await client.query(
-        "ROLLBACK"
-      );
+      await client.query("ROLLBACK");
 
       return res.status(400).json({
         mensagem:
@@ -182,19 +172,13 @@ async function movimentarEstoque(
       );
 
 
-    /*
-     * A quantidade existente no banco também precisa
-     * estar íntegra antes de efetuarmos qualquer cálculo.
-     */
     if (
       !Number.isInteger(
         quantidadeAnterior
       ) ||
       quantidadeAnterior < 0
     ) {
-      await client.query(
-        "ROLLBACK"
-      );
+      await client.query("ROLLBACK");
 
       console.error(
         "Quantidade de estoque inválida no produto:",
@@ -209,8 +193,7 @@ async function movimentarEstoque(
 
 
     const adicionaEstoque =
-      tipoNormalizado ===
-        "ENTRADA" ||
+      tipoNormalizado === "ENTRADA" ||
       tipoNormalizado ===
         "AJUSTE_ENTRADA";
 
@@ -224,12 +207,11 @@ async function movimentarEstoque(
 
 
     /*
-     * Estoque negativo nunca é permitido.
+     * Regra permanente do estoque:
+     * nenhuma operação pode deixar a quantidade negativa.
      */
     if (quantidadePosterior < 0) {
-      await client.query(
-        "ROLLBACK"
-      );
+      await client.query("ROLLBACK");
 
       return res.status(400).json({
         mensagem:
@@ -245,7 +227,8 @@ async function movimentarEstoque(
 
           SET
             quantidade_atual = $1,
-            atualizado_em = CURRENT_TIMESTAMP
+            atualizado_em =
+              CURRENT_TIMESTAMP
 
           WHERE id = $2
 
@@ -294,11 +277,11 @@ async function movimentarEstoque(
 
 
     /*
-     * A movimentação já possui seu próprio histórico.
-     * Também registramos no log geral de auditoria.
+     * O histórico específico de estoque e o log geral
+     * possuem finalidades diferentes.
      *
-     * Uma falha no log não desfaz a movimentação que
-     * já foi confirmada no banco.
+     * A movimentação permanece registrada mesmo se houver
+     * falha posterior ao registrar a auditoria geral.
      */
     try {
       await registrarLog({
@@ -383,87 +366,274 @@ async function movimentarEstoque(
 
 
 /*
- * Exibe o histórico de movimentações do produto,
- * incluindo quem realizou cada operação.
+ * Retorna o histórico geral das movimentações de estoque.
+ *
+ * Diferentemente da versão anterior, esta consulta não
+ * pertence a um único produto.
+ *
+ * A autorização de Administrador/Gerente é aplicada
+ * diretamente no estoqueRoutes.js.
  */
-async function listarMovimentacoesProduto(
+async function listarHistoricoEstoque(
   req,
   res
 ) {
   try {
-    const produtoId =
-      Number(req.params.produtoId);
+    const {
+      busca,
+      tipo,
+      pagina = "1",
+      limite = "20",
+    } = req.query;
+
+
+    /*
+     * Busca opcional pelo nome do produto.
+     */
+    let buscaNormalizada = "";
+
+    if (
+      busca !== undefined &&
+      busca !== ""
+    ) {
+      if (typeof busca !== "string") {
+        return res.status(400).json({
+          mensagem:
+            "A busca informada é inválida.",
+        });
+      }
+
+      buscaNormalizada =
+        busca.trim();
+
+      if (
+        buscaNormalizada.length >
+        LIMITE_BUSCA
+      ) {
+        return res.status(400).json({
+          mensagem:
+            `A busca deve possuir no máximo ${LIMITE_BUSCA} caracteres.`,
+        });
+      }
+    }
+
+
+    /*
+     * O filtro de tipo utiliza a mesma lista aceita para
+     * criação das movimentações.
+     */
+    let tipoNormalizado = "";
+
+    if (
+      tipo !== undefined &&
+      tipo !== ""
+    ) {
+      if (typeof tipo !== "string") {
+        return res.status(400).json({
+          mensagem:
+            "O tipo informado é inválido.",
+        });
+      }
+
+      tipoNormalizado =
+        tipo.trim().toUpperCase();
+
+      if (
+        !TIPOS_MOVIMENTACAO.includes(
+          tipoNormalizado
+        )
+      ) {
+        return res.status(400).json({
+          mensagem:
+            "Tipo de movimentação inválido.",
+        });
+      }
+    }
+
+
+    const paginaNumero =
+      Number(pagina);
+
+    const limiteNumero =
+      Number(limite);
 
 
     if (
-      !Number.isInteger(produtoId) ||
-      produtoId <= 0
+      !Number.isInteger(paginaNumero) ||
+      paginaNumero <= 0
     ) {
       return res.status(400).json({
         mensagem:
-          "ID de produto inválido.",
+          "A página informada é inválida.",
       });
     }
-
-
-    const produtoExiste =
-      await pool.query(
-        `
-          SELECT id
-          FROM produtos
-          WHERE id = $1
-        `,
-        [produtoId]
-      );
 
 
     if (
-      produtoExiste.rows.length === 0
+      !Number.isInteger(limiteNumero) ||
+      limiteNumero <= 0 ||
+      limiteNumero >
+        LIMITE_MAXIMO_POR_PAGINA
     ) {
-      return res.status(404).json({
+      return res.status(400).json({
         mensagem:
-          "Produto não encontrado.",
+          `O limite deve ser um número inteiro entre 1 e ${LIMITE_MAXIMO_POR_PAGINA}.`,
       });
     }
 
 
+    const filtros = [];
+    const valores = [];
+
+
+    if (buscaNormalizada) {
+      valores.push(
+        `%${buscaNormalizada}%`
+      );
+
+      filtros.push(
+        `p.nome ILIKE $${valores.length}`
+      );
+    }
+
+
+    if (tipoNormalizado) {
+      valores.push(
+        tipoNormalizado
+      );
+
+      filtros.push(
+        `m.tipo = $${valores.length}`
+      );
+    }
+
+
+    const where =
+      filtros.length > 0
+        ? `WHERE ${filtros.join(
+            " AND "
+          )}`
+        : "";
+
+
+    const resultadoTotal =
+      await pool.query(
+        `
+          SELECT
+            COUNT(*)::INTEGER AS total
+
+          FROM movimentacoes_estoque m
+
+          INNER JOIN produtos p
+            ON p.id = m.produto_id
+
+          ${where}
+        `,
+        valores
+      );
+
+
+    const offset =
+      (paginaNumero - 1) *
+      limiteNumero;
+
+
+    const valoresConsulta = [
+      ...valores,
+      limiteNumero,
+      offset,
+    ];
+
+
+    const parametroLimite =
+      valores.length + 1;
+
+    const parametroOffset =
+      valores.length + 2;
+
+
+    /*
+     * LEFT JOIN preserva a movimentação caso futuramente
+     * o usuário responsável deixe de estar disponível.
+     *
+     * O produto continua relacionado porque seu cadastro
+     * atualmente trabalha com inativação em vez de exclusão.
+     */
     const resultado =
       await pool.query(
         `
           SELECT
             m.id,
+
             m.produto_id,
+            p.nome AS produto_nome,
+            p.unidade AS produto_unidade,
+
             m.tipo,
             m.quantidade,
             m.quantidade_anterior,
             m.quantidade_posterior,
             m.motivo,
-            m.criado_em,
 
-            u.id AS usuario_id,
-            u.nome AS usuario_nome
+            m.usuario_id,
+            u.nome AS usuario_nome,
+
+            m.criado_em
 
           FROM movimentacoes_estoque m
 
-          INNER JOIN usuarios u
+          INNER JOIN produtos p
+            ON p.id = m.produto_id
+
+          LEFT JOIN usuarios u
             ON u.id = m.usuario_id
 
-          WHERE m.produto_id = $1
+          ${where}
 
           ORDER BY
             m.criado_em DESC,
             m.id DESC
+
+          LIMIT $${parametroLimite}
+          OFFSET $${parametroOffset}
         `,
-        [produtoId]
+        valoresConsulta
       );
 
 
-    return res.status(200).json(
-      resultado.rows
-    );
+    const total =
+      resultadoTotal.rows[0].total;
+
+
+    const totalPaginas =
+      Math.max(
+        Math.ceil(
+          total / limiteNumero
+        ),
+        1
+      );
+
+
+    return res.status(200).json({
+      movimentacoes:
+        resultado.rows,
+
+      paginacao: {
+        pagina:
+          paginaNumero,
+
+        limite:
+          limiteNumero,
+
+        total,
+
+        total_paginas:
+          totalPaginas,
+      },
+    });
   } catch (error) {
     console.error(
-      "Erro ao listar movimentações:",
+      "Erro ao listar histórico geral de estoque:",
       error
     );
 
@@ -477,5 +647,5 @@ async function listarMovimentacoesProduto(
 
 module.exports = {
   movimentarEstoque,
-  listarMovimentacoesProduto,
+  listarHistoricoEstoque,
 };

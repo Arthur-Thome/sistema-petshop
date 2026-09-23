@@ -1,11 +1,11 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
 
 import {
   useNavigate,
-  useParams,
 } from "react-router-dom";
 
 import api from "../services/api";
@@ -13,19 +13,61 @@ import api from "../services/api";
 import "../styles/HistoricoEstoque.css";
 
 
+const TIPOS_MOVIMENTACAO = [
+  {
+    valor: "",
+    texto: "Todos os tipos",
+  },
+  {
+    valor: "ENTRADA",
+    texto: "Entrada",
+  },
+  {
+    valor: "SAIDA",
+    texto: "Saída",
+  },
+  {
+    valor: "AJUSTE_ENTRADA",
+    texto: "Ajuste de entrada",
+  },
+  {
+    valor: "AJUSTE_SAIDA",
+    texto: "Ajuste de saída",
+  },
+];
+
+
 function HistoricoEstoque() {
   const navigate = useNavigate();
-
-  const { id } = useParams();
-
-
-  const [produto, setProduto] =
-    useState(null);
 
   const [
     movimentacoes,
     setMovimentacoes,
   ] = useState([]);
+
+  const [busca, setBusca] =
+    useState("");
+
+  const [
+    buscaAplicada,
+    setBuscaAplicada,
+  ] = useState("");
+
+  const [tipo, setTipo] =
+    useState("");
+
+  const [pagina, setPagina] =
+    useState(1);
+
+  const [
+    paginacao,
+    setPaginacao,
+  ] = useState({
+    pagina: 1,
+    limite: 20,
+    total: 0,
+    total_paginas: 1,
+  });
 
   const [carregando, setCarregando] =
     useState(true);
@@ -34,55 +76,103 @@ function HistoricoEstoque() {
     useState("");
 
 
-  useEffect(() => {
-    async function carregarHistorico() {
+  /*
+   * O histórico agora é geral.
+   *
+   * A API recebe paginação e filtros, evitando carregar
+   * indefinidamente todas as movimentações do estoque
+   * conforme o sistema crescer.
+   */
+  const carregarHistorico =
+    useCallback(async () => {
       try {
         setCarregando(true);
         setErro("");
 
+        const params = {
+          pagina,
+          limite: 20,
+        };
 
-        /*
-         * Buscamos produto e histórico separadamente.
-         * Dessa forma a tela consegue apresentar também
-         * a situação atual do estoque.
-         */
-        const [
-          respostaProduto,
-          respostaHistorico,
-        ] = await Promise.all([
-          api.get(`/produtos/${id}`),
+        if (buscaAplicada) {
+          params.busca =
+            buscaAplicada;
+        }
 
-          api.get(
-            `/estoque/produtos/${id}/movimentacoes`
-          ),
-        ]);
+        if (tipo) {
+          params.tipo = tipo;
+        }
 
-
-        setProduto(
-          respostaProduto.data.produto
-        );
+        const resposta =
+          await api.get(
+            "/estoque/historico",
+            {
+              params,
+            }
+          );
 
         setMovimentacoes(
-          respostaHistorico.data
+          resposta.data.movimentacoes ||
+            []
+        );
+
+        setPaginacao(
+          resposta.data.paginacao || {
+            pagina: 1,
+            limite: 20,
+            total: 0,
+            total_paginas: 1,
+          }
         );
       } catch (error) {
         console.error(
-          "Erro ao carregar histórico:",
+          "Erro ao carregar histórico geral de estoque:",
           error
         );
 
         setErro(
           error.response?.data?.mensagem ||
-          "Não foi possível carregar o histórico do produto."
+            "Não foi possível carregar o histórico de estoque."
         );
+
+        setMovimentacoes([]);
       } finally {
         setCarregando(false);
       }
-    }
+    }, [
+      buscaAplicada,
+      tipo,
+      pagina,
+    ]);
 
 
+  useEffect(() => {
     carregarHistorico();
-  }, [id]);
+  }, [carregarHistorico]);
+
+
+  function pesquisar(event) {
+    event.preventDefault();
+
+    setPagina(1);
+    setBuscaAplicada(
+      busca.trim()
+    );
+  }
+
+
+  function alterarTipo(event) {
+    setTipo(event.target.value);
+    setPagina(1);
+  }
+
+
+  function limparFiltros() {
+    setBusca("");
+    setBuscaAplicada("");
+    setTipo("");
+    setPagina(1);
+  }
 
 
   function formatarData(data) {
@@ -96,7 +186,7 @@ function HistoricoEstoque() {
   }
 
 
-  function formatarTipo(tipo) {
+  function formatarTipo(tipoMovimentacao) {
     const tipos = {
       ENTRADA:
         "Entrada",
@@ -111,14 +201,21 @@ function HistoricoEstoque() {
         "Ajuste de saída",
     };
 
-    return tipos[tipo] || tipo;
+    return (
+      tipos[tipoMovimentacao] ||
+      tipoMovimentacao
+    );
   }
 
 
-  function obterClasseTipo(tipo) {
+  function obterClasseTipo(
+    tipoMovimentacao
+  ) {
     if (
-      tipo === "ENTRADA" ||
-      tipo === "AJUSTE_ENTRADA"
+      tipoMovimentacao ===
+        "ENTRADA" ||
+      tipoMovimentacao ===
+        "AJUSTE_ENTRADA"
     ) {
       return "movimento-entrada";
     }
@@ -127,21 +224,33 @@ function HistoricoEstoque() {
   }
 
 
-  if (carregando) {
-    return (
-      <div className="historico-estoque-page">
-        <p>
-          Carregando histórico...
-        </p>
-      </div>
+  const possuiFiltros =
+    Boolean(
+      buscaAplicada ||
+      tipo
     );
-  }
 
 
   return (
     <div className="historico-estoque-page">
 
-      <div className="historico-topo">
+      <header className="historico-geral-header">
+
+        <div>
+          <span className="historico-label">
+            ADMINISTRATIVO
+          </span>
+
+          <h1>
+            Histórico Geral de Estoque
+          </h1>
+
+          <p>
+            Consulte entradas, saídas e
+            ajustes realizados em todos os
+            produtos.
+          </p>
+        </div>
 
         <button
           type="button"
@@ -150,230 +259,330 @@ function HistoricoEstoque() {
             navigate("/produtos")
           }
         >
-          ← Voltar aos produtos
+          Ver produtos
         </button>
 
+      </header>
 
-        <div>
-          <span className="historico-label">
-            HISTÓRICO DE ESTOQUE
+
+      <section className="historico-painel">
+
+        <div className="historico-painel-info">
+
+          <span>
+            Movimentações encontradas
           </span>
 
-          <h1>
-            {produto?.nome ||
-              "Produto"}
-          </h1>
+          <strong>
+            {paginacao.total}
+          </strong>
 
-          <p>
-            Acompanhe todas as entradas,
-            saídas e ajustes realizados.
-          </p>
+          <small>
+            Registro administrativo do
+            estoque
+          </small>
+
         </div>
 
-      </div>
+
+        <form
+          className="historico-filtros"
+          onSubmit={pesquisar}
+        >
+
+          <div className="historico-campo historico-campo-busca">
+
+            <label htmlFor="busca-estoque">
+              Produto
+            </label>
+
+            <input
+              id="busca-estoque"
+              type="text"
+              maxLength={100}
+              placeholder="Pesquisar pelo nome..."
+              value={busca}
+              onChange={(event) =>
+                setBusca(
+                  event.target.value
+                )
+              }
+            />
+
+          </div>
 
 
-      {erro ? (
+          <div className="historico-campo">
 
+            <label htmlFor="tipo-movimentacao">
+              Tipo de movimentação
+            </label>
+
+            <select
+              id="tipo-movimentacao"
+              value={tipo}
+              onChange={alterarTipo}
+            >
+              {TIPOS_MOVIMENTACAO.map(
+                (opcao) => (
+                  <option
+                    key={
+                      opcao.valor ||
+                      "todos"
+                    }
+                    value={opcao.valor}
+                  >
+                    {opcao.texto}
+                  </option>
+                )
+              )}
+            </select>
+
+          </div>
+
+
+          <div className="historico-filtro-acoes">
+
+            <button
+              type="submit"
+              className="primary-button"
+            >
+              Pesquisar
+            </button>
+
+            {possuiFiltros && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={limparFiltros}
+              >
+                Limpar
+              </button>
+            )}
+
+          </div>
+
+        </form>
+
+      </section>
+
+
+      {erro && (
         <div className="historico-erro">
           {erro}
         </div>
-
-      ) : (
-
-        <>
-          <section className="estoque-resumo">
-
-            <div className="estoque-resumo-principal">
-
-              <span>
-                Estoque atual
-              </span>
-
-              <strong>
-                {produto?.quantidade_atual ?? 0}
-              </strong>
-
-              <small>
-                {produto?.unidade || ""}
-              </small>
-
-            </div>
+      )}
 
 
-            <div className="estoque-resumo-item">
+      <section className="historico-conteudo">
 
-              <span>
-                Estoque mínimo
-              </span>
+        <div className="historico-titulo">
 
-              <strong>
-                {produto?.quantidade_minima ?? 0}
-              </strong>
+          <div>
+            <h2>
+              Movimentações
+            </h2>
 
-            </div>
+            <p>
+              As movimentações mais recentes
+              aparecem primeiro.
+            </p>
+          </div>
 
+          <span className="historico-pagina-indicador">
+            Página {paginacao.pagina} de{" "}
+            {paginacao.total_paginas}
+          </span>
 
-            <div className="estoque-resumo-item">
-
-              <span>
-                Situação
-              </span>
-
-              <strong>
-                {!produto?.ativo
-                  ? "Inativo"
-                  : produto?.estoque_baixo
-                    ? "Estoque baixo"
-                    : "Normal"}
-              </strong>
-
-            </div>
+        </div>
 
 
-            <div className="estoque-resumo-item">
+        {carregando ? (
 
-              <span>
-                Movimentações
-              </span>
+          <div className="historico-estado">
+            Carregando histórico...
+          </div>
 
-              <strong>
-                {movimentacoes.length}
-              </strong>
+        ) : movimentacoes.length === 0 ? (
 
-            </div>
+          <div className="historico-vazio">
+            Nenhuma movimentação de estoque
+            foi encontrada.
+          </div>
 
-          </section>
+        ) : (
 
+          <div className="historico-tabela-container">
 
-          <section className="historico-conteudo">
+            <table className="historico-tabela">
 
-            <div className="historico-titulo">
-
-              <div>
-                <h2>
-                  Movimentações
-                </h2>
-
-                <p>
-                  Registro completo das alterações
-                  realizadas no estoque.
-                </p>
-              </div>
-
-            </div>
-
-
-            {movimentacoes.length === 0 ? (
-
-              <div className="historico-vazio">
-                Este produto ainda não possui
-                movimentações de estoque.
-              </div>
-
-            ) : (
-
-              <div className="historico-tabela-container">
-
-                <table className="historico-tabela">
-
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Tipo</th>
-                      <th>Quantidade</th>
-                      <th>Anterior</th>
-                      <th>Posterior</th>
-                      <th>Motivo</th>
-                      <th>Usuário</th>
-                    </tr>
-                  </thead>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Tipo</th>
+                  <th>Quantidade</th>
+                  <th>Anterior</th>
+                  <th>Posterior</th>
+                  <th>Motivo</th>
+                  <th>Responsável</th>
+                  <th>Data e hora</th>
+                </tr>
+              </thead>
 
 
-                  <tbody>
+              <tbody>
 
-                    {movimentacoes.map(
-                      (movimentacao) => (
+                {movimentacoes.map(
+                  (movimentacao) => (
 
-                        <tr
-                          key={
-                            movimentacao.id
+                    <tr
+                      key={
+                        movimentacao.id
+                      }
+                    >
+
+                      <td>
+                        <div className="historico-produto">
+                          <strong>
+                            {movimentacao.produto_nome ||
+                              "Produto"}
+                          </strong>
+
+                          <span>
+                            {movimentacao.produto_unidade ||
+                              "-"}
+                          </span>
+                        </div>
+                      </td>
+
+
+                      <td>
+                        <span
+                          className={
+                            obterClasseTipo(
+                              movimentacao.tipo
+                            )
                           }
                         >
-
-                          <td>
-                            {formatarData(
-                              movimentacao.criado_em
-                            )}
-                          </td>
-
-
-                          <td>
-                            <span
-                              className={
-                                obterClasseTipo(
-                                  movimentacao.tipo
-                                )
-                              }
-                            >
-                              {formatarTipo(
-                                movimentacao.tipo
-                              )}
-                            </span>
-                          </td>
+                          {formatarTipo(
+                            movimentacao.tipo
+                          )}
+                        </span>
+                      </td>
 
 
-                          <td>
-                            <strong>
-                              {movimentacao.quantidade}
-                            </strong>
-                          </td>
+                      <td>
+                        <strong>
+                          {movimentacao.quantidade}
+                        </strong>
+                      </td>
 
 
-                          <td>
-                            {
-                              movimentacao
-                                .quantidade_anterior
-                            }
-                          </td>
+                      <td>
+                        {
+                          movimentacao
+                            .quantidade_anterior
+                        }
+                      </td>
 
 
-                          <td>
-                            {
-                              movimentacao
-                                .quantidade_posterior
-                            }
-                          </td>
+                      <td>
+                        {
+                          movimentacao
+                            .quantidade_posterior
+                        }
+                      </td>
 
 
-                          <td>
-                            {movimentacao.motivo ||
-                              "-"}
-                          </td>
+                      <td className="historico-motivo">
+                        {movimentacao.motivo ||
+                          "-"}
+                      </td>
 
 
-                          <td>
-                            {movimentacao.usuario_nome ||
-                              "-"}
-                          </td>
+                      <td>
+                        {movimentacao.usuario_nome ||
+                          "Usuário não disponível"}
+                      </td>
 
-                        </tr>
 
-                      )
-                    )}
+                      <td className="historico-data">
+                        {formatarData(
+                          movimentacao.criado_em
+                        )}
+                      </td>
 
-                  </tbody>
+                    </tr>
 
-                </table>
+                  )
+                )}
 
-              </div>
+              </tbody>
 
-            )}
+            </table>
 
-          </section>
-        </>
+          </div>
 
-      )}
+        )}
+
+
+        {!carregando &&
+          !erro &&
+          paginacao.total_paginas > 1 && (
+
+            <div className="historico-paginacao">
+
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={
+                  pagina <= 1
+                }
+                onClick={() =>
+                  setPagina(
+                    (paginaAtual) =>
+                      paginaAtual - 1
+                  )
+                }
+              >
+                ← Anterior
+              </button>
+
+
+              <span>
+                Página{" "}
+                <strong>
+                  {paginacao.pagina}
+                </strong>{" "}
+                de{" "}
+                <strong>
+                  {paginacao.total_paginas}
+                </strong>
+              </span>
+
+
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={
+                  pagina >=
+                  paginacao.total_paginas
+                }
+                onClick={() =>
+                  setPagina(
+                    (paginaAtual) =>
+                      paginaAtual + 1
+                  )
+                }
+              >
+                Próxima →
+              </button>
+
+            </div>
+
+          )}
+
+      </section>
 
     </div>
   );

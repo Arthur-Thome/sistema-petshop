@@ -148,3 +148,77 @@ ON pets(tutor_id);
 
 CREATE INDEX IF NOT EXISTS idx_pets_nome
 ON pets(nome);
+
+/*
+ * =========================================================
+ * RELACIONAMENTO ENTRE PETS E TUTORES
+ * =========================================================
+ *
+ * Permite que um tutor esteja vinculado a vários pets
+ * e que um mesmo pet possua vários tutores.
+ *
+ * Durante a migração do sistema, pets.tutor_id continua
+ * existindo temporariamente para manter compatibilidade
+ * com funcionalidades que ainda utilizam o modelo antigo.
+ */
+CREATE TABLE IF NOT EXISTS pet_tutores (
+    pet_id INTEGER NOT NULL,
+    tutor_id INTEGER NOT NULL,
+
+    principal BOOLEAN NOT NULL DEFAULT FALSE,
+
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (pet_id, tutor_id),
+
+    CONSTRAINT fk_pet_tutores_pet
+        FOREIGN KEY (pet_id)
+        REFERENCES pets(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_pet_tutores_tutor
+        FOREIGN KEY (tutor_id)
+        REFERENCES tutores(id)
+        ON DELETE RESTRICT
+);
+
+
+/*
+ * Otimiza consultas que procuram todos os pets
+ * vinculados a determinado tutor.
+ */
+CREATE INDEX IF NOT EXISTS
+idx_pet_tutores_tutor
+ON pet_tutores(tutor_id);
+
+
+/*
+ * Um pet pode possuir vários tutores, mas somente
+ * um deles pode ser marcado como principal.
+ */
+CREATE UNIQUE INDEX IF NOT EXISTS
+idx_pet_tutores_principal_unico
+ON pet_tutores(pet_id)
+WHERE principal = TRUE;
+
+
+/*
+ * Migra automaticamente relacionamentos do modelo antigo
+ * para pet_tutores em instalações que já possuem dados.
+ *
+ * ON CONFLICT torna esta operação segura para executar
+ * novamente sem duplicar vínculos existentes.
+ */
+INSERT INTO pet_tutores (
+    pet_id,
+    tutor_id,
+    principal
+)
+SELECT
+    id,
+    tutor_id,
+    TRUE
+FROM pets
+WHERE tutor_id IS NOT NULL
+ON CONFLICT (pet_id, tutor_id)
+DO NOTHING;

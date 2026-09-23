@@ -2,8 +2,10 @@ const express = require("express");
 
 const {
   movimentarEstoque,
-  listarMovimentacoesProduto,
-} = require("../controllers/estoqueController");
+  listarHistoricoEstoque,
+} = require(
+  "../controllers/estoqueController"
+);
 
 const autenticar = require(
   "../middleware/authMiddleware"
@@ -18,27 +20,30 @@ const router = express.Router();
 
 
 /*
- * Todas as rotas de estoque exigem autenticação.
+ * Todas as rotas de estoque exigem uma sessão válida.
  */
 router.use(autenticar);
 
 
 /*
- * O histórico pode ser consultado por qualquer
- * usuário autenticado.
+ * O histórico geral possui informações administrativas
+ * sobre todas as movimentações realizadas no estoque.
+ *
+ * Somente Administrador e Gerente podem consultá-lo.
  */
 router.get(
-  "/produtos/:produtoId/movimentacoes",
-  listarMovimentacoesProduto
+  "/historico",
+  permitirPerfis(
+    "administrador",
+    "gerente"
+  ),
+  listarHistoricoEstoque
 );
 
 
 /*
- * Alterações de estoque são restritas aos perfis
- * gerente e administrador.
- *
- * Isso é validado no backend, portanto não depende
- * apenas de esconder botões no frontend.
+ * Alterações de estoque também permanecem restritas
+ * aos perfis Gerente e Administrador.
  */
 router.post(
   "/produtos/:produtoId/movimentacoes",

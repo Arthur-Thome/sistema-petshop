@@ -337,19 +337,6 @@ function Produtos() {
                         >
                           Visualizar
                         </button>
-
-
-                        <button
-                          className="btn-history"
-                          onClick={() =>
-                            navigate(
-                              `/produtos/${produto.id}/historico`
-                            )
-                          }
-                        >
-                          Histórico
-                        </button>
-
                       </div>
                     </td>
 

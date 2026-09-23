@@ -8,6 +8,17 @@ function Layout() {
     localStorage.getItem("usuario") || "{}"
   );
 
+  /*
+   * Administrador e Gerente podem acessar recursos
+   * administrativos relacionados à operação.
+   *
+   * Esta verificação controla somente a exibição do menu.
+   * A autorização real também será aplicada no backend.
+   */
+  const podeAcessarAdministrativo =
+    usuario.perfil === "administrador" ||
+    usuario.perfil === "gerente";
+
   function sair() {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
@@ -63,7 +74,7 @@ function Layout() {
           </NavLink>
 
           <div className="menu-section">
-            ÁREA ADMINISTRATIVA
+            GESTÃO
           </div>
 
           <NavLink to="/produtos">
@@ -76,8 +87,39 @@ function Layout() {
             Serviços
           </NavLink>
 
-          {/* Administração fica oculta para outros perfis.
-          A autorização real continua sendo responsabilidade do backend. */}
+          {/*
+           * O Administrativo operacional é exibido somente
+           * para Administrador e Gerente.
+           *
+           * Funcionários continuam utilizando Produtos para
+           * consulta, mas não recebem acesso ao histórico
+           * administrativo de movimentações.
+           */}
+          {podeAcessarAdministrativo && (
+            <>
+              <div className="menu-section">
+                ADMINISTRATIVO
+              </div>
+
+              <NavLink to="/administrativo/estoque">
+                <span>📋</span>
+                Histórico de Estoque
+              </NavLink>
+
+              <NavLink to="/administrativo/pagamentos-pendentes">
+                <span>💳</span>
+                Pagamentos Pendentes
+              </NavLink>
+
+            </>
+          )}
+
+          {/*
+           * Sistema -> Administração permanece separado.
+           *
+           * Esta área contém usuários, segurança e auditoria
+           * completa e continua exclusiva do Administrador.
+           */}
           {usuario.perfil === "administrador" && (
             <>
               <div className="menu-section">
@@ -94,12 +136,19 @@ function Layout() {
 
         <div className="sidebar-user">
           <div className="user-avatar">
-            {usuario.nome?.charAt(0)?.toUpperCase() || "U"}
+            {usuario.nome
+              ?.charAt(0)
+              ?.toUpperCase() || "U"}
           </div>
 
           <div className="user-info">
-            <strong>{usuario.nome}</strong>
-            <span>{usuario.perfil}</span>
+            <strong>
+              {usuario.nome}
+            </strong>
+
+            <span>
+              {usuario.perfil}
+            </span>
           </div>
 
           <button

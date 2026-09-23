@@ -14,6 +14,12 @@ const {
   "../controllers/banhoTosaController"
 );
 
+const {
+  listarPagamentosPendentes,
+} = require(
+  "../controllers/pagamentoController"
+);
+
 const autenticar = require(
   "../middleware/authMiddleware"
 );
@@ -32,6 +38,27 @@ const router = express.Router();
  * pelos funcionários autenticados.
  */
 router.use(autenticar);
+
+/*
+ * Informações financeiras consolidadas são restritas
+ * aos perfis responsáveis pela gestão.
+ *
+ * Esta rota precisa permanecer antes de "/:id" para que
+ * "pagamentos-pendentes" não seja interpretado como um ID.
+ */
+router.get(
+  "/pagamentos-pendentes",
+  permitirPerfis(
+    "administrador",
+    "gerente"
+  ),
+  listarPagamentosPendentes
+);
+
+router.get(
+  "/ativos",
+  listarAtivos
+);
 
 router.get(
   "/ativos",

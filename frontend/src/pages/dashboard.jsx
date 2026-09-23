@@ -333,7 +333,7 @@ function Dashboard() {
             icone="🏨"
             textoLink="Ver hotel →"
             onClick={() =>
-              navigate("/hotel")
+              navigate("/hotel?secao=hospedados")
             }
           />
 
@@ -349,7 +349,7 @@ function Dashboard() {
             icone="✂️"
             textoLink="Ver atendimentos →"
             onClick={() =>
-              navigate("/banho-tosa")
+              navigate("/banho-tosa?filtro=hoje")
             }
           />
 
@@ -569,10 +569,10 @@ function Dashboard() {
                       .pagamentos_pendentes
               }
               icone="💳"
-              textoLink="Ver Banho e Tosa →"
+              textoLink="Ver pagamentos →"
               onClick={() =>
                 navigate(
-                  "/banho-tosa"
+                  "/administrativo/pagamentos-pendentes"
                 )
               }
             />
@@ -603,7 +603,7 @@ function Dashboard() {
               icone="📅"
               textoLink="Ver hotel →"
               onClick={() =>
-                navigate("/hotel")
+                navigate("/hotel?secao=reservas")
               }
             />
 
