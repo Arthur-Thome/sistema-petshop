@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 
 /*
+ * Garante unicidade do e-mail sem diferenciar
+ * letras maiúsculas e minúsculas.
+ *
+ * Embora a aplicação normalize novos e-mails,
+ * esta regra no banco protege também contra
+ * operações concorrentes ou gravações externas.
+ */
+CREATE UNIQUE INDEX IF NOT EXISTS
+idx_usuarios_email_lower_unique
+ON usuarios (LOWER(email));
+
+/*
  * Tokens utilizados no processo de recuperação de senha.
  *
  * O token original enviado por e-mail nunca é armazenado.
@@ -77,6 +89,15 @@ CREATE TABLE IF NOT EXISTS tutores (
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+/*
+ * CPF é opcional, porém, quando informado,
+ * deve identificar apenas um tutor.
+ */
+CREATE UNIQUE INDEX IF NOT EXISTS
+idx_tutores_cpf_unique
+ON tutores (cpf)
+WHERE cpf IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tutores_cpf
 ON tutores(cpf)

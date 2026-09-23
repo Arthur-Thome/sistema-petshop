@@ -7,19 +7,116 @@ const {
 } = require("../utils/pix");
 
 
+const LIMITE_OBSERVACOES = 2000;
+const LIMITE_MOTIVO_CANCELAMENTO = 1000;
+const LIMITE_SERVICOS_POR_ATENDIMENTO = 50;
+
+const METODOS_PAGAMENTO = [
+  "PIX",
+  "DINHEIRO",
+  "CARTAO_CREDITO",
+  "CARTAO_DEBITO",
+];
+
+
 /*
- * Cria um novo agendamento de Banho e Tosa.
+ * Converte um valor em ID e garante que seja
+ * um número inteiro positivo.
+ */
+function converterId(valor) {
+  const id = Number(valor);
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    return null;
+  }
+
+  return id;
+}
+
+
+/*
+ * Normaliza campos de texto opcionais.
  *
- * Um único agendamento pode possuir vários serviços.
+ * Campos vazios são armazenados como null para evitar
+ * strings contendo somente espaços no banco.
+ */
+function normalizarTextoOpcional(valor) {
+  if (
+    valor === undefined ||
+    valor === null
+  ) {
+    return null;
+  }
+
+  if (typeof valor !== "string") {
+    return null;
+  }
+
+  const texto = valor.trim();
+
+  return texto || null;
+}
+
+
+/*
+ * Valida textos opcionais antes que qualquer .trim()
+ * seja executado.
+ */
+function validarTextoOpcional(
+  valor,
+  nomeCampo,
+  limite
+) {
+  if (
+    valor !== undefined &&
+    valor !== null &&
+    typeof valor !== "string"
+  ) {
+    return `${nomeCampo} deve ser um texto.`;
+  }
+
+  const texto =
+    normalizarTextoOpcional(valor);
+
+  if (
+    texto &&
+    texto.length > limite
+  ) {
+    return `${nomeCampo} deve possuir no máximo ${limite} caracteres.`;
+  }
+
+  return null;
+}
+
+
+/*
+ * Registra auditoria sem transformar uma operação
+ * já concluída em erro para o operador.
+ */
+async function registrarLogSeguro(dados) {
+  try {
+    await registrarLog(dados);
+  } catch (erro) {
+    console.error(
+      "Operação concluída, mas houve erro ao gerar o log:",
+      erro
+    );
+  }
+}
+
+
+/*
+ * Cria um novo agendamento.
  *
- * Os valores utilizados são sempre buscados no banco.
- * Nunca confiamos em preços enviados pelo frontend.
- *
- * Todo o processo utiliza uma transação para impedir
- * que um agendamento seja criado parcialmente.
+ * Os preços e durações são sempre obtidos do banco.
+ * Nenhum valor financeiro recebido do frontend é utilizado.
  */
 async function criarAgendamento(req, res) {
-  const client = await pool.connect();
+  let client;
+  let transacaoIniciada = false;
 
   try {
     const {
@@ -29,13 +126,13 @@ async function criarAgendamento(req, res) {
       observacoes_agendamento,
     } = req.body;
 
+    const petId = converterId(pet_id);
 
-    if (!pet_id) {
+    if (!petId) {
       return res.status(400).json({
-        mensagem: "Selecione um pet.",
+        mensagem: "Selecione um pet válido.",
       });
     }
-
 
     if (
       !Array.isArray(servicos) ||
@@ -47,18 +144,52 @@ async function criarAgendamento(req, res) {
       });
     }
 
+    /*
+     * Também limitamos a quantidade recebida antes de
+     * processar o array para evitar payloads abusivos.
+     */
+    if (
+      servicos.length >
+      LIMITE_SERVICOS_POR_ATENDIMENTO
+    ) {
+      return res.status(400).json({
+        mensagem:
+          `Selecione no máximo ${LIMITE_SERVICOS_POR_ATENDIMENTO} serviços por atendimento.`,
+      });
+    }
 
-    if (!agendado_para) {
+    const servicosUnicos = [
+      ...new Set(
+        servicos.map(converterId)
+      ),
+    ];
+
+    if (
+      servicosUnicos.some(
+        (id) => id === null
+      )
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "Existe um serviço inválido no agendamento.",
+      });
+    }
+
+    /*
+     * O horário precisa representar uma data válida.
+     */
+    if (
+      typeof agendado_para !== "string" ||
+      !agendado_para.trim()
+    ) {
       return res.status(400).json({
         mensagem:
           "Informe a data e o horário do agendamento.",
       });
     }
 
-
     const dataAgendamento =
       new Date(agendado_para);
-
 
     if (
       Number.isNaN(
@@ -71,41 +202,50 @@ async function criarAgendamento(req, res) {
       });
     }
 
-
     /*
-     * Remove IDs duplicados.
+     * Novos agendamentos não podem ser criados no passado.
      *
-     * Assim, mesmo que o frontend envie acidentalmente
-     * o mesmo serviço duas vezes, ele será considerado
-     * apenas uma vez.
+     * Esta regra vale somente para a criação. Um atendimento
+     * já agendado não será impedido de iniciar apenas porque
+     * seu horário previsto já passou.
      */
-    const servicosUnicos = [
-      ...new Set(
-        servicos.map(Number)
-      ),
-    ];
-
-
     if (
-      servicosUnicos.some(
-        (id) =>
-          !Number.isInteger(id) ||
-          id <= 0
-      )
+      dataAgendamento.getTime() <
+      Date.now()
     ) {
       return res.status(400).json({
         mensagem:
-          "Existe um serviço inválido no agendamento.",
+          "Não é possível criar um agendamento para uma data ou horário que já passou.",
       });
     }
 
+    const erroObservacoes =
+      validarTextoOpcional(
+        observacoes_agendamento,
+        "As observações do agendamento",
+        LIMITE_OBSERVACOES
+      );
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarTextoOpcional(
+        observacoes_agendamento
+      );
+
+    client = await pool.connect();
 
     await client.query("BEGIN");
-
+    transacaoIniciada = true;
 
     /*
-     * Valida o pet e já recupera informações do tutor
-     * que serão úteis na confirmação do agendamento.
+     * Bloqueamos o cadastro do Pet durante a criação.
+     * Isso evita que seu estado seja alterado enquanto
+     * o agendamento está sendo validado.
      */
     const resultadoPet =
       await client.query(
@@ -125,26 +265,28 @@ async function criarAgendamento(req, res) {
             ON t.id = p.tutor_id
 
           WHERE p.id = $1
+
+          FOR UPDATE OF p
         `,
-        [pet_id]
+        [petId]
       );
 
-
-    if (resultadoPet.rows.length === 0) {
+    if (
+      resultadoPet.rows.length === 0
+    ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(404).json({
-        mensagem:
-          "Pet não encontrado.",
+        mensagem: "Pet não encontrado.",
       });
     }
 
-
     const pet = resultadoPet.rows[0];
-
 
     if (!pet.ativo) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(400).json({
         mensagem:
@@ -152,10 +294,9 @@ async function criarAgendamento(req, res) {
       });
     }
 
-
     /*
-     * Busca todos os serviços selecionados diretamente
-     * no banco, incluindo preço e duração atuais.
+     * O preço e a duração dos serviços são obtidos
+     * diretamente do banco.
      */
     const resultadoServicos =
       await client.query(
@@ -177,16 +318,12 @@ async function criarAgendamento(req, res) {
         [servicosUnicos]
       );
 
-
-    /*
-     * Se recebemos 3 IDs e encontramos somente 2,
-     * algum dos serviços enviados não existe.
-     */
     if (
       resultadoServicos.rows.length !==
       servicosUnicos.length
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(400).json({
         mensagem:
@@ -194,15 +331,14 @@ async function criarAgendamento(req, res) {
       });
     }
 
-
     const servicoInativo =
       resultadoServicos.rows.find(
         (servico) => !servico.ativo
       );
 
-
     if (servicoInativo) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(400).json({
         mensagem:
@@ -210,11 +346,6 @@ async function criarAgendamento(req, res) {
       });
     }
 
-
-    /*
-     * Primeiro criamos o registro principal.
-     * Os serviços serão relacionados logo depois.
-     */
     const resultadoAgendamento =
       await client.query(
         `
@@ -231,31 +362,24 @@ async function criarAgendamento(req, res) {
           RETURNING *
         `,
         [
-          pet_id,
+          petId,
           agendado_para,
-          observacoes_agendamento?.trim()
-            || null,
+          observacoesNormalizadas,
           req.usuario.id,
         ]
       );
 
-
     const agendamento =
       resultadoAgendamento.rows[0];
-
 
     let valorTotal = 0;
     let duracaoTotal = 0;
 
     const servicosAgendamento = [];
 
-
     /*
-     * Guardamos um snapshot do preço e da duração.
-     *
-     * Se o cadastro do serviço for alterado no futuro,
-     * este agendamento continuará mantendo os valores
-     * que eram válidos no momento da contratação.
+     * O snapshot garante que alterações futuras no catálogo
+     * não modifiquem atendimentos já contratados.
      */
     for (
       const servico
@@ -270,7 +394,6 @@ async function criarAgendamento(req, res) {
               servico.duracao_minutos
             )
           : null;
-
 
       const resultadoItem =
         await client.query(
@@ -295,13 +418,11 @@ async function criarAgendamento(req, res) {
           ]
         );
 
-
       valorTotal += valor;
 
       if (duracao) {
         duracaoTotal += duracao;
       }
-
 
       servicosAgendamento.push({
         ...resultadoItem.rows[0],
@@ -310,11 +431,9 @@ async function criarAgendamento(req, res) {
       });
     }
 
-
     /*
-     * Cada agendamento possui um único registro financeiro.
-     *
-     * Neste momento ele nasce como PENDENTE.
+     * O pagamento nasce PENDENTE e o valor é calculado
+     * exclusivamente a partir dos snapshots dos serviços.
      */
     const resultadoPagamento =
       await client.query(
@@ -336,33 +455,25 @@ async function criarAgendamento(req, res) {
         ]
       );
 
-
     const pagamento =
       resultadoPagamento.rows[0];
 
-
     await client.query("COMMIT");
+    transacaoIniciada = false;
 
-
-    /*
-     * O log é registrado depois que a transação principal
-     * foi concluída com sucesso.
-     */
-    await registrarLog({
+    await registrarLogSeguro({
       usuarioId: req.usuario.id,
       acao: "AGENDAR_BANHO_TOSA",
       entidade: "banho_tosa",
       registroId: agendamento.id,
-
+      valorAnterior: null,
       valorNovo: {
         ...agendamento,
         servicos: servicosAgendamento,
         valor_total: valorTotal,
       },
-
       ip: req.ip,
     });
-
 
     return res.status(201).json({
       mensagem:
@@ -371,8 +482,7 @@ async function criarAgendamento(req, res) {
       atendimento: {
         ...agendamento,
 
-        pet_nome:
-          pet.nome,
+        pet_nome: pet.nome,
 
         tutor_id:
           pet.tutor_id,
@@ -395,40 +505,41 @@ async function criarAgendamento(req, res) {
         pagamento,
       },
     });
-
   } catch (erro) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (erroRollback) {
-      console.error(
-        "Erro ao desfazer transação:",
-        erroRollback
-      );
+    if (
+      client &&
+      transacaoIniciada
+    ) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao desfazer transação:",
+          erroRollback
+        );
+      }
     }
-
 
     console.error(
       "Erro ao criar agendamento de banho e tosa:",
       erro
     );
 
-
     return res.status(500).json({
       mensagem:
         "Erro interno do servidor.",
     });
-
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }
 
 
 /*
- * Lista agendamentos e atendimentos ainda ativos.
- *
- * Os serviços são agregados em JSON porque agora um
- * atendimento pode possuir vários serviços.
+ * Lista agendamentos e atendimentos que ainda
+ * fazem parte da operação atual.
  */
 async function listarAtivos(req, res) {
   try {
@@ -474,9 +585,7 @@ async function listarAtivos(req, res) {
                 SELECT SUM(
                   bts.valor_unitario
                 )
-
                 FROM banho_tosa_servicos bts
-
                 WHERE
                   bts.banho_tosa_id = bt.id
               ),
@@ -488,9 +597,7 @@ async function listarAtivos(req, res) {
                 SELECT SUM(
                   bts.duracao_minutos
                 )
-
                 FROM banho_tosa_servicos bts
-
                 WHERE
                   bts.banho_tosa_id = bt.id
               ),
@@ -515,17 +622,14 @@ async function listarAtivos(req, res) {
         `
       );
 
-
     return res.status(200).json(
       resultado.rows
     );
-
   } catch (erro) {
     console.error(
       "Erro ao listar atendimentos:",
       erro
     );
-
 
     return res.status(500).json({
       mensagem:
@@ -536,7 +640,7 @@ async function listarAtivos(req, res) {
 
 
 /*
- * Histórico de atendimentos encerrados.
+ * Lista atendimentos encerrados.
  */
 async function listarHistorico(req, res) {
   try {
@@ -603,17 +707,14 @@ async function listarHistorico(req, res) {
         `
       );
 
-
     return res.status(200).json(
       resultado.rows
     );
-
   } catch (erro) {
     console.error(
       "Erro ao listar histórico:",
       erro
     );
-
 
     return res.status(500).json({
       mensagem:
@@ -624,15 +725,23 @@ async function listarHistorico(req, res) {
 
 
 /*
- * Busca todos os dados necessários para visualizar
- * um atendimento e posteriormente gerar seu comprovante.
+ * Retorna todos os dados necessários para visualizar
+ * um atendimento e seu pagamento.
  */
 async function buscarAtendimentoPorId(
   req,
   res
 ) {
   try {
-    const { id } = req.params;
+    const id =
+      converterId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um atendimento válido.",
+      });
+    }
 
     const resultado =
       await pool.query(
@@ -640,24 +749,15 @@ async function buscarAtendimentoPorId(
           SELECT
             bt.*,
 
-            -- Dados do pet
             p.nome AS pet_nome,
             p.especie AS pet_especie,
             p.raca AS pet_raca,
 
-            -- Dados do tutor
             t.id AS tutor_id,
             t.nome AS tutor_nome,
             t.telefone AS tutor_telefone,
             t.email AS tutor_email,
 
-            /*
-             * Serviços vinculados ao atendimento.
-             *
-             * O valor e a duração vêm da tabela
-             * banho_tosa_servicos porque representam
-             * o snapshot salvo no agendamento.
-             */
             COALESCE(
               (
                 SELECT json_agg(
@@ -682,13 +782,6 @@ async function buscarAtendimentoPorId(
               '[]'::json
             ) AS servicos,
 
-            /*
-             * Dados do pagamento.
-             *
-             * Utilizamos nomes específicos para evitar
-             * conflito com campos do atendimento e para
-             * manter o retorno padronizado no frontend.
-             */
             pg.id AS pagamento_id,
             pg.valor_total AS valor_total,
             pg.status AS pagamento_status,
@@ -712,26 +805,24 @@ async function buscarAtendimentoPorId(
         [id]
       );
 
-
-    if (resultado.rows.length === 0) {
+    if (
+      resultado.rows.length === 0
+    ) {
       return res.status(404).json({
         mensagem:
           "Atendimento não encontrado.",
       });
     }
 
-
     return res.status(200).json({
       atendimento:
         resultado.rows[0],
     });
-
   } catch (erro) {
     console.error(
       "Erro ao buscar atendimento:",
       erro
     );
-
 
     return res.status(500).json({
       mensagem:
@@ -740,52 +831,98 @@ async function buscarAtendimentoPorId(
   }
 }
 
-
 /*
- * Inicia somente registros ainda AGENDADOS.
+ * Inicia um atendimento atualmente AGENDADO.
+ *
+ * Utilizamos transação + FOR UPDATE para impedir que duas
+ * requisições iniciem o mesmo atendimento simultaneamente.
+ *
+ * O horário previsto não bloqueia o início. Isso permite que
+ * a operação seja iniciada alguns minutos antes ou depois
+ * do horário agendado.
  */
 async function iniciarAtendimento(req, res) {
-  try {
-    const { id } = req.params;
+  let client;
+  let transacaoIniciada = false;
 
+  try {
+    const id =
+      converterId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um atendimento válido.",
+      });
+    }
+
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+    transacaoIniciada = true;
 
     const resultadoAnterior =
-      await pool.query(
+      await client.query(
         `
-          SELECT *
-          FROM banho_tosa
-          WHERE id = $1
+          SELECT
+            bt.*,
+            p.nome AS pet_nome,
+            p.ativo AS pet_ativo
+          FROM banho_tosa bt
+
+          INNER JOIN pets p
+            ON p.id = bt.pet_id
+
+          WHERE bt.id = $1
+
+          FOR UPDATE OF bt
         `,
         [id]
       );
 
-
     if (
       resultadoAnterior.rows.length === 0
     ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
       return res.status(404).json({
         mensagem:
           "Atendimento não encontrado.",
       });
     }
 
-
     const anterior =
       resultadoAnterior.rows[0];
-
 
     if (
       anterior.status !== "AGENDADO"
     ) {
-      return res.status(400).json({
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
         mensagem:
           "Somente atendimentos agendados podem ser iniciados.",
       });
     }
 
+    /*
+     * Um Pet inativado depois da criação do agendamento
+     * não deve iniciar um novo atendimento operacional.
+     */
+    if (!anterior.pet_ativo) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(400).json({
+        mensagem:
+          "Não é possível iniciar atendimento de um pet inativo.",
+      });
+    }
 
     const resultado =
-      await pool.query(
+      await client.query(
         `
           UPDATE banho_tosa
 
@@ -806,20 +943,25 @@ async function iniciarAtendimento(req, res) {
         ]
       );
 
+    if (
+      resultado.rows.length === 0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
-    if (resultado.rows.length === 0) {
       return res.status(409).json({
         mensagem:
           "O atendimento já foi alterado por outro usuário.",
       });
     }
 
-
     const atualizado =
       resultado.rows[0];
 
+    await client.query("COMMIT");
+    transacaoIniciada = false;
 
-    await registrarLog({
+    await registrarLogSeguro({
       usuarioId: req.usuario.id,
       acao: "INICIAR_BANHO_TOSA",
       entidade: "banho_tosa",
@@ -829,7 +971,6 @@ async function iniciarAtendimento(req, res) {
       ip: req.ip,
     });
 
-
     return res.status(200).json({
       mensagem:
         "Atendimento iniciado com sucesso.",
@@ -837,75 +978,130 @@ async function iniciarAtendimento(req, res) {
       atendimento:
         atualizado,
     });
-
   } catch (erro) {
+    if (
+      client &&
+      transacaoIniciada
+    ) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao desfazer início do atendimento:",
+          erroRollback
+        );
+      }
+    }
+
     console.error(
       "Erro ao iniciar atendimento:",
       erro
     );
 
-
     return res.status(500).json({
       mensagem:
         "Erro interno do servidor.",
     });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
 
 /*
- * Finaliza somente atendimentos atualmente em andamento.
+ * Finaliza somente atendimentos que estão EM_ATENDIMENTO.
+ *
+ * O registro é bloqueado até o COMMIT para impedir duas
+ * finalizações simultâneas.
  */
 async function finalizarAtendimento(
   req,
   res
 ) {
+  let client;
+  let transacaoIniciada = false;
+
   try {
-    const { id } = req.params;
+    const id =
+      converterId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um atendimento válido.",
+      });
+    }
 
     const {
       observacoes_atendimento,
     } = req.body;
 
+    const erroObservacoes =
+      validarTextoOpcional(
+        observacoes_atendimento,
+        "As observações do atendimento",
+        LIMITE_OBSERVACOES
+      );
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarTextoOpcional(
+        observacoes_atendimento
+      );
+
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+    transacaoIniciada = true;
 
     const resultadoAnterior =
-      await pool.query(
+      await client.query(
         `
           SELECT *
           FROM banho_tosa
           WHERE id = $1
+          FOR UPDATE
         `,
         [id]
       );
 
-
     if (
       resultadoAnterior.rows.length === 0
     ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
       return res.status(404).json({
         mensagem:
           "Atendimento não encontrado.",
       });
     }
 
-
     const anterior =
       resultadoAnterior.rows[0];
-
 
     if (
       anterior.status !==
       "EM_ATENDIMENTO"
     ) {
-      return res.status(400).json({
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
         mensagem:
           "Somente atendimentos em andamento podem ser finalizados.",
       });
     }
 
-
     const resultado =
-      await pool.query(
+      await client.query(
         `
           UPDATE banho_tosa
 
@@ -922,29 +1118,31 @@ async function finalizarAtendimento(
           RETURNING *
         `,
         [
-          observacoes_atendimento
-            ?.trim() || null,
-
+          observacoesNormalizadas,
           req.usuario.id,
-
           id,
         ]
       );
 
+    if (
+      resultado.rows.length === 0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
-    if (resultado.rows.length === 0) {
       return res.status(409).json({
         mensagem:
           "O atendimento já foi alterado por outro usuário.",
       });
     }
 
-
     const atualizado =
       resultado.rows[0];
 
+    await client.query("COMMIT");
+    transacaoIniciada = false;
 
-    await registrarLog({
+    await registrarLogSeguro({
       usuarioId: req.usuario.id,
       acao: "FINALIZAR_BANHO_TOSA",
       entidade: "banho_tosa",
@@ -954,7 +1152,6 @@ async function finalizarAtendimento(
       ip: req.ip,
     });
 
-
     return res.status(200).json({
       mensagem:
         "Atendimento finalizado com sucesso.",
@@ -962,43 +1159,73 @@ async function finalizarAtendimento(
       atendimento:
         atualizado,
     });
-
   } catch (erro) {
+    if (
+      client &&
+      transacaoIniciada
+    ) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao desfazer finalização do atendimento:",
+          erroRollback
+        );
+      }
+    }
+
     console.error(
       "Erro ao finalizar atendimento:",
       erro
     );
 
-
     return res.status(500).json({
       mensagem:
         "Erro interno do servidor.",
     });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
 
 /*
- * O cancelamento não apaga o agendamento.
+ * Cancela somente um atendimento ainda AGENDADO.
  *
- * Mantemos o registro para histórico e auditoria.
+ * O atendimento permanece armazenado para histórico.
+ * Se o pagamento ainda estiver PENDENTE, ele também passa
+ * para CANCELADO na mesma transação.
+ *
+ * Pagamentos já confirmados não são automaticamente
+ * estornados.
  */
 async function cancelarAgendamento(
   req,
   res
 ) {
-  const client = await pool.connect();
+  let client;
+  let transacaoIniciada = false;
 
   try {
-    const { id } = req.params;
+    const id =
+      converterId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um atendimento válido.",
+      });
+    }
 
     const {
       motivo_cancelamento,
     } = req.body;
 
-
     if (
-      !motivo_cancelamento ||
+      typeof motivo_cancelamento !==
+        "string" ||
       !motivo_cancelamento.trim()
     ) {
       return res.status(400).json({
@@ -1007,9 +1234,23 @@ async function cancelarAgendamento(
       });
     }
 
+    const motivoNormalizado =
+      motivo_cancelamento.trim();
+
+    if (
+      motivoNormalizado.length >
+      LIMITE_MOTIVO_CANCELAMENTO
+    ) {
+      return res.status(400).json({
+        mensagem:
+          `O motivo do cancelamento deve possuir no máximo ${LIMITE_MOTIVO_CANCELAMENTO} caracteres.`,
+      });
+    }
+
+    client = await pool.connect();
 
     await client.query("BEGIN");
-
+    transacaoIniciada = true;
 
     const resultadoAnterior =
       await client.query(
@@ -1017,15 +1258,16 @@ async function cancelarAgendamento(
           SELECT *
           FROM banho_tosa
           WHERE id = $1
+          FOR UPDATE
         `,
         [id]
       );
-
 
     if (
       resultadoAnterior.rows.length === 0
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(404).json({
         mensagem:
@@ -1033,22 +1275,81 @@ async function cancelarAgendamento(
       });
     }
 
-
     const anterior =
       resultadoAnterior.rows[0];
-
 
     if (
       anterior.status !== "AGENDADO"
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
-      return res.status(400).json({
+      return res.status(409).json({
         mensagem:
           "Somente atendimentos agendados podem ser cancelados.",
       });
     }
 
+    /*
+     * Bloqueamos também o pagamento associado antes de
+     * modificar os dois registros.
+     */
+    const resultadoPagamentoAnterior =
+      await client.query(
+        `
+          SELECT *
+          FROM pagamentos_banho_tosa
+          WHERE banho_tosa_id = $1
+          FOR UPDATE
+        `,
+        [id]
+      );
+
+    if (
+      resultadoPagamentoAnterior.rows.length ===
+      0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "O atendimento não possui um registro financeiro válido.",
+      });
+    }
+
+    const pagamentoAnterior =
+      resultadoPagamentoAnterior.rows[0];
+
+    /*
+     * Não cancelamos automaticamente um atendimento cujo
+     * pagamento já foi confirmado. Um fluxo de estorno será
+     * tratado separadamente no futuro.
+     */
+    if (
+      pagamentoAnterior.status === "PAGO"
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "Este atendimento possui pagamento confirmado. O pagamento precisa ser tratado antes do cancelamento.",
+      });
+    }
+
+    if (
+      pagamentoAnterior.status ===
+      "CANCELADO"
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "O pagamento deste atendimento já está cancelado.",
+      });
+    }
 
     const resultado =
       await client.query(
@@ -1067,15 +1368,17 @@ async function cancelarAgendamento(
           RETURNING *
         `,
         [
-          motivo_cancelamento.trim(),
+          motivoNormalizado,
           req.usuario.id,
           id,
         ]
       );
 
-
-    if (resultado.rows.length === 0) {
+    if (
+      resultado.rows.length === 0
+    ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(409).json({
         mensagem:
@@ -1083,38 +1386,46 @@ async function cancelarAgendamento(
       });
     }
 
-
     const atualizado =
       resultado.rows[0];
 
+    const resultadoPagamento =
+      await client.query(
+        `
+          UPDATE pagamentos_banho_tosa
 
-    /*
-     * Se o atendimento ainda estava aguardando pagamento,
-     * o registro financeiro também é cancelado.
-     *
-     * Um pagamento já marcado como PAGO não é alterado
-     * automaticamente, pois posteriormente poderemos
-     * implementar estorno de forma separada.
-     */
-    await client.query(
-      `
-        UPDATE pagamentos_banho_tosa
+          SET
+            status = 'CANCELADO',
+            atualizado_em = CURRENT_TIMESTAMP
 
-        SET
-          status = 'CANCELADO',
-          atualizado_em = CURRENT_TIMESTAMP
+          WHERE banho_tosa_id = $1
+            AND status = 'PENDENTE'
 
-        WHERE banho_tosa_id = $1
-          AND status = 'PENDENTE'
-      `,
-      [id]
-    );
+          RETURNING *
+        `,
+        [id]
+      );
 
+    if (
+      resultadoPagamento.rows.length ===
+      0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "O pagamento foi alterado por outro usuário. O cancelamento não foi realizado.",
+      });
+    }
+
+    const pagamentoAtualizado =
+      resultadoPagamento.rows[0];
 
     await client.query("COMMIT");
+    transacaoIniciada = false;
 
-
-    await registrarLog({
+    await registrarLogSeguro({
       usuarioId: req.usuario.id,
       acao: "CANCELAR_BANHO_TOSA",
       entidade: "banho_tosa",
@@ -1124,6 +1435,20 @@ async function cancelarAgendamento(
       ip: req.ip,
     });
 
+    await registrarLogSeguro({
+      usuarioId: req.usuario.id,
+      acao:
+        "CANCELAR_PAGAMENTO_BANHO_TOSA",
+      entidade:
+        "pagamentos_banho_tosa",
+      registroId:
+        pagamentoAtualizado.id,
+      valorAnterior:
+        pagamentoAnterior,
+      valorNovo:
+        pagamentoAtualizado,
+      ip: req.ip,
+    });
 
     return res.status(200).json({
       mensagem:
@@ -1132,177 +1457,306 @@ async function cancelarAgendamento(
       atendimento:
         atualizado,
     });
-
   } catch (erro) {
-    try {
-      await client.query("ROLLBACK");
-    } catch (erroRollback) {
-      console.error(
-        "Erro ao desfazer transação:",
-        erroRollback
-      );
+    if (
+      client &&
+      transacaoIniciada
+    ) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao desfazer cancelamento:",
+          erroRollback
+        );
+      }
     }
-
 
     console.error(
       "Erro ao cancelar agendamento:",
       erro
     );
 
-
     return res.status(500).json({
       mensagem:
         "Erro interno do servidor.",
     });
-
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }
 
+
 /*
- * Confirma manualmente o pagamento de um atendimento.
+ * Confirma manualmente o pagamento.
  *
- * Nesta etapa a confirmação é feita pelo funcionário.
- * Futuramente esta mesma estrutura poderá receber
- * confirmações automáticas de um provedor Pix.
+ * Esta operação continua restrita a Administrador e Gerente
+ * através da rota.
+ *
+ * O valor não é recebido do frontend. Apenas a forma de
+ * pagamento é informada pelo operador.
  */
-async function confirmarPagamento(req, res) {
-  const { id } = req.params;
-  const { metodo } = req.body;
-
-  const metodosPermitidos = [
-    "PIX",
-    "DINHEIRO",
-    "CARTAO_CREDITO",
-    "CARTAO_DEBITO",
-  ];
-
-  if (!metodo) {
-    return res.status(400).json({
-      mensagem: "Informe a forma de pagamento.",
-    });
-  }
-
-  if (!metodosPermitidos.includes(metodo)) {
-    return res.status(400).json({
-      mensagem: "Forma de pagamento inválida.",
-    });
-  }
+async function confirmarPagamento(
+  req,
+  res
+) {
+  let client;
+  let transacaoIniciada = false;
 
   try {
-    /*
-     * Somente pagamentos pendentes podem ser
-     * confirmados. Isso evita confirmar duas vezes.
-     */
-    const resultado = await pool.query(
-      `
-        UPDATE pagamentos_banho_tosa
-        SET
-          status = 'PAGO',
-          metodo = $1,
-          pago_em = CURRENT_TIMESTAMP,
-          atualizado_em = CURRENT_TIMESTAMP
-        WHERE banho_tosa_id = $2
-          AND status = 'PENDENTE'
-        RETURNING
-          id,
-          banho_tosa_id,
-          valor_total,
-          status,
-          metodo,
-          pago_em
-      `,
-      [
-        metodo,
-        id,
-      ]
-    );
+    const atendimentoId =
+      converterId(req.params.id);
 
-    if (resultado.rowCount === 0) {
-      const pagamentoExistente =
-        await pool.query(
-          `
-            SELECT
-              id,
-              status
-            FROM pagamentos_banho_tosa
-            WHERE banho_tosa_id = $1
-          `,
-          [id]
-        );
-
-      if (
-        pagamentoExistente.rowCount === 0
-      ) {
-        return res.status(404).json({
-          mensagem:
-            "Pagamento não encontrado para este atendimento.",
-        });
-      }
-
+    if (!atendimentoId) {
       return res.status(400).json({
         mensagem:
-          "Este pagamento não está pendente.",
+          "Informe um atendimento válido.",
+      });
+    }
+
+    const { metodo } = req.body;
+
+    if (
+      typeof metodo !== "string" ||
+      !metodo.trim()
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "Informe a forma de pagamento.",
+      });
+    }
+
+    const metodoNormalizado =
+      metodo.trim().toUpperCase();
+
+    if (
+      !METODOS_PAGAMENTO.includes(
+        metodoNormalizado
+      )
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "Forma de pagamento inválida.",
+      });
+    }
+
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+    transacaoIniciada = true;
+
+    /*
+     * Primeiro verificamos o atendimento e bloqueamos seu
+     * registro durante a confirmação financeira.
+     */
+    const resultadoAtendimento =
+      await client.query(
+        `
+          SELECT *
+          FROM banho_tosa
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [atendimentoId]
+      );
+
+    if (
+      resultadoAtendimento.rows.length ===
+      0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(404).json({
+        mensagem:
+          "Atendimento não encontrado.",
+      });
+    }
+
+    const atendimento =
+      resultadoAtendimento.rows[0];
+
+    if (
+      atendimento.status === "CANCELADO"
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "Não é possível confirmar pagamento de um atendimento cancelado.",
+      });
+    }
+
+    /*
+     * O pagamento é bloqueado antes da leitura do status.
+     * Assim duas confirmações simultâneas não podem ser
+     * processadas como válidas.
+     */
+    const resultadoAnterior =
+      await client.query(
+        `
+          SELECT *
+          FROM pagamentos_banho_tosa
+          WHERE banho_tosa_id = $1
+          FOR UPDATE
+        `,
+        [atendimentoId]
+      );
+
+    if (
+      resultadoAnterior.rows.length ===
+      0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(404).json({
+        mensagem:
+          "Pagamento não encontrado para este atendimento.",
+      });
+    }
+
+    const pagamentoAnterior =
+      resultadoAnterior.rows[0];
+
+    if (
+      pagamentoAnterior.status !==
+      "PENDENTE"
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          pagamentoAnterior.status ===
+          "PAGO"
+            ? "Este pagamento já foi confirmado."
+            : "Este pagamento não está pendente.",
+      });
+    }
+
+    const resultado =
+      await client.query(
+        `
+          UPDATE pagamentos_banho_tosa
+
+          SET
+            status = 'PAGO',
+            metodo = $1,
+            pago_em = CURRENT_TIMESTAMP,
+            atualizado_em =
+              CURRENT_TIMESTAMP
+
+          WHERE banho_tosa_id = $2
+            AND status = 'PENDENTE'
+
+          RETURNING *
+        `,
+        [
+          metodoNormalizado,
+          atendimentoId,
+        ]
+      );
+
+    if (
+      resultado.rows.length === 0
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "O pagamento foi alterado por outro usuário.",
       });
     }
 
     const pagamento =
       resultado.rows[0];
 
+    await client.query("COMMIT");
+    transacaoIniciada = false;
+
     /*
-     * Mantemos a confirmação registrada também
-     * no sistema de auditoria.
+     * Corrigimos aqui os nomes utilizados pelo logService.
+     * Nenhum dado financeiro é recebido do navegador além
+     * da forma de pagamento.
      */
-    await registrarLog({
-      usuario_id: req.usuario.id,
-      acao: "CONFIRMAR_PAGAMENTO_BANHO_TOSA",
-      entidade: "pagamentos_banho_tosa",
-      entidade_id: pagamento.id,
-      dados_anteriores: {
-        status: "PENDENTE",
-      },
-      dados_novos: {
-        status: "PAGO",
-        metodo: pagamento.metodo,
-        pago_em: pagamento.pago_em,
-      },
+    await registrarLogSeguro({
+      usuarioId: req.usuario.id,
+      acao:
+        "CONFIRMAR_PAGAMENTO_BANHO_TOSA",
+      entidade:
+        "pagamentos_banho_tosa",
+      registroId:
+        pagamento.id,
+      valorAnterior:
+        pagamentoAnterior,
+      valorNovo:
+        pagamento,
       ip: req.ip,
     });
 
-    return res.json({
+    return res.status(200).json({
       mensagem:
         "Pagamento confirmado com sucesso.",
       pagamento,
     });
+  } catch (erro) {
+    if (
+      client &&
+      transacaoIniciada
+    ) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao desfazer confirmação de pagamento:",
+          erroRollback
+        );
+      }
+    }
 
-  } catch (error) {
     console.error(
       "Erro ao confirmar pagamento:",
-      error
+      erro
     );
 
     return res.status(500).json({
       mensagem:
         "Erro interno ao confirmar pagamento.",
     });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
+
 /*
- * Gera os dados necessários para pagamento via Pix.
+ * Gera o Pix utilizando exclusivamente o valor armazenado
+ * no banco.
  *
- * O valor nunca é recebido do frontend. Ele é buscado
- * diretamente no pagamento registrado no banco para
- * impedir que o navegador altere o valor da cobrança.
+ * O frontend não consegue informar ou substituir o valor
+ * utilizado na cobrança.
  */
 async function gerarPixAtendimento(
   req,
   res
 ) {
   try {
-    const { id } = req.params;
+    const atendimentoId =
+      converterId(req.params.id);
 
+    if (!atendimentoId) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um atendimento válido.",
+      });
+    }
 
     const resultado =
       await pool.query(
@@ -1311,54 +1765,95 @@ async function gerarPixAtendimento(
             pg.id,
             pg.banho_tosa_id,
             pg.valor_total,
-            pg.status
+            pg.status,
+
+            bt.status
+              AS atendimento_status
 
           FROM pagamentos_banho_tosa pg
 
           INNER JOIN banho_tosa bt
-            ON bt.id = pg.banho_tosa_id
+            ON bt.id =
+               pg.banho_tosa_id
 
           WHERE
             pg.banho_tosa_id = $1
-            AND bt.status <> 'CANCELADO'
         `,
-        [id]
+        [atendimentoId]
       );
 
-
-    if (resultado.rows.length === 0) {
+    if (
+      resultado.rows.length === 0
+    ) {
       return res.status(404).json({
         mensagem:
           "Pagamento não encontrado para este atendimento.",
       });
     }
 
-
     const pagamento =
       resultado.rows[0];
 
+    if (
+      pagamento.atendimento_status ===
+      "CANCELADO"
+    ) {
+      return res.status(409).json({
+        mensagem:
+          "Não é possível gerar Pix para um atendimento cancelado.",
+      });
+    }
 
     if (
       pagamento.status ===
       "CANCELADO"
     ) {
-      return res.status(400).json({
+      return res.status(409).json({
         mensagem:
           "Este pagamento foi cancelado.",
       });
     }
 
-
     if (
-      pagamento.status ===
-      "PAGO"
+      pagamento.status === "PAGO"
     ) {
-      return res.status(400).json({
+      return res.status(409).json({
         mensagem:
           "Este atendimento já está pago.",
       });
     }
 
+    /*
+     * Fail closed: somente o estado explicitamente esperado
+     * pode gerar uma nova cobrança.
+     */
+    if (
+      pagamento.status !== "PENDENTE"
+    ) {
+      return res.status(409).json({
+        mensagem:
+          "Este pagamento não está disponível para cobrança.",
+      });
+    }
+
+    const valor =
+      Number(pagamento.valor_total);
+
+    if (
+      !Number.isFinite(valor) ||
+      valor < 0 ||
+      valor > 99999999.99
+    ) {
+      console.error(
+        "Valor inválido armazenado para pagamento:",
+        pagamento.id
+      );
+
+      return res.status(500).json({
+        mensagem:
+          "O pagamento possui um valor inválido.",
+      });
+    }
 
     if (
       !process.env.PIX_CHAVE ||
@@ -1371,14 +1866,12 @@ async function gerarPixAtendimento(
       });
     }
 
-
     /*
-     * Um TXID diferente é utilizado para cada
-     * atendimento, facilitando sua identificação.
+     * O identificador deriva do atendimento e não contém
+     * informações pessoais do tutor ou do Pet.
      */
     const txid =
       `ATEND${pagamento.banho_tosa_id}`;
-
 
     const payload =
       gerarPayloadPix({
@@ -1391,17 +1884,11 @@ async function gerarPixAtendimento(
         cidade:
           process.env.PIX_CIDADE,
 
-        valor:
-          pagamento.valor_total,
+        valor,
 
         txid,
       });
 
-
-    /*
-     * O QR Code é retornado como Data URL para que
-     * o React possa exibi-lo diretamente em <img>.
-     */
     const qrCode =
       await QRCode.toDataURL(
         payload,
@@ -1411,12 +1898,9 @@ async function gerarPixAtendimento(
         }
       );
 
-
     return res.status(200).json({
       pix: {
-        valor:
-          pagamento.valor_total,
-
+        valor,
         txid,
 
         copia_cola:
@@ -1426,13 +1910,11 @@ async function gerarPixAtendimento(
           qrCode,
       },
     });
-
   } catch (erro) {
     console.error(
       "Erro ao gerar Pix:",
       erro
     );
-
 
     return res.status(500).json({
       mensagem:

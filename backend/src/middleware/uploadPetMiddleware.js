@@ -20,8 +20,10 @@ const storage = multer.diskStorage({
       .extname(file.originalname)
       .toLowerCase();
 
-    // O nome enviado pelo usuário não é utilizado como nome
-    // físico do arquivo. Isso evita colisões e nomes inseguros.
+    /*
+     * O nome original enviado pelo usuário nunca é utilizado
+     * como nome físico do arquivo.
+     */
     const nomeUnico =
       `${Date.now()}-${crypto.randomUUID()}${extensao}`;
 
@@ -30,18 +32,41 @@ const storage = multer.diskStorage({
 });
 
 
-// Somente formatos de imagem utilizados pelo sistema são aceitos.
-function filtroArquivo(req, file, cb) {
+// Aceita somente os formatos utilizados para fotos de pets.
+// MIME type e extensão precisam pertencer às listas permitidas.
+function filtroArquivo(
+  req,
+  file,
+  cb
+) {
   const tiposPermitidos = [
     "image/jpeg",
     "image/png",
     "image/webp",
   ];
 
-  if (!tiposPermitidos.includes(file.mimetype)) {
+  const extensoesPermitidas = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+  ];
+
+  const extensao = path
+    .extname(file.originalname)
+    .toLowerCase();
+
+  if (
+    !tiposPermitidos.includes(
+      file.mimetype
+    ) ||
+    !extensoesPermitidas.includes(
+      extensao
+    )
+  ) {
     return cb(
       new Error(
-        "Formato de imagem não permitido. Utilize JPG, PNG ou WEBP."
+        "Formato de imagem não permitido. Utilize JPG, JPEG, PNG ou WEBP."
       )
     );
   }
@@ -53,9 +78,10 @@ function filtroArquivo(req, file, cb) {
 const uploadPet = multer({
   storage,
 
-  // Limite de 5 MB por foto.
+  // Uma única foto pode ocupar no máximo 5 MB.
   limits: {
     fileSize: 5 * 1024 * 1024,
+    files: 1,
   },
 
   fileFilter: filtroArquivo,

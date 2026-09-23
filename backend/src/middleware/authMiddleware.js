@@ -29,8 +29,18 @@ async function autenticar(req, res, next) {
   const token = partes[1];
 
   try {
-    // Verifica assinatura e expiração do token.
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    /*
+    * Aceitamos explicitamente apenas tokens assinados com HS256.
+    * Isso mantém a validação alinhada ao algoritmo utilizado
+    * pelo sistema para emitir os JWTs.
+    */
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+      {
+        algorithms: ["HS256"],
+      }
+    );
 
     // O banco é a fonte atual da situação e das permissões do usuário.
     const resultado = await pool.query(

@@ -5,11 +5,117 @@ const {
   formatarCPF,
 } = require("../utils/cpf");
 
+/*
+ * Normaliza os campos textuais de um tutor antes
+ * das validações e da gravação no banco.
+ *
+ * Senhas não existem neste cadastro, portanto todos
+ * os campos tratados aqui podem ter espaços externos
+ * removidos com segurança.
+ */
+function normalizarDadosTutor(dados) {
+  const normalizarTexto = (valor) => {
+    if (typeof valor !== "string") {
+      return "";
+    }
+
+    return valor.trim();
+  };
+
+  return {
+    nome: normalizarTexto(dados.nome),
+    cpf: normalizarTexto(dados.cpf),
+    telefone: normalizarTexto(dados.telefone),
+
+    email: normalizarTexto(
+      dados.email
+    ).toLowerCase(),
+
+    endereco: normalizarTexto(dados.endereco),
+    numero: normalizarTexto(dados.numero),
+    complemento: normalizarTexto(
+      dados.complemento
+    ),
+    bairro: normalizarTexto(dados.bairro),
+    cidade: normalizarTexto(dados.cidade),
+
+    estado: normalizarTexto(
+      dados.estado
+    ).toUpperCase(),
+
+    cep: normalizarTexto(dados.cep),
+    observacoes: normalizarTexto(
+      dados.observacoes
+    ),
+  };
+}
+
+/*
+ * Mantém as mesmas regras de tamanho no cadastro
+ * e na edição de tutores.
+ */
+function validarDadosTutor(dados) {
+  if (
+    !dados.nome ||
+    !dados.telefone ||
+    !dados.endereco
+  ) {
+    return "Nome, telefone e endereço são obrigatórios.";
+  }
+
+  const limites = [
+    ["nome", 150, "Nome"],
+    ["cpf", 20, "CPF"],
+    ["telefone", 30, "Telefone"],
+    ["email", 255, "E-mail"],
+    ["endereco", 255, "Endereço"],
+    ["numero", 30, "Número"],
+    ["complemento", 150, "Complemento"],
+    ["bairro", 150, "Bairro"],
+    ["cidade", 150, "Cidade"],
+    ["estado", 2, "Estado"],
+    ["cep", 20, "CEP"],
+    ["observacoes", 2000, "Observações"],
+  ];
+
+  for (const [
+    campo,
+    limite,
+    nomeCampo,
+  ] of limites) {
+    if (
+      dados[campo] &&
+      dados[campo].length > limite
+    ) {
+      return `${nomeCampo} deve possuir no máximo ${limite} caracteres.`;
+    }
+  }
+
+  /*
+   * Quando o estado for informado, exigimos uma UF
+   * brasileira no formato de duas letras.
+   *
+   * Neste momento validamos o formato; não estamos
+   * alterando a lógica do formulário/ViaCEP.
+   */
+  if (
+    dados.estado &&
+    !/^[A-Z]{2}$/.test(dados.estado)
+  ) {
+    return "Estado deve ser informado com uma UF de 2 letras.";
+  }
+
+  return null;
+}
+
 // Cadastra o responsável pelo pet.
 // CPF é opcional, mas quando informado deve passar pela
 // validação e normalização antes de chegar ao banco.
 async function cadastrarTutor(req, res) {
   try {
+    const dados =
+      normalizarDadosTutor(req.body);
+
     const {
       nome,
       cpf,
@@ -23,11 +129,14 @@ async function cadastrarTutor(req, res) {
       estado,
       cep,
       observacoes,
-    } = req.body;
+    } = dados;
 
-    if (!nome || !telefone || !endereco) {
+    const erroValidacao =
+      validarDadosTutor(dados);
+
+    if (erroValidacao) {
       return res.status(400).json({
-        mensagem: "Nome, telefone e endereço são obrigatórios.",
+        mensagem: erroValidacao,
       });
     }
 
@@ -106,6 +215,17 @@ async function cadastrarTutor(req, res) {
       tutor,
     });
   } catch (erro) {
+    /*
+    * O banco também protege a unicidade do CPF.
+    * Esta verificação trata inclusive duas tentativas
+    * simultâneas de cadastrar o mesmo documento.
+    */
+    if (erro.code === "23505") {
+      return res.status(409).json({
+        mensagem:
+          "Já existe um tutor cadastrado com este CPF.",
+      });
+    }
     console.error("Erro ao cadastrar tutor:", erro);
 
     return res.status(500).json({
@@ -117,7 +237,25 @@ async function cadastrarTutor(req, res) {
 // Lista tutores e permite pesquisa parcial por dados principais.
 async function listarTutores(req, res) {
   try {
-    const { busca } = req.query;
+    let { busca } = req.query;
+
+    /*
+    * A busca é opcional, mas quando informada removemos
+    * espaços externos e limitamos seu tamanho para evitar
+    * consultas desnecessariamente grandes.
+    */
+    if (typeof busca === "string") {
+      busca = busca.trim();
+
+      if (busca.length > 100) {
+        return res.status(400).json({
+          mensagem:
+            "A busca deve possuir no máximo 100 caracteres.",
+        });
+      }
+    } else {
+      busca = "";
+    }
 
     let consulta = `
       SELECT *
@@ -159,13 +297,26 @@ async function listarTutores(req, res) {
 // e no preenchimento do formulário de edição.
 async function buscarTutorPorId(req, res) {
   try {
-    const { id } = req.params;
+    /*
+    * IDs recebidos pela URL precisam representar
+    * números inteiros positivos.
+    */
+    const tutorId = Number(req.params.id);
+
+    if (
+      !Number.isInteger(tutorId) ||
+      tutorId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem: "ID de tutor inválido.",
+      });
+    }
 
     const resultado = await pool.query(
       `SELECT *
        FROM tutores
        WHERE id = $1`,
-      [id]
+      [tutorId]
     );
 
     if (resultado.rows.length === 0) {
@@ -188,28 +339,42 @@ async function buscarTutorPorId(req, res) {
 // para manter uma trilha completa da alteração.
 async function atualizarTutor(req, res) {
   try {
-    const { id } = req.params;
+    const tutorId = Number(req.params.id);
 
-    const {
-      nome,
-      cpf,
-      telefone,
-      email,
-      endereco,
-      numero,
-      complemento,
-      bairro,
-      cidade,
-      estado,
-      cep,
-      observacoes,
-    } = req.body;
-
-    if (!nome || !telefone || !endereco) {
+    if (
+      !Number.isInteger(tutorId) ||
+      tutorId <= 0
+    ) {
       return res.status(400).json({
-        mensagem: "Nome, telefone e endereço são obrigatórios.",
+        mensagem: "ID de tutor inválido.",
       });
     }
+      const dados =
+        normalizarDadosTutor(req.body);
+
+      const {
+        nome,
+        cpf,
+        telefone,
+        email,
+        endereco,
+        numero,
+        complemento,
+        bairro,
+        cidade,
+        estado,
+        cep,
+        observacoes,
+      } = dados;
+
+      const erroValidacao =
+        validarDadosTutor(dados);
+
+      if (erroValidacao) {
+        return res.status(400).json({
+          mensagem: erroValidacao,
+        });
+      }
 
     // Aplica exatamente a mesma regra utilizada no cadastro.
     if (cpf && !validarCPF(cpf)) {
@@ -226,7 +391,7 @@ async function atualizarTutor(req, res) {
       `SELECT *
        FROM tutores
        WHERE id = $1`,
-      [id]
+      [tutorId]
     );
 
     if (resultadoAnterior.rows.length === 0) {
@@ -241,7 +406,7 @@ async function atualizarTutor(req, res) {
           FROM tutores
           WHERE cpf = $1
             AND id <> $2`,
-          [cpfFormatado, id]
+          [cpfFormatado, tutorId]
       );
 
       if (cpfExistente.rows.length > 0) {
@@ -284,7 +449,7 @@ async function atualizarTutor(req, res) {
         estado || null,
         cep || null,
         observacoes || null,
-        id,
+        tutorId,
       ]
     );
 
@@ -305,6 +470,12 @@ async function atualizarTutor(req, res) {
       tutor: atualizado,
     });
   } catch (erro) {
+    if (erro.code === "23505") {
+      return res.status(409).json({
+        mensagem:
+          "Já existe outro tutor cadastrado com este CPF.",
+      });
+    }
     console.error("Erro ao atualizar tutor:", erro);
 
     return res.status(500).json({
@@ -318,8 +489,17 @@ async function atualizarTutor(req, res) {
 // hospedagens, atendimentos e demais registros.
 async function alterarStatusTutor(req, res) {
   try {
-    const { id } = req.params;
+    const tutorId = Number(req.params.id);
     const { ativo } = req.body;
+
+    if (
+      !Number.isInteger(tutorId) ||
+      tutorId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem: "ID de tutor inválido.",
+      });
+    }
 
     if (typeof ativo !== "boolean") {
       return res.status(400).json({
@@ -331,7 +511,7 @@ async function alterarStatusTutor(req, res) {
       `SELECT *
        FROM tutores
        WHERE id = $1`,
-      [id]
+      [tutorId]
     );
 
     if (resultadoAnterior.rows.length === 0) {
@@ -357,7 +537,7 @@ async function alterarStatusTutor(req, res) {
          atualizado_em = CURRENT_TIMESTAMP
        WHERE id = $2
        RETURNING *`,
-      [ativo, id]
+      [ativo, tutorId]
     );
 
     const atualizado = resultado.rows[0];

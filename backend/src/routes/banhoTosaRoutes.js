@@ -18,6 +18,10 @@ const autenticar = require(
   "../middleware/authMiddleware"
 );
 
+const permitirPerfis = require(
+  "../middleware/permissaoMiddleware"
+);
+
 const router = express.Router();
 
 /*

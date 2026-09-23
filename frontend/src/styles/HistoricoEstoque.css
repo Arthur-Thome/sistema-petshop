@@ -1,0 +1,174 @@
+.historico-estoque-page {
+  width: 100%;
+}
+
+.historico-topo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.historico-topo h1 {
+  margin: 6px 0;
+}
+
+.historico-topo p {
+  margin: 0;
+  color: #667085;
+}
+
+.historico-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #667085;
+}
+
+
+/*
+ * O resumo utiliza blocos assimétricos para que esta
+ * página tenha identidade própria sem fugir do padrão
+ * visual geral do sistema.
+ */
+.estoque-resumo {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.estoque-resumo-principal,
+.estoque-resumo-item {
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 22px;
+}
+
+.estoque-resumo-principal {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.estoque-resumo-principal span {
+  width: 100%;
+  display: block;
+  color: #667085;
+}
+
+.estoque-resumo-principal strong {
+  font-size: 34px;
+}
+
+.estoque-resumo-principal small {
+  color: #667085;
+}
+
+.estoque-resumo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.estoque-resumo-item span {
+  color: #667085;
+  font-size: 14px;
+}
+
+.estoque-resumo-item strong {
+  font-size: 18px;
+}
+
+.historico-conteudo {
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.historico-titulo {
+  padding: 22px;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.historico-titulo h2 {
+  margin: 0 0 5px;
+}
+
+.historico-titulo p {
+  margin: 0;
+  color: #667085;
+}
+
+.historico-tabela-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.historico-tabela {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.historico-tabela th,
+.historico-tabela td {
+  padding: 15px 18px;
+  text-align: left;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.historico-tabela th {
+  font-size: 13px;
+  color: #667085;
+  background: #f9fafb;
+}
+
+.movimento-entrada,
+.movimento-saida {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.movimento-entrada {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.movimento-saida {
+  background: #fff4ed;
+  color: #b93815;
+}
+
+.historico-vazio {
+  padding: 40px 22px;
+  text-align: center;
+  color: #667085;
+}
+
+.historico-erro {
+  padding: 16px;
+  border: 1px solid #fecdca;
+  border-radius: 10px;
+  background: #fef3f2;
+  color: #b42318;
+}
+
+
+@media (max-width: 1000px) {
+  .estoque-resumo {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+@media (max-width: 650px) {
+  .estoque-resumo {
+    grid-template-columns: 1fr;
+  }
+}

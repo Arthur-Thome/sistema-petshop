@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import api from "../services/api";
 
@@ -10,42 +13,49 @@ function Produtos() {
   const navigate = useNavigate();
 
   const [searchParams] =
-  useSearchParams();
+    useSearchParams();
+
 
   /*
-  * Quando estoque=baixo vier pela URL, a tela exibe
-  * somente produtos ativos que precisam de reposição.
-  */
+   * Quando estoque=baixo vier pela URL, a tela exibe
+   * somente produtos ativos que precisam de reposição.
+   */
   const somenteEstoqueBaixo =
     searchParams.get("estoque") === "baixo";
 
-    /*
-    * O usuário autenticado é armazenado no localStorage
-    * durante o login.
-    */
-    const usuarioSalvo =
-      localStorage.getItem("usuario");
 
-    const usuario =
-      usuarioSalvo
-        ? JSON.parse(usuarioSalvo)
-        : null;
+  /*
+   * O usuário autenticado é armazenado no localStorage
+   * durante o login.
+   */
+  const usuarioSalvo =
+    localStorage.getItem("usuario");
+
+  const usuario =
+    usuarioSalvo
+      ? JSON.parse(usuarioSalvo)
+      : null;
 
 
-    /*
-    * Somente administrador e gerente podem realizar
-    * alterações no módulo de produtos e estoque.
-    *
-    * O backend continua sendo a proteção principal.
-    * Esta verificação serve para adequar a interface.
-    */
-    const podeGerenciar =
-      ["administrador", "gerente"].includes(
-        usuario?.perfil
-      );
+  /*
+   * Somente administrador e gerente podem realizar
+   * alterações no módulo de produtos e estoque.
+   *
+   * O backend continua sendo a proteção principal.
+   * Esta verificação serve para adequar a interface.
+   */
+  const podeGerenciar =
+    [
+      "administrador",
+      "gerente",
+    ].includes(usuario?.perfil);
 
-  const [produtos, setProdutos] = useState([]);
-  const [busca, setBusca] = useState("");
+
+  const [produtos, setProdutos] =
+    useState([]);
+
+  const [busca, setBusca] =
+    useState("");
 
   const [carregando, setCarregando] =
     useState(true);
@@ -84,21 +94,15 @@ function Produtos() {
 
 
   /*
-   * A pesquisa é feita no frontend porque neste momento
-   * o volume de produtos será pequeno.
+   * Primeiro aplicamos o filtro de estoque baixo.
+   * Depois aplicamos a pesquisa digitada pelo usuário.
    *
-   * O backend também possui suporte a pesquisa para
-   * podermos evoluir isso posteriormente.
+   * Essa ordem é importante para que o filtro recebido
+   * pela URL continue funcionando mesmo quando a caixa
+   * de pesquisa estiver vazia.
    */
   const produtosFiltrados =
     produtos.filter((produto) => {
-      const termo =
-        busca.trim().toLowerCase();
-
-      if (!termo) {
-        return true;
-      }
-
       if (
         somenteEstoqueBaixo &&
         (
@@ -108,6 +112,16 @@ function Produtos() {
       ) {
         return false;
       }
+
+
+      const termo =
+        busca.trim().toLowerCase();
+
+
+      if (!termo) {
+        return true;
+      }
+
 
       return (
         produto.nome
@@ -146,7 +160,9 @@ function Produtos() {
       <div className="produtos-header">
 
         <div>
-          <h1>Produtos e Estoque</h1>
+          <h1>
+            Produtos e Estoque
+          </h1>
 
           <p>
             Controle dos produtos utilizados
@@ -182,10 +198,13 @@ function Produtos() {
 
       </div>
 
+
       {somenteEstoqueBaixo && (
         <div className="filtro-estoque-ativo">
+
           <span>
-            Mostrando somente produtos que precisam de reposição.
+            Mostrando somente produtos que
+            precisam de reposição.
           </span>
 
           <button
@@ -197,6 +216,7 @@ function Produtos() {
           >
             Mostrar todos
           </button>
+
         </div>
       )}
 
@@ -210,7 +230,9 @@ function Produtos() {
 
       {carregando ? (
 
-        <p>Carregando produtos...</p>
+        <p>
+          Carregando produtos...
+        </p>
 
       ) : produtosFiltrados.length === 0 ? (
 
@@ -303,18 +325,32 @@ function Produtos() {
 
 
                     <td>
+                      <div className="produto-acoes">
 
-                      <button
-                        className="btn-secondary"
-                        onClick={() =>
-                          navigate(
-                            `/produtos/${produto.id}`
-                          )
-                        }
-                      >
-                        Visualizar
-                      </button>
+                        <button
+                          className="btn-secondary"
+                          onClick={() =>
+                            navigate(
+                              `/produtos/${produto.id}`
+                            )
+                          }
+                        >
+                          Visualizar
+                        </button>
 
+
+                        <button
+                          className="btn-history"
+                          onClick={() =>
+                            navigate(
+                              `/produtos/${produto.id}/historico`
+                            )
+                          }
+                        >
+                          Histórico
+                        </button>
+
+                      </div>
                     </td>
 
                   </tr>

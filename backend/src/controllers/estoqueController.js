@@ -18,63 +18,120 @@ const TIPOS_MOVIMENTACAO = [
  * controller. Assim mantemos um histórico completo
  * das entradas, saídas e ajustes realizados.
  */
-async function movimentarEstoque(req, res) {
-  const client = await pool.connect();
+async function movimentarEstoque(
+  req,
+  res
+) {
+  /*
+   * Validamos os dados antes de reservar uma conexão
+   * exclusiva do pool para a transação.
+   */
+  const produtoId =
+    Number(req.params.produtoId);
+
+  if (
+    !Number.isInteger(produtoId) ||
+    produtoId <= 0
+  ) {
+    return res.status(400).json({
+      mensagem:
+        "ID de produto inválido.",
+    });
+  }
+
+
+  const {
+    tipo,
+    quantidade,
+    motivo,
+  } = req.body;
+
+
+  const tipoNormalizado =
+    typeof tipo === "string"
+      ? tipo.trim().toUpperCase()
+      : "";
+
+
+  if (
+    !TIPOS_MOVIMENTACAO.includes(
+      tipoNormalizado
+    )
+  ) {
+    return res.status(400).json({
+      mensagem:
+        "Tipo de movimentação inválido.",
+    });
+  }
+
+
+  const quantidadeNumerica =
+    Number(quantidade);
+
+
+  /*
+   * O estoque representa unidades, caixas, pacotes etc.
+   * Portanto não permitimos quantidades fracionadas.
+   */
+  if (
+    !Number.isInteger(
+      quantidadeNumerica
+    ) ||
+    quantidadeNumerica <= 0
+  ) {
+    return res.status(400).json({
+      mensagem:
+        "A quantidade deve ser um número inteiro maior que zero.",
+    });
+  }
+
+
+  /*
+   * O motivo é opcional, porém quando informado precisa
+   * ser texto e possuir tamanho controlado.
+   */
+  let motivoNormalizado = null;
+
+  if (
+    motivo !== null &&
+    motivo !== undefined &&
+    motivo !== ""
+  ) {
+    if (typeof motivo !== "string") {
+      return res.status(400).json({
+        mensagem:
+          "O motivo da movimentação é inválido.",
+      });
+    }
+
+    motivoNormalizado =
+      motivo.trim() || null;
+
+    if (
+      motivoNormalizado &&
+      motivoNormalizado.length > 1000
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "O motivo deve possuir no máximo 1000 caracteres.",
+      });
+    }
+  }
+
+
+  const client =
+    await pool.connect();
 
   try {
-    const { produtoId } = req.params;
-
-    const {
-      tipo,
-      quantidade,
-      motivo,
-    } = req.body;
-
-
-    const tipoNormalizado =
-      String(tipo || "")
-        .trim()
-        .toUpperCase();
-
-
-    if (
-      !TIPOS_MOVIMENTACAO.includes(
-        tipoNormalizado
-      )
-    ) {
-      return res.status(400).json({
-        mensagem:
-          "Tipo de movimentação inválido.",
-      });
-    }
-
-
-    const quantidadeNumerica =
-      Number(quantidade);
-
-
-    /*
-     * O estoque representa unidades, caixas, pacotes etc.
-     * Portanto não permitimos quantidades fracionadas.
-     */
-    if (
-      !Number.isInteger(quantidadeNumerica) ||
-      quantidadeNumerica <= 0
-    ) {
-      return res.status(400).json({
-        mensagem:
-          "A quantidade deve ser um número inteiro maior que zero.",
-      });
-    }
-
-
     await client.query("BEGIN");
 
 
     /*
-     * Bloqueamos o produto durante a transação para evitar
-     * duas movimentações simultâneas calculando a partir
-     * da mesma quantidade.
+     * FOR UPDATE bloqueia o registro enquanto a
+     * movimentação estiver sendo calculada.
+     *
+     * Isso impede duas requisições simultâneas de
+     * utilizarem a mesma quantidade inicial.
      */
     const resultadoProduto =
       await client.query(
@@ -88,8 +145,13 @@ async function movimentarEstoque(req, res) {
       );
 
 
-    if (resultadoProduto.rows.length === 0) {
-      await client.query("ROLLBACK");
+    if (
+      resultadoProduto.rows.length ===
+      0
+    ) {
+      await client.query(
+        "ROLLBACK"
+      );
 
       return res.status(404).json({
         mensagem:
@@ -103,7 +165,9 @@ async function movimentarEstoque(req, res) {
 
 
     if (!produto.ativo) {
-      await client.query("ROLLBACK");
+      await client.query(
+        "ROLLBACK"
+      );
 
       return res.status(400).json({
         mensagem:
@@ -113,25 +177,59 @@ async function movimentarEstoque(req, res) {
 
 
     const quantidadeAnterior =
-      Number(produto.quantidade_atual);
+      Number(
+        produto.quantidade_atual
+      );
+
+
+    /*
+     * A quantidade existente no banco também precisa
+     * estar íntegra antes de efetuarmos qualquer cálculo.
+     */
+    if (
+      !Number.isInteger(
+        quantidadeAnterior
+      ) ||
+      quantidadeAnterior < 0
+    ) {
+      await client.query(
+        "ROLLBACK"
+      );
+
+      console.error(
+        "Quantidade de estoque inválida no produto:",
+        produtoId
+      );
+
+      return res.status(500).json({
+        mensagem:
+          "Não foi possível processar o estoque do produto.",
+      });
+    }
 
 
     const adicionaEstoque =
-      tipoNormalizado === "ENTRADA" ||
-      tipoNormalizado === "AJUSTE_ENTRADA";
+      tipoNormalizado ===
+        "ENTRADA" ||
+      tipoNormalizado ===
+        "AJUSTE_ENTRADA";
 
 
     const quantidadePosterior =
       adicionaEstoque
-        ? quantidadeAnterior + quantidadeNumerica
-        : quantidadeAnterior - quantidadeNumerica;
+        ? quantidadeAnterior +
+          quantidadeNumerica
+        : quantidadeAnterior -
+          quantidadeNumerica;
 
 
     /*
      * Estoque negativo nunca é permitido.
      */
     if (quantidadePosterior < 0) {
-      await client.query("ROLLBACK");
+      await client.query(
+        "ROLLBACK"
+      );
 
       return res.status(400).json({
         mensagem:
@@ -186,7 +284,7 @@ async function movimentarEstoque(req, res) {
           quantidadeNumerica,
           quantidadeAnterior,
           quantidadePosterior,
-          motivo?.trim() || null,
+          motivoNormalizado,
           req.usuario.id,
         ]
       );
@@ -198,13 +296,23 @@ async function movimentarEstoque(req, res) {
     /*
      * A movimentação já possui seu próprio histórico.
      * Também registramos no log geral de auditoria.
+     *
+     * Uma falha no log não desfaz a movimentação que
+     * já foi confirmada no banco.
      */
     try {
       await registrarLog({
-        usuarioId: req.usuario.id,
-        acao: "MOVIMENTAR_ESTOQUE",
-        entidade: "produtos",
-        registroId: Number(produtoId),
+        usuarioId:
+          req.usuario.id,
+
+        acao:
+          "MOVIMENTAR_ESTOQUE",
+
+        entidade:
+          "produtos",
+
+        registroId:
+          produtoId,
 
         valorAnterior: {
           quantidade_atual:
@@ -222,7 +330,7 @@ async function movimentarEstoque(req, res) {
             quantidadeNumerica,
 
           motivo:
-            motivo?.trim() || null,
+            motivoNormalizado,
         },
 
         ip: req.ip,
@@ -240,14 +348,18 @@ async function movimentarEstoque(req, res) {
         "Movimentação registrada com sucesso.",
 
       produto:
-        resultadoProdutoAtualizado.rows[0],
+        resultadoProdutoAtualizado
+          .rows[0],
 
       movimentacao:
-        resultadoMovimentacao.rows[0],
+        resultadoMovimentacao
+          .rows[0],
     });
   } catch (error) {
     try {
-      await client.query("ROLLBACK");
+      await client.query(
+        "ROLLBACK"
+      );
     } catch (erroRollback) {
       console.error(
         "Erro ao executar rollback:",
@@ -279,7 +391,19 @@ async function listarMovimentacoesProduto(
   res
 ) {
   try {
-    const { produtoId } = req.params;
+    const produtoId =
+      Number(req.params.produtoId);
+
+
+    if (
+      !Number.isInteger(produtoId) ||
+      produtoId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de produto inválido.",
+      });
+    }
 
 
     const produtoExiste =
@@ -293,7 +417,9 @@ async function listarMovimentacoesProduto(
       );
 
 
-    if (produtoExiste.rows.length === 0) {
+    if (
+      produtoExiste.rows.length === 0
+    ) {
       return res.status(404).json({
         mensagem:
           "Produto não encontrado.",

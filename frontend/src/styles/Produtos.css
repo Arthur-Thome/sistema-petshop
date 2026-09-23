@@ -19,6 +19,10 @@
   color: #666;
 }
 
+
+/*
+ * Área de pesquisa dos produtos.
+ */
 .produtos-filtros {
   margin-bottom: 20px;
 }
@@ -27,15 +31,24 @@
   width: 100%;
   max-width: 500px;
   padding: 12px 14px;
+
   border: 1px solid #d7d7d7;
   border-radius: 8px;
+
   font-size: 15px;
 }
 
+
+/*
+ * A tabela pode ultrapassar a largura disponível em
+ * telas menores. O scroll horizontal evita quebrar
+ * o restante do layout.
+ */
 .produtos-tabela-container {
   width: 100%;
   overflow-x: auto;
-  background: #fff;
+
+  background: #ffffff;
   border-radius: 10px;
 }
 
@@ -48,26 +61,37 @@
 .produtos-tabela td {
   padding: 14px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #eeeeee;
 }
 
 .produtos-tabela th {
   font-size: 14px;
-  color: #555;
+  color: #555555;
+}
+
+.produtos-tabela tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .produto-unidade {
   margin-top: 4px;
+
   font-size: 12px;
-  color: #777;
+  color: #777777;
 }
 
+
+/*
+ * Situação atual do produto.
+ */
 .status-ok,
 .status-baixo,
 .status-inativo {
   display: inline-block;
+
   padding: 5px 9px;
   border-radius: 20px;
+
   font-size: 12px;
   font-weight: 600;
 }
@@ -84,37 +108,139 @@
 
 .status-inativo {
   background: #ededed;
-  color: #666;
+  color: #666666;
 }
 
+
+/*
+ * Mantemos as ações agrupadas para que Visualizar e
+ * Histórico permaneçam organizados mesmo quando a
+ * tabela perder espaço horizontal.
+ */
+.produto-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  white-space: nowrap;
+}
+
+.produto-acoes button {
+  min-height: 36px;
+}
+
+
+/*
+ * Ação de consulta do produto.
+ */
+.produto-acoes .btn-secondary {
+  padding: 8px 12px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 7px;
+
+  background: #ffffff;
+  color: #344054;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.produto-acoes .btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #98a2b3;
+}
+
+
+/*
+ * O histórico possui uma aparência própria para ser
+ * facilmente identificado como uma ação de consulta,
+ * sem competir visualmente com o botão principal.
+ */
+.btn-history {
+  padding: 8px 12px;
+
+  border: 1px solid #c7d7fe;
+  border-radius: 7px;
+
+  background: #eef4ff;
+  color: #3538cd;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.btn-history:hover {
+  background: #e0eaff;
+  border-color: #84adff;
+}
+
+
+/*
+ * Mensagens da página.
+ */
 .produtos-vazio {
   padding: 30px;
-  background: #fff;
+
+  background: #ffffff;
   border-radius: 10px;
+
   text-align: center;
-  color: #666;
+  color: #666666;
 }
 
 .produtos-erro {
   margin-bottom: 16px;
   padding: 12px;
+
   border-radius: 8px;
+
   background: #fdeaea;
   color: #a32a2a;
 }
 
+
+/*
+ * Botão principal da página.
+ */
 .btn-primary {
-  background: #1f2937;
-  color: #ffffff;
   padding: 10px 16px;
 
   border: none;
   border-radius: 7px;
 
+  background: #1f2937;
+  color: #ffffff;
+
   font-weight: 600;
 
   cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
 }
+
+.btn-primary:hover {
+  background: #111827;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
 
 /*
  * Aviso exibido quando a lista foi aberta pelo
@@ -124,6 +250,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
 
   padding: 14px 16px;
@@ -138,41 +265,31 @@
   font-weight: 500;
 }
 
+
+/*
+ * Ajustes para telas menores.
+ */
 @media (max-width: 650px) {
+  .produtos-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .produtos-header .btn-primary {
+    width: 100%;
+  }
+
   .filtro-estoque-ativo {
     flex-direction: column;
     align-items: stretch;
   }
+
+  .produto-acoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .produto-acoes button {
+    width: 100%;
+  }
 }
-
-/*
- * Botão principal da tela de Produtos.
- * Mantemos o estilo aqui para que o módulo não dependa
- * de estilos específicos de outras páginas.
- 
-.produtos-header .btn-primary {
-  padding: 11px 18px;
-
-  border: none;
-  border-radius: 8px;
-
-  background: #4f46e5;
-  color: #ffffff;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s ease,
-    transform 0.1s ease;
-}
-
-.produtos-header .btn-primary:hover {
-  background: #4338ca;
-}
-
-.produtos-header .btn-primary:active {
-  transform: scale(0.98);
-}*/

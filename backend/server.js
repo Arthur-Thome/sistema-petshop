@@ -1,8 +1,24 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 require("dotenv").config();
 
-const pool = require("./src/database/connection");
+/*
+ * O servidor não deve iniciar sem uma chave JWT adequada.
+ *
+ * A validação acontece na inicialização para evitar que uma
+ * configuração insegura passe despercebida.
+ */
+if (
+  !process.env.JWT_SECRET ||
+  process.env.JWT_SECRET.length < 32
+) {
+  console.error(
+    "JWT_SECRET ausente ou muito curta. Utilize pelo menos 32 caracteres."
+  );
+
+  process.exit(1);
+}
 
 const authRoutes = require("./src/routes/authRoutes");
 const usuarioRoutes = require("./src/routes/usuarioRoutes");
@@ -20,14 +36,95 @@ const path = require("path");
 
 const app = express();
 
+/*
+ * Adiciona cabeçalhos HTTP de segurança.
+ *
+ * crossOriginResourcePolicy é configurado como
+ * cross-origin porque o frontend e os arquivos de
+ * upload são servidos em origens diferentes.
+ *
+ * Desenvolvimento:
+ * frontend -> localhost:5173
+ * uploads  -> localhost:3001
+ */
+app.use(
+  helmet({
+    crossOriginResourcePolicy: {
+      policy: "cross-origin",
+    },
+  })
+);
 
-// Permite que o frontend faça requisições para esta API.
-// Em produção, poderemos restringir o CORS ao domínio do sistema.
-app.use(cors());
+/*
+ * Evita divulgar explicitamente que a aplicação
+ * utiliza Express através do cabeçalho X-Powered-By.
+ */
+app.disable("x-powered-by");
 
 
-// Converte automaticamente requisições JSON para req.body.
-app.use(express.json());
+/*
+ * Permite requisições do frontend configurado.
+ *
+ * Em desenvolvimento utilizamos localhost:5173.
+ * Em produção, FRONTEND_URL deverá apontar para o
+ * endereço real em que o frontend estiver publicado.
+ */
+const frontendUrl =
+  process.env.FRONTEND_URL ||
+  "http://localhost:5173";
+
+let frontendUrlValidada;
+
+try {
+  frontendUrlValidada =
+    new URL(frontendUrl);
+
+  if (
+    frontendUrlValidada.protocol !== "http:" &&
+    frontendUrlValidada.protocol !== "https:"
+  ) {
+    throw new Error(
+      "Protocolo inválido."
+    );
+  }
+} catch (erro) {
+  console.error(
+    "FRONTEND_URL inválida. Utilize uma URL HTTP ou HTTPS válida."
+  );
+
+  process.exit(1);
+}
+
+app.use(
+  cors({
+    origin: frontendUrl,
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Confirm-Password",
+    ],
+  })
+);
+
+
+/*
+ * Limita o tamanho de corpos JSON recebidos pela API.
+ *
+ * Uploads de fotos utilizam multipart/form-data e não
+ * dependem deste limite.
+ */
+app.use(
+  express.json({
+    limit: "1mb",
+  })
+);
 
 // Disponibiliza publicamente somente os arquivos da pasta uploads.
 // Exemplo:
@@ -64,26 +161,54 @@ app.get("/", (req, res) => {
   });
 });
 
-
-// Rota temporária de diagnóstico da conexão com PostgreSQL.
-// Poderemos remover esta rota antes de publicar o sistema em produção.
-app.get("/teste-banco", async (req, res) => {
-  try {
-    const resultado = await pool.query("SELECT NOW()");
-
-    res.json({
-      mensagem: "Conexão com PostgreSQL funcionando",
-      horarioBanco: resultado.rows[0].now,
-    });
-  } catch (erro) {
-    console.error("Erro ao conectar ao banco:", erro);
-
-    res.status(500).json({
-      mensagem: "Erro ao conectar ao banco de dados",
-    });
-  }
+/*
+ * Qualquer endereço que não corresponda às rotas
+ * existentes recebe uma resposta JSON controlada.
+ *
+ * Isso evita que o Express devolva sua resposta HTML
+ * padrão para endpoints inexistentes.
+ */
+app.use((req, res) => {
+  return res.status(404).json({
+    mensagem: "Rota não encontrada.",
+  });
 });
 
+/*
+ * Tratamento final para erros que chegarem até o Express
+ * sem terem sido tratados pelo módulo responsável.
+ *
+ * Detalhes internos não são enviados ao cliente.
+ */
+app.use((erro, req, res, next) => {
+  console.error(
+    "Erro não tratado pela aplicação:",
+    erro
+  );
+
+    /*
+    * JSON malformado é um erro da requisição e não uma
+    * falha interna do servidor.
+    */
+    if (
+      erro instanceof SyntaxError &&
+      erro.status === 400 &&
+      "body" in erro
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "O corpo JSON da requisição é inválido.",
+      });
+    }
+
+  if (res.headersSent) {
+    return next(erro);
+  }
+
+  return res.status(500).json({
+    mensagem: "Erro interno do servidor.",
+  });
+});
 
 const PORT = process.env.PORT || 3001;
 

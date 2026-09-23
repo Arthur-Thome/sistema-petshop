@@ -37,80 +37,300 @@ function removerArquivoFoto(caminhoFoto) {
   }
 }
 
+
+/*
+ * Normaliza os campos textuais antes das validações
+ * e da gravação no banco.
+ *
+ * Campos opcionais vazios são mantidos como string vazia
+ * durante a validação e convertidos para null no INSERT/UPDATE.
+ */
+function normalizarDadosPet(dados) {
+  const normalizarTexto = (valor) => {
+    if (typeof valor !== "string") {
+      return "";
+    }
+
+    return valor.trim();
+  };
+
+  return {
+    tutor_id: dados.tutor_id,
+
+    nome:
+      normalizarTexto(dados.nome),
+
+    especie:
+      normalizarTexto(dados.especie),
+
+    raca:
+      normalizarTexto(dados.raca),
+
+    sexo:
+      normalizarTexto(
+        dados.sexo
+      ).toLowerCase(),
+
+    data_nascimento:
+      normalizarTexto(
+        dados.data_nascimento
+      ),
+
+    peso:
+      dados.peso,
+
+    cor:
+      normalizarTexto(dados.cor),
+
+    observacoes:
+      normalizarTexto(
+        dados.observacoes
+      ),
+  };
+}
+
+
+/*
+ * Valida uma data no formato YYYY-MM-DD sem depender
+ * apenas da conversão automática feita pelo JavaScript.
+ */
+function dataValida(data) {
+  if (!data) {
+    return true;
+  }
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(data)
+  ) {
+    return false;
+  }
+
+  const [
+    ano,
+    mes,
+    dia,
+  ] = data
+    .split("-")
+    .map(Number);
+
+  const dataCriada =
+    new Date(
+      Date.UTC(
+        ano,
+        mes - 1,
+        dia
+      )
+    );
+
+  return (
+    dataCriada.getUTCFullYear() === ano &&
+    dataCriada.getUTCMonth() ===
+      mes - 1 &&
+    dataCriada.getUTCDate() === dia
+  );
+}
+
+
+/*
+ * Impede datas de nascimento futuras.
+ *
+ * A comparação utiliza somente YYYY-MM-DD para evitar
+ * diferenças causadas por horário ou fuso.
+ */
+function dataNascimentoFutura(data) {
+  if (!data) {
+    return false;
+  }
+
+  const hoje =
+    new Date()
+      .toISOString()
+      .slice(0, 10);
+
+  return data > hoje;
+}
+
+
+/*
+ * Mantém as mesmas regras de validação tanto no cadastro
+ * quanto na edição do pet.
+ */
+function validarDadosPet(dados) {
+  const tutorId =
+    Number(dados.tutor_id);
+
+  if (
+    !Number.isInteger(tutorId) ||
+    tutorId <= 0
+  ) {
+    return {
+      erro: "ID de tutor inválido.",
+    };
+  }
+
+  if (
+    !dados.nome ||
+    !dados.especie
+  ) {
+    return {
+      erro:
+        "Tutor, nome e espécie são obrigatórios.",
+    };
+  }
+
+  const limites = [
+    ["nome", 150, "Nome"],
+    ["especie", 100, "Espécie"],
+    ["raca", 150, "Raça"],
+    ["cor", 100, "Cor"],
+    [
+      "observacoes",
+      2000,
+      "Observações",
+    ],
+  ];
+
+  for (const [
+    campo,
+    limite,
+    nomeCampo,
+  ] of limites) {
+    if (
+      dados[campo] &&
+      dados[campo].length > limite
+    ) {
+      return {
+        erro:
+          `${nomeCampo} deve possuir no máximo ${limite} caracteres.`,
+      };
+    }
+  }
+
+  const sexosPermitidos = [
+    "macho",
+    "femea",
+  ];
+
+  if (
+    dados.sexo &&
+    !sexosPermitidos.includes(
+      dados.sexo
+    )
+  ) {
+    return {
+      erro: "Sexo inválido.",
+    };
+  }
+
+  if (
+    dados.data_nascimento &&
+    !dataValida(
+      dados.data_nascimento
+    )
+  ) {
+    return {
+      erro:
+        "Data de nascimento inválida.",
+    };
+  }
+
+  if (
+    dados.data_nascimento &&
+    dataNascimentoFutura(
+      dados.data_nascimento
+    )
+  ) {
+    return {
+      erro:
+        "A data de nascimento não pode ser futura.",
+    };
+  }
+
+  let pesoNormalizado = null;
+
+  if (
+    dados.peso !== null &&
+    dados.peso !== undefined &&
+    dados.peso !== ""
+  ) {
+    pesoNormalizado =
+      Number(dados.peso);
+
+    if (
+      !Number.isFinite(
+        pesoNormalizado
+      ) ||
+      pesoNormalizado <= 0
+    ) {
+      return {
+        erro:
+          "O peso deve ser um número válido maior que zero.",
+      };
+    }
+
+    /*
+     * Limite defensivo para impedir valores evidentemente
+     * incorretos sem restringir animais de grande porte.
+     */
+    if (pesoNormalizado > 1000) {
+      return {
+        erro:
+          "O peso informado é inválido.",
+      };
+    }
+  }
+
+  return {
+    erro: null,
+    tutorId,
+    pesoNormalizado,
+  };
+}
+
+
 // Cadastra um pet e obrigatoriamente o relaciona a um tutor.
 // O vínculo tutor-pet é validado no backend, portanto não
 // dependemos apenas das opções apresentadas pelo frontend.
 async function cadastrarPet(req, res) {
   try {
+    const dados =
+      normalizarDadosPet(req.body);
+
+    const validacao =
+      validarDadosPet(dados);
+
+    if (validacao.erro) {
+      return res.status(400).json({
+        mensagem: validacao.erro,
+      });
+    }
+
     const {
-      tutor_id,
-      nome,
-      especie,
-      raca,
-      sexo,
-      data_nascimento,
-      peso,
-      cor,
-      observacoes,
-    } = req.body;
-
-    if (!tutor_id || !nome || !especie) {
-      return res.status(400).json({
-        mensagem:
-          "Tutor, nome e espécie são obrigatórios.",
-      });
-    }
-
-    const sexosPermitidos = [
-      "macho",
-      "femea",
-    ];
-
-    if (
-      sexo &&
-      !sexosPermitidos.includes(sexo)
-    ) {
-      return res.status(400).json({
-        mensagem: "Sexo inválido.",
-      });
-    }
-
-    // Quando informado, o peso precisa ser um número válido
-    // e obrigatoriamente maior que zero.
-    if (
-      peso !== null &&
-      peso !== undefined &&
-      peso !== ""
-    ) {
-      const pesoNumerico = Number(peso);
-
-      if (
-        !Number.isFinite(pesoNumerico) ||
-        pesoNumerico <= 0
-      ) {
-        return res.status(400).json({
-          mensagem:
-            "O peso deve ser um número válido maior que zero.",
-        });
-      }
-    }
+      tutorId,
+      pesoNormalizado,
+    } = validacao;
 
     // Confirma que o tutor realmente existe antes de criar
     // o relacionamento entre os registros.
-    const resultadoTutor = await pool.query(
-      `SELECT id, nome, ativo
-       FROM tutores
-       WHERE id = $1`,
-      [tutor_id]
-    );
+    const resultadoTutor =
+      await pool.query(
+        `SELECT id, nome, ativo
+         FROM tutores
+         WHERE id = $1`,
+        [tutorId]
+      );
 
-    if (resultadoTutor.rows.length === 0) {
+    if (
+      resultadoTutor.rows.length === 0
+    ) {
       return res.status(404).json({
-        mensagem: "Tutor não encontrado.",
+        mensagem:
+          "Tutor não encontrado.",
       });
     }
 
-    const tutor = resultadoTutor.rows[0];
+    const tutor =
+      resultadoTutor.rows[0];
 
     // Não permitimos novos pets em um tutor inativo.
     if (!tutor.ativo) {
@@ -120,36 +340,39 @@ async function cadastrarPet(req, res) {
       });
     }
 
-    const resultado = await pool.query(
-      `INSERT INTO pets
-       (
-         tutor_id,
-         nome,
-         especie,
-         raca,
-         sexo,
-         data_nascimento,
-         peso,
-         cor,
-         observacoes
-       )
-       VALUES
-       ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-       RETURNING *`,
-      [
-        tutor_id,
-        nome.trim(),
-        especie,
-        raca || null,
-        sexo || null,
-        data_nascimento || null,
-        peso || null,
-        cor || null,
-        observacoes || null,
-      ]
-    );
+    const resultado =
+      await pool.query(
+        `INSERT INTO pets
+        (
+          tutor_id,
+          nome,
+          especie,
+          raca,
+          sexo,
+          data_nascimento,
+          peso,
+          cor,
+          observacoes
+        )
+        VALUES
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        RETURNING *`,
+        [
+          tutorId,
+          dados.nome,
+          dados.especie,
+          dados.raca || null,
+          dados.sexo || null,
+          dados.data_nascimento ||
+            null,
+          pesoNormalizado,
+          dados.cor || null,
+          dados.observacoes || null,
+        ]
+      );
 
-    const pet = resultado.rows[0];
+    const pet =
+      resultado.rows[0];
 
     await registrarLog({
       usuarioId: req.usuario.id,
@@ -161,24 +384,43 @@ async function cadastrarPet(req, res) {
     });
 
     return res.status(201).json({
-      mensagem: "Pet cadastrado com sucesso.",
+      mensagem:
+        "Pet cadastrado com sucesso.",
       pet,
     });
   } catch (erro) {
-    console.error("Erro ao cadastrar pet:", erro);
+    console.error(
+      "Erro ao cadastrar pet:",
+      erro
+    );
 
     return res.status(500).json({
-      mensagem: "Erro interno do servidor.",
+      mensagem:
+        "Erro interno do servidor.",
     });
   }
 }
 
 
 // Lista os pets juntamente com informações básicas do tutor.
-// A pesquisa permite localizar pelo nome do pet, raça ou tutor.
+// A pesquisa permite localizar pelo nome do pet, raça,
+// espécie ou nome do tutor.
 async function listarPets(req, res) {
   try {
-    const { busca } = req.query;
+    let { busca } = req.query;
+
+    if (typeof busca === "string") {
+      busca = busca.trim();
+
+      if (busca.length > 100) {
+        return res.status(400).json({
+          mensagem:
+            "A busca deve possuir no máximo 100 caracteres.",
+        });
+      }
+    } else {
+      busca = "";
+    }
 
     let consulta = `
       SELECT
@@ -215,17 +457,20 @@ async function listarPets(req, res) {
           OR t.nome ILIKE $1
       `;
 
-      parametros.push(`%${busca}%`);
+      parametros.push(
+        `%${busca}%`
+      );
     }
 
     consulta += `
       ORDER BY p.nome ASC
     `;
 
-    const resultado = await pool.query(
-      consulta,
-      parametros
-    );
+    const resultado =
+      await pool.query(
+        consulta,
+        parametros
+      );
 
     return res.status(200).json(
       resultado.rows
@@ -237,38 +482,55 @@ async function listarPets(req, res) {
     );
 
     return res.status(500).json({
-      mensagem: "Erro interno do servidor.",
+      mensagem:
+        "Erro interno do servidor.",
     });
   }
 }
+
 
 // Recupera a ficha completa de um pet e também os dados
 // principais do tutor responsável por ele.
 async function buscarPetPorId(req, res) {
   try {
-    const { id } = req.params;
+    const petId =
+      Number(req.params.id);
 
-    const resultado = await pool.query(
-      `SELECT
-         p.*,
+    if (
+      !Number.isInteger(petId) ||
+      petId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de pet inválido.",
+      });
+    }
 
-         t.nome AS tutor_nome,
-         t.telefone AS tutor_telefone,
-         t.email AS tutor_email,
-         t.ativo AS tutor_ativo
+    const resultado =
+      await pool.query(
+        `SELECT
+           p.*,
 
-       FROM pets p
+           t.nome AS tutor_nome,
+           t.telefone AS tutor_telefone,
+           t.email AS tutor_email,
+           t.ativo AS tutor_ativo
 
-       INNER JOIN tutores t
-         ON t.id = p.tutor_id
+         FROM pets p
 
-       WHERE p.id = $1`,
-      [id]
-    );
+         INNER JOIN tutores t
+           ON t.id = p.tutor_id
 
-    if (resultado.rows.length === 0) {
+         WHERE p.id = $1`,
+        [petId]
+      );
+
+    if (
+      resultado.rows.length === 0
+    ) {
       return res.status(404).json({
-        mensagem: "Pet não encontrado.",
+        mensagem:
+          "Pet não encontrado.",
       });
     }
 
@@ -276,13 +538,18 @@ async function buscarPetPorId(req, res) {
       pet: resultado.rows[0],
     });
   } catch (erro) {
-    console.error("Erro ao buscar pet:", erro);
+    console.error(
+      "Erro ao buscar pet:",
+      erro
+    );
 
     return res.status(500).json({
-      mensagem: "Erro interno do servidor.",
+      mensagem:
+        "Erro interno do servidor.",
     });
   }
 }
+
 
 // Atualiza os dados cadastrais do pet.
 //
@@ -290,73 +557,53 @@ async function buscarPetPorId(req, res) {
 // também precisa existir e estar ativo.
 async function atualizarPet(req, res) {
   try {
-    const { id } = req.params;
+    const petId =
+      Number(req.params.id);
 
-    const {
-      tutor_id,
-      nome,
-      especie,
-      raca,
-      sexo,
-      data_nascimento,
-      peso,
-      cor,
-      observacoes,
-    } = req.body;
-
-    if (!tutor_id || !nome || !especie) {
+    if (
+      !Number.isInteger(petId) ||
+      petId <= 0
+    ) {
       return res.status(400).json({
         mensagem:
-          "Tutor, nome e espécie são obrigatórios.",
+          "ID de pet inválido.",
       });
     }
 
-    const sexosPermitidos = [
-      "macho",
-      "femea",
-    ];
+    const dados =
+      normalizarDadosPet(req.body);
 
-    if (
-      sexo &&
-      !sexosPermitidos.includes(sexo)
-    ) {
+    const validacao =
+      validarDadosPet(dados);
+
+    if (validacao.erro) {
       return res.status(400).json({
-        mensagem: "Sexo inválido.",
+        mensagem: validacao.erro,
       });
     }
 
-    // Quando informado, o peso precisa ser um número válido
-    // e obrigatoriamente maior que zero.
-    if (
-      peso !== null &&
-      peso !== undefined &&
-      peso !== ""
-    ) {
-      const pesoNumerico = Number(peso);
-
-      if (
-        !Number.isFinite(pesoNumerico) ||
-        pesoNumerico <= 0
-      ) {
-        return res.status(400).json({
-          mensagem:
-            "O peso deve ser um número válido maior que zero.",
-        });
-      }
-    }
+    const {
+      tutorId,
+      pesoNormalizado,
+    } = validacao;
 
     // Recuperamos o estado anterior para registrar
     // exatamente o que foi alterado no log.
-    const resultadoAnterior = await pool.query(
-      `SELECT *
-       FROM pets
-       WHERE id = $1`,
-      [id]
-    );
+    const resultadoAnterior =
+      await pool.query(
+        `SELECT *
+         FROM pets
+         WHERE id = $1`,
+        [petId]
+      );
 
-    if (resultadoAnterior.rows.length === 0) {
+    if (
+      resultadoAnterior.rows.length ===
+      0
+    ) {
       return res.status(404).json({
-        mensagem: "Pet não encontrado.",
+        mensagem:
+          "Pet não encontrado.",
       });
     }
 
@@ -364,28 +611,36 @@ async function atualizarPet(req, res) {
       resultadoAnterior.rows[0];
 
     // Confirma que o tutor selecionado existe.
-    const resultadoTutor = await pool.query(
-      `SELECT id, nome, ativo
-       FROM tutores
-       WHERE id = $1`,
-      [tutor_id]
-    );
+    const resultadoTutor =
+      await pool.query(
+        `SELECT id, nome, ativo
+         FROM tutores
+         WHERE id = $1`,
+        [tutorId]
+      );
 
-    if (resultadoTutor.rows.length === 0) {
+    if (
+      resultadoTutor.rows.length === 0
+    ) {
       return res.status(404).json({
-        mensagem: "Tutor não encontrado.",
+        mensagem:
+          "Tutor não encontrado.",
       });
     }
 
     const tutor =
       resultadoTutor.rows[0];
 
-    // Permitimos manter o mesmo tutor de um cadastro antigo,
-    // mas não transferir o pet para outro tutor inativo.
+    /*
+     * Permitimos manter o mesmo tutor de um cadastro antigo,
+     * mas não transferir o pet para outro tutor inativo.
+     */
     if (
       !tutor.ativo &&
-      Number(tutor_id) !==
-        Number(petAnterior.tutor_id)
+      tutorId !==
+        Number(
+          petAnterior.tutor_id
+        )
     ) {
       return res.status(400).json({
         mensagem:
@@ -393,36 +648,38 @@ async function atualizarPet(req, res) {
       });
     }
 
-    const resultado = await pool.query(
-      `UPDATE pets
-       SET
-         tutor_id = $1,
-         nome = $2,
-         especie = $3,
-         raca = $4,
-         sexo = $5,
-         data_nascimento = $6,
-         peso = $7,
-         cor = $8,
-         observacoes = $9,
-         atualizado_em = CURRENT_TIMESTAMP
+    const resultado =
+      await pool.query(
+        `UPDATE pets
+         SET
+           tutor_id = $1,
+           nome = $2,
+           especie = $3,
+           raca = $4,
+           sexo = $5,
+           data_nascimento = $6,
+           peso = $7,
+           cor = $8,
+           observacoes = $9,
+           atualizado_em = CURRENT_TIMESTAMP
 
-       WHERE id = $10
+         WHERE id = $10
 
-       RETURNING *`,
-      [
-        tutor_id,
-        nome.trim(),
-        especie,
-        raca || null,
-        sexo || null,
-        data_nascimento || null,
-        peso || null,
-        cor || null,
-        observacoes || null,
-        id,
-      ]
-    );
+         RETURNING *`,
+        [
+          tutorId,
+          dados.nome,
+          dados.especie,
+          dados.raca || null,
+          dados.sexo || null,
+          dados.data_nascimento ||
+            null,
+          pesoNormalizado,
+          dados.cor || null,
+          dados.observacoes || null,
+          petId,
+        ]
+      );
 
     const petAtualizado =
       resultado.rows[0];
@@ -431,7 +688,8 @@ async function atualizarPet(req, res) {
       usuarioId: req.usuario.id,
       acao: "ALTERAR_PET",
       entidade: "pets",
-      registroId: petAtualizado.id,
+      registroId:
+        petAtualizado.id,
       valorAnterior: petAnterior,
       valorNovo: petAtualizado,
       ip: req.ip,
@@ -449,19 +707,34 @@ async function atualizarPet(req, res) {
     );
 
     return res.status(500).json({
-      mensagem: "Erro interno do servidor.",
+      mensagem:
+        "Erro interno do servidor.",
     });
   }
 }
 
+
 // Pets são inativados em vez de excluídos fisicamente.
 //
 // Essa estratégia preserva o histórico do animal e será
-// importante para atendimentos, creche, hotel e banho/tosa.
+// importante para atendimentos, creche, hotel e demais
+// registros vinculados ao animal.
 async function alterarStatusPet(req, res) {
   try {
-    const { id } = req.params;
+    const petId =
+      Number(req.params.id);
+
     const { ativo } = req.body;
+
+    if (
+      !Number.isInteger(petId) ||
+      petId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de pet inválido.",
+      });
+    }
 
     if (typeof ativo !== "boolean") {
       return res.status(400).json({
@@ -470,23 +743,30 @@ async function alterarStatusPet(req, res) {
       });
     }
 
-    const resultadoAnterior = await pool.query(
-      `SELECT *
-       FROM pets
-       WHERE id = $1`,
-      [id]
-    );
+    const resultadoAnterior =
+      await pool.query(
+        `SELECT *
+         FROM pets
+         WHERE id = $1`,
+        [petId]
+      );
 
-    if (resultadoAnterior.rows.length === 0) {
+    if (
+      resultadoAnterior.rows.length ===
+      0
+    ) {
       return res.status(404).json({
-        mensagem: "Pet não encontrado.",
+        mensagem:
+          "Pet não encontrado.",
       });
     }
 
     const petAnterior =
       resultadoAnterior.rows[0];
 
-    if (petAnterior.ativo === ativo) {
+    if (
+      petAnterior.ativo === ativo
+    ) {
       return res.status(400).json({
         mensagem: ativo
           ? "O pet já está ativo."
@@ -494,15 +774,16 @@ async function alterarStatusPet(req, res) {
       });
     }
 
-    const resultado = await pool.query(
-      `UPDATE pets
-       SET
-         ativo = $1,
-         atualizado_em = CURRENT_TIMESTAMP
-       WHERE id = $2
-       RETURNING *`,
-      [ativo, id]
-    );
+    const resultado =
+      await pool.query(
+        `UPDATE pets
+         SET
+           ativo = $1,
+           atualizado_em = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING *`,
+        [ativo, petId]
+      );
 
     const petAtualizado =
       resultado.rows[0];
@@ -513,14 +794,16 @@ async function alterarStatusPet(req, res) {
         ? "ATIVAR_PET"
         : "DESATIVAR_PET",
       entidade: "pets",
-      registroId: petAtualizado.id,
+      registroId:
+        petAtualizado.id,
 
       valorAnterior: {
         ativo: petAnterior.ativo,
       },
 
       valorNovo: {
-        ativo: petAtualizado.ativo,
+        ativo:
+          petAtualizado.ativo,
       },
 
       ip: req.ip,
@@ -540,106 +823,140 @@ async function alterarStatusPet(req, res) {
     );
 
     return res.status(500).json({
-      mensagem: "Erro interno do servidor.",
+      mensagem:
+        "Erro interno do servidor.",
     });
   }
 }
+
 
 // Atualiza a foto de um pet.
 //
 // Quando já existe uma foto anterior, ela é removida somente
 // depois que o banco aceita a nova referência.
 async function atualizarFotoPet(req, res) {
-  const { id } = req.params;
+  const petId =
+    Number(req.params.id);
 
-  // O middleware Multer executa antes do controller.
-  // Portanto, quando chegamos aqui, o arquivo já foi
-  // validado e armazenado temporariamente no servidor.
+  /*
+   * O Multer executa antes do controller.
+   * Portanto, quando chegamos aqui, o arquivo já foi
+   * validado e armazenado no servidor.
+   */
   if (!req.file) {
     return res.status(400).json({
-      mensagem: "Nenhuma foto foi enviada.",
+      mensagem:
+        "Nenhuma foto foi enviada.",
     });
   }
 
   const novaFoto =
     `/uploads/pets/${req.file.filename}`;
 
+  /*
+   * Como o arquivo já foi gravado pelo Multer,
+   * precisamos removê-lo caso o ID seja inválido.
+   */
+  if (
+    !Number.isInteger(petId) ||
+    petId <= 0
+  ) {
+    removerArquivoFoto(novaFoto);
+
+    return res.status(400).json({
+      mensagem:
+        "ID de pet inválido.",
+    });
+  }
+
   let bancoAtualizado = false;
 
   try {
     const resultadoAnterior =
       await pool.query(
-        `
-          SELECT *
-          FROM pets
-          WHERE id = $1
-        `,
-        [id]
+        `SELECT *
+         FROM pets
+         WHERE id = $1`,
+        [petId]
       );
 
-    if (resultadoAnterior.rows.length === 0) {
-      removerArquivoFoto(novaFoto);
+    if (
+      resultadoAnterior.rows.length ===
+      0
+    ) {
+      removerArquivoFoto(
+        novaFoto
+      );
 
       return res.status(404).json({
-        mensagem: "Pet não encontrado.",
+        mensagem:
+          "Pet não encontrado.",
       });
     }
 
     const petAnterior =
       resultadoAnterior.rows[0];
 
-
     const resultado =
       await pool.query(
-        `
-          UPDATE pets
-          SET
-            foto = $1,
-            atualizado_em = CURRENT_TIMESTAMP
-          WHERE id = $2
-          RETURNING *
-        `,
-        [novaFoto, id]
+        `UPDATE pets
+         SET
+           foto = $1,
+           atualizado_em = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING *`,
+        [
+          novaFoto,
+          petId,
+        ]
       );
 
     const petAtualizado =
       resultado.rows[0];
 
-    // A partir deste ponto o banco já aponta para a nova
-    // imagem. Ela não deve mais ser removida pelo catch.
+    /*
+     * A partir deste ponto o banco já aponta para
+     * a nova imagem. Ela não deve mais ser removida
+     * pelo tratamento de erro.
+     */
     bancoAtualizado = true;
 
-
     /*
-     * A remoção da fotografia anterior acontece somente
-     * depois que a nova referência foi salva no banco.
+     * A foto antiga somente é apagada depois que a nova
+     * referência foi salva com sucesso no banco.
      */
     if (
       petAnterior.foto &&
-      petAnterior.foto !== novaFoto
+      petAnterior.foto !==
+        novaFoto
     ) {
       removerArquivoFoto(
         petAnterior.foto
       );
     }
 
-
     /*
      * Uma falha exclusivamente na auditoria não deve
-     * quebrar uma troca de foto que já foi concluída.
+     * desfazer uma troca de foto já concluída.
      */
     try {
       await registrarLog({
         usuarioId: req.usuario.id,
-        acao: "ALTERAR_FOTO_PET",
+        acao:
+          "ALTERAR_FOTO_PET",
         entidade: "pets",
-        registroId: petAtualizado.id,
+        registroId:
+          petAtualizado.id,
+
         valorAnterior: {
           foto: petAnterior.foto,
         },
+
         valorNovo: {
-          foto: petAtualizado.foto,
+          foto:
+            petAtualizado.foto,
         },
+
         ip: req.ip,
       });
     } catch (erroLog) {
@@ -649,7 +966,6 @@ async function atualizarFotoPet(req, res) {
       );
     }
 
-
     return res.status(200).json({
       mensagem:
         "Foto do pet atualizada com sucesso.",
@@ -657,12 +973,14 @@ async function atualizarFotoPet(req, res) {
     });
   } catch (error) {
     /*
-     * Se a atualização no banco não aconteceu, removemos
-     * o arquivo recém-recebido para não deixar arquivos
-     * órfãos na pasta de uploads.
+     * Se o banco não passou a utilizar a nova foto,
+     * removemos o arquivo recebido para não deixar
+     * arquivos órfãos no servidor.
      */
     if (!bancoAtualizado) {
-      removerArquivoFoto(novaFoto);
+      removerArquivoFoto(
+        novaFoto
+      );
     }
 
     console.error(
@@ -677,47 +995,68 @@ async function atualizarFotoPet(req, res) {
   }
 }
 
+
 // Lista todos os pets vinculados a um tutor específico.
-// Essa consulta alimenta a seção "Pets deste tutor"
-// existente na página de detalhes do responsável.
-async function listarPetsPorTutor(req, res) {
+// Essa consulta alimenta a seção "Pets deste tutor".
+async function listarPetsPorTutor(
+  req,
+  res
+) {
   try {
-    const { tutorId } = req.params;
+    const tutorId =
+      Number(req.params.tutorId);
 
-    // Primeiro confirmamos se o tutor existe.
-    const resultadoTutor = await pool.query(
-      `SELECT id
-       FROM tutores
-       WHERE id = $1`,
-      [tutorId]
-    );
-
-    if (resultadoTutor.rows.length === 0) {
-      return res.status(404).json({
-        mensagem: "Tutor não encontrado.",
+    if (
+      !Number.isInteger(tutorId) ||
+      tutorId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de tutor inválido.",
       });
     }
 
-    const resultado = await pool.query(
-      `SELECT
-         id,
-         tutor_id,
-         nome,
-         especie,
-         raca,
-         sexo,
-         data_nascimento,
-         peso,
-         cor,
-         foto,
-         ativo
-       FROM pets
-       WHERE tutor_id = $1
-       ORDER BY nome ASC`,
-      [tutorId]
-    );
+    // Primeiro confirmamos se o tutor existe.
+    const resultadoTutor =
+      await pool.query(
+        `SELECT id
+         FROM tutores
+         WHERE id = $1`,
+        [tutorId]
+      );
 
-    return res.status(200).json(resultado.rows);
+    if (
+      resultadoTutor.rows.length === 0
+    ) {
+      return res.status(404).json({
+        mensagem:
+          "Tutor não encontrado.",
+      });
+    }
+
+    const resultado =
+      await pool.query(
+        `SELECT
+           id,
+           tutor_id,
+           nome,
+           especie,
+           raca,
+           sexo,
+           data_nascimento,
+           peso,
+           cor,
+           foto,
+           ativo
+         FROM pets
+         WHERE tutor_id = $1
+         ORDER BY nome ASC`,
+        [tutorId]
+      );
+
+    return res.status(200).json(
+      resultado.rows
+    );
   } catch (erro) {
     console.error(
       "Erro ao listar pets do tutor:",
@@ -725,10 +1064,12 @@ async function listarPetsPorTutor(req, res) {
     );
 
     return res.status(500).json({
-      mensagem: "Erro interno do servidor.",
+      mensagem:
+        "Erro interno do servidor.",
     });
   }
 }
+
 
 module.exports = {
   cadastrarPet,

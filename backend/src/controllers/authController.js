@@ -7,6 +7,9 @@ const { enviarEmail } = require("../services/emailService");
 const {
   validarSenha,
 } = require("../utils/validarSenha");
+const {
+  escapeHtml,
+} = require("../utils/escapeHtml");
 
 
 // Autentica o usuário e gera um JWT quando as credenciais
@@ -50,6 +53,15 @@ async function login(req, res) {
 
     const usuario = resultado.rows[0];
 
+    /*
+    * A versão escapada é utilizada somente no HTML.
+    *
+    * No conteúdo de texto simples podemos continuar usando
+    * o nome original do usuário.
+    */
+    const nomeUsuarioHtml =
+      escapeHtml(usuario.nome);
+
     if (!usuario.ativo) {
       return res.status(403).json({
         mensagem: "Usuário desativado.",
@@ -82,6 +94,7 @@ async function login(req, res) {
       {
         expiresIn:
           process.env.JWT_EXPIRES_IN || "8h",
+        algorithm: "HS256",
       }
     );
     // Registra o login bem-sucedido para fins de auditoria.
@@ -168,6 +181,13 @@ async function solicitarRecuperacaoSenha(req, res) {
     const usuario = resultado.rows[0];
 
     /*
+    * O nome escapado é utilizado somente no conteúdo HTML
+    * do e-mail para impedir interpretação de tags HTML.
+    */
+    const nomeUsuarioHtml =
+      escapeHtml(usuario.nome);
+
+    /*
      * Gera um token aleatório criptograficamente seguro.
      *
      * O token original será enviado somente por e-mail.
@@ -230,7 +250,7 @@ async function solicitarRecuperacaoSenha(req, res) {
           "Redefinição de senha - Sistema Pet Shop",
 
         texto:
-          `Olá, ${usuario.nome}.\n\n` +
+          `Olá, ${nomeUsuarioHtml}.\n\n` +
           `Recebemos uma solicitação para redefinir sua senha.\n\n` +
           `Acesse o link abaixo:\n${linkRecuperacao}\n\n` +
           `O link é válido por 30 minutos e pode ser utilizado apenas uma vez.\n\n` +

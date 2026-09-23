@@ -1,30 +1,99 @@
 const pool = require("../database/connection");
 const { registrarLog } = require("../services/logService");
 
+const LIMITE_OBSERVACOES = 2000;
+const LIMITE_MOTIVO_CANCELAMENTO = 1000;
+const LIMITE_BUSCA = 100;
+
 
 /*
- * Converte uma data recebida pelo frontend e verifica
- * se ela representa uma data/hora válida.
+ * Normaliza textos opcionais utilizados pelo Hotel.
+ *
+ * Valores vazios ou contendo apenas espaços são armazenados
+ * como null, mantendo o banco mais consistente.
  */
-function dataValida(valor) {
-  if (!valor) {
-    return false;
+function normalizarTextoOpcional(valor) {
+  if (
+    valor === undefined ||
+    valor === null
+  ) {
+    return null;
   }
 
-  return !Number.isNaN(
-    new Date(valor).getTime()
-  );
+  if (typeof valor !== "string") {
+    return null;
+  }
+
+  const texto = valor.trim();
+
+  return texto || null;
 }
 
 
 /*
- * Cria uma nova reserva de Hotel.
+ * Valida campos de texto opcionais antes de acessar o banco.
  *
- * Neste momento a reserva nasce como AGENDADO.
- * O status HOSPEDADO será utilizado somente depois
- * que o check-in realmente acontecer.
+ * Os campos correspondentes são TEXT no PostgreSQL e não possuem
+ * limite próprio. A API aplica limites para evitar requisições
+ * excessivamente grandes.
  */
+function validarTextoOpcional(
+  valor,
+  nomeCampo,
+  limite
+) {
+  if (
+    valor !== undefined &&
+    valor !== null &&
+    typeof valor !== "string"
+  ) {
+    return `${nomeCampo} deve ser um texto.`;
+  }
 
+  const texto =
+    normalizarTextoOpcional(valor);
+
+  if (
+    texto &&
+    texto.length > limite
+  ) {
+    return `${nomeCampo} deve possuir no máximo ${limite} caracteres.`;
+  }
+
+  return null;
+}
+
+
+/*
+ * Converte e valida datas recebidas pelo frontend.
+ *
+ * O valor precisa existir, ser string e representar
+ * uma data/hora válida para ser aceito pela API.
+ */
+function converterData(valor) {
+  if (
+    typeof valor !== "string" ||
+    !valor.trim()
+  ) {
+    return null;
+  }
+
+  const data = new Date(valor);
+
+  if (Number.isNaN(data.getTime())) {
+    return null;
+  }
+
+  return data;
+}
+
+
+/*
+ * Cria uma nova reserva do Hotel.
+ *
+ * A reserva nasce com status AGENDADO. O pet somente passa
+ * para HOSPEDADO quando o check-in for efetivamente realizado.
+ */
 async function criarReserva(req, res) {
   let client;
   let transacaoIniciada = false;
@@ -39,11 +108,6 @@ async function criarReserva(req, res) {
 
     const petId = Number(pet_id);
 
-    /*
-     * Validamos os dados antes de abrir uma transação.
-     * Isso evita reservar uma conexão do PostgreSQL
-     * desnecessariamente para requisições inválidas.
-     */
     if (
       !Number.isInteger(petId) ||
       petId <= 0
@@ -54,23 +118,18 @@ async function criarReserva(req, res) {
       });
     }
 
-    if (
-      !dataValida(entrada_prevista) ||
-      !dataValida(saida_prevista)
-    ) {
+    const entrada =
+      converterData(entrada_prevista);
+
+    const saida =
+      converterData(saida_prevista);
+
+    if (!entrada || !saida) {
       return res.status(400).json({
         mensagem:
           "Informe datas válidas para entrada e saída.",
       });
     }
-
-    const entrada = new Date(
-      entrada_prevista
-    );
-
-    const saida = new Date(
-      saida_prevista
-    );
 
     if (saida <= entrada) {
       return res.status(400).json({
@@ -79,32 +138,39 @@ async function criarReserva(req, res) {
       });
     }
 
+    const erroObservacoes =
+      validarTextoOpcional(
+        observacoes,
+        "As observações",
+        LIMITE_OBSERVACOES
+      );
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarTextoOpcional(observacoes);
+
     client = await pool.connect();
 
     await client.query("BEGIN");
     transacaoIniciada = true;
 
     /*
-     * Lock transacional por pet.
+     * O advisory lock serializa operações de reserva para
+     * o mesmo pet durante esta transação.
      *
-     * Se dois funcionários tentarem criar reservas para
-     * o mesmo pet simultaneamente, somente uma transação
-     * poderá continuar por vez.
-     *
-     * O lock é liberado automaticamente no COMMIT ou
-     * ROLLBACK.
-     *
-     * Reservas de pets diferentes não se bloqueiam.
+     * Assim, duas requisições simultâneas não conseguem
+     * passar juntas pela verificação de conflito.
      */
     await client.query(
       "SELECT pg_advisory_xact_lock($1)",
       [petId]
     );
 
-    /*
-     * O pet é consultado dentro da mesma transação.
-     * Não permitimos novas reservas para pets inativos.
-     */
     const petResult =
       await client.query(
         `
@@ -147,11 +213,8 @@ async function criarReserva(req, res) {
      * E
      * nova saída > entrada existente
      *
-     * Dessa forma, períodos que apenas encostam são
-     * permitidos:
-     *
-     * Reserva A: 08:00 até 10:00
-     * Reserva B: 10:00 até 12:00
+     * Períodos que apenas se encontram no mesmo horário
+     * continuam permitidos.
      */
     const conflitoResult =
       await client.query(
@@ -204,10 +267,6 @@ async function criarReserva(req, res) {
       });
     }
 
-    /*
-     * Somente após adquirir o lock e verificar conflitos
-     * a nova reserva é inserida.
-     */
     const resultado =
       await client.query(
         `
@@ -233,7 +292,7 @@ async function criarReserva(req, res) {
           petId,
           entrada_prevista,
           saida_prevista,
-          observacoes?.trim() || null,
+          observacoesNormalizadas,
           req.usuario.id,
         ]
       );
@@ -245,19 +304,28 @@ async function criarReserva(req, res) {
     transacaoIniciada = false;
 
     /*
-     * O log é registrado somente depois que a reserva
-     * foi confirmada no banco. Assim não criamos um
-     * histórico de uma operação que sofreu rollback.
+     * O log é criado somente depois que a reserva foi
+     * confirmada no banco.
+     *
+     * Utilizamos os mesmos nomes de propriedades adotados
+     * pelo restante do sistema.
      */
-    await registrarLog({
-      usuarioId: req.usuario.id,
-      acao: "CRIAR_RESERVA_HOTEL",
-      entidade: "hotel",
-      entidadeId: reserva.id,
-      dadosAnteriores: null,
-      dadosNovos: reserva,
-      ip: req.ip,
-    });
+    try {
+      await registrarLog({
+        usuarioId: req.usuario.id,
+        acao: "CRIAR_RESERVA_HOTEL",
+        entidade: "hotel",
+        registroId: reserva.id,
+        valorAnterior: null,
+        valorNovo: reserva,
+        ip: req.ip,
+      });
+    } catch (erroLog) {
+      console.error(
+        "Reserva criada, mas houve erro ao gerar o log:",
+        erroLog
+      );
+    }
 
     return res.status(201).json({
       mensagem:
@@ -265,18 +333,12 @@ async function criarReserva(req, res) {
       reserva,
     });
   } catch (error) {
-    /*
-     * Só tentamos rollback se a transação realmente
-     * chegou a ser iniciada.
-     */
     if (
       client &&
       transacaoIniciada
     ) {
       try {
-        await client.query(
-          "ROLLBACK"
-        );
+        await client.query("ROLLBACK");
       } catch (rollbackError) {
         console.error(
           "Erro ao desfazer transação da reserva:",
@@ -295,22 +357,16 @@ async function criarReserva(req, res) {
         "Erro interno ao criar a reserva do Hotel.",
     });
   } finally {
-    /*
-     * Toda conexão retirada do Pool precisa ser
-     * devolvida, inclusive quando ocorrer erro.
-     */
     if (client) {
       client.release();
     }
   }
 }
 
+
 /*
- * Lista as reservas e hospedagens que ainda fazem
- * parte da operação atual do Hotel.
- *
- * FINALIZADO e CANCELADO ficarão no histórico,
- * que criaremos posteriormente.
+ * Lista reservas e hospedagens que ainda fazem parte
+ * da operação atual do Hotel.
  */
 async function listarReservasAtivas(req, res) {
   try {
@@ -337,7 +393,6 @@ async function listarReservasAtivas(req, res) {
           t.telefone AS tutor_telefone,
 
           u.nome AS usuario_criacao_nome,
-
           uc.nome AS usuario_checkin_nome
 
         FROM hotel h
@@ -369,7 +424,6 @@ async function listarReservasAtivas(req, res) {
       `
     );
 
-
     return res.status(200).json({
       reservas: resultado.rows,
     });
@@ -386,20 +440,20 @@ async function listarReservasAtivas(req, res) {
   }
 }
 
+
 /*
- * Realiza o check-in de uma reserva do Hotel.
+ * Realiza o check-in de uma reserva.
  *
- * Somente uma reserva AGENDADO pode receber check-in.
- * O horário real é registrado separadamente da
- * entrada prevista para preservar o histórico.
+ * Somente registros AGENDADO podem receber check-in.
  */
 async function realizarCheckin(req, res) {
   let client;
+  let transacaoIniciada = false;
 
   try {
-    client = await pool.connect();
+    const reservaId =
+      Number(req.params.id);
 
-    const reservaId = Number(req.params.id);
     const { observacoes } = req.body;
 
     if (
@@ -412,12 +466,30 @@ async function realizarCheckin(req, res) {
       });
     }
 
+    const erroObservacoes =
+      validarTextoOpcional(
+        observacoes,
+        "As observações",
+        LIMITE_OBSERVACOES
+      );
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarTextoOpcional(observacoes);
+
+    client = await pool.connect();
+
     await client.query("BEGIN");
+    transacaoIniciada = true;
 
     /*
-     * Bloqueamos a reserva enquanto o check-in
-     * é processado para impedir duas alterações
-     * simultâneas no mesmo registro.
+     * FOR UPDATE impede que duas alterações concorrentes
+     * sejam realizadas sobre a mesma reserva.
      */
     const resultadoReserva =
       await client.query(
@@ -427,9 +499,12 @@ async function realizarCheckin(req, res) {
             p.nome AS pet_nome,
             p.ativo AS pet_ativo
           FROM hotel h
+
           INNER JOIN pets p
             ON p.id = h.pet_id
+
           WHERE h.id = $1
+
           FOR UPDATE
         `,
         [reservaId]
@@ -439,6 +514,7 @@ async function realizarCheckin(req, res) {
       resultadoReserva.rows.length === 0
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(404).json({
         mensagem:
@@ -449,15 +525,12 @@ async function realizarCheckin(req, res) {
     const reservaAnterior =
       resultadoReserva.rows[0];
 
-
-    /*
-     * Uma reserva finalizada, cancelada ou que já
-     * recebeu check-in não pode ser utilizada novamente.
-     */
     if (
-      reservaAnterior.status !== "AGENDADO"
+      reservaAnterior.status !==
+      "AGENDADO"
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(409).json({
         mensagem:
@@ -465,9 +538,9 @@ async function realizarCheckin(req, res) {
       });
     }
 
-
     if (!reservaAnterior.pet_ativo) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(400).json({
         mensagem:
@@ -475,13 +548,12 @@ async function realizarCheckin(req, res) {
       });
     }
 
-
     /*
-     * Também verificamos se o pet já possui outra
-     * hospedagem aberta.
+     * Também verificamos se existe outra hospedagem aberta
+     * para o mesmo pet.
      *
-     * O índice parcial criado no PostgreSQL funciona
-     * como uma segunda camada de proteção.
+     * O índice parcial do PostgreSQL continua sendo a camada
+     * definitiva de proteção contra duplicidade.
      */
     const resultadoHospedagem =
       await client.query(
@@ -503,13 +575,13 @@ async function realizarCheckin(req, res) {
       resultadoHospedagem.rows.length > 0
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(409).json({
         mensagem:
           "Este pet já está hospedado no Hotel.",
       });
     }
-
 
     const resultadoAtualizacao =
       await client.query(
@@ -525,7 +597,7 @@ async function realizarCheckin(req, res) {
           RETURNING *
         `,
         [
-          observacoes?.trim() || null,
+          observacoesNormalizadas,
           req.usuario.id,
           reservaId,
         ]
@@ -535,11 +607,8 @@ async function realizarCheckin(req, res) {
       resultadoAtualizacao.rows[0];
 
     await client.query("COMMIT");
+    transacaoIniciada = false;
 
-
-    /*
-     * O check-in também faz parte da auditoria.
-     */
     try {
       await registrarLog({
         usuarioId: req.usuario.id,
@@ -557,19 +626,16 @@ async function realizarCheckin(req, res) {
       );
     }
 
-
     return res.status(200).json({
       mensagem:
         "Check-in realizado com sucesso.",
       reserva: reservaAtualizada,
     });
   } catch (error) {
-    /*
-     * 23505 também protege contra duas hospedagens
-     * abertas para o mesmo pet através do índice
-     * parcial do PostgreSQL.
-     */
-    if (client) {
+    if (
+      client &&
+      transacaoIniciada
+    ) {
       try {
         await client.query("ROLLBACK");
       } catch (erroRollback) {
@@ -603,20 +669,20 @@ async function realizarCheckin(req, res) {
   }
 }
 
+
 /*
  * Realiza o check-out de um pet atualmente hospedado.
  *
  * Somente registros HOSPEDADO podem ser finalizados.
- * Mantemos reserva, check-in e check-out no mesmo registro
- * para preservar todo o histórico da hospedagem.
  */
 async function realizarCheckout(req, res) {
   let client;
+  let transacaoIniciada = false;
 
   try {
-    client = await pool.connect();
+    const reservaId =
+      Number(req.params.id);
 
-    const reservaId = Number(req.params.id);
     const { observacoes } = req.body;
 
     if (
@@ -629,11 +695,30 @@ async function realizarCheckout(req, res) {
       });
     }
 
+    const erroObservacoes =
+      validarTextoOpcional(
+        observacoes,
+        "As observações",
+        LIMITE_OBSERVACOES
+      );
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarTextoOpcional(observacoes);
+
+    client = await pool.connect();
+
     await client.query("BEGIN");
+    transacaoIniciada = true;
 
     /*
-     * Bloqueamos o registro durante a operação para
-     * impedir dois check-outs simultâneos.
+     * O registro permanece bloqueado até COMMIT/ROLLBACK,
+     * impedindo dois check-outs simultâneos.
      */
     const resultadoReserva =
       await client.query(
@@ -642,9 +727,12 @@ async function realizarCheckout(req, res) {
             h.*,
             p.nome AS pet_nome
           FROM hotel h
+
           INNER JOIN pets p
             ON p.id = h.pet_id
+
           WHERE h.id = $1
+
           FOR UPDATE
         `,
         [reservaId]
@@ -654,6 +742,7 @@ async function realizarCheckout(req, res) {
       resultadoReserva.rows.length === 0
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(404).json({
         mensagem:
@@ -664,16 +753,12 @@ async function realizarCheckout(req, res) {
     const reservaAnterior =
       resultadoReserva.rows[0];
 
-    /*
-     * Uma reserva AGENDADO ainda não recebeu check-in.
-     * FINALIZADO e CANCELADO também não podem receber
-     * um novo check-out.
-     */
     if (
       reservaAnterior.status !==
       "HOSPEDADO"
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(409).json({
         mensagem:
@@ -695,7 +780,7 @@ async function realizarCheckout(req, res) {
           RETURNING *
         `,
         [
-          observacoes?.trim() || null,
+          observacoesNormalizadas,
           req.usuario.id,
           reservaId,
         ]
@@ -705,11 +790,8 @@ async function realizarCheckout(req, res) {
       resultadoAtualizacao.rows[0];
 
     await client.query("COMMIT");
+    transacaoIniciada = false;
 
-    /*
-     * Registramos quem realizou a operação e os valores
-     * anteriores e posteriores para auditoria.
-     */
     try {
       await registrarLog({
         usuarioId: req.usuario.id,
@@ -733,7 +815,10 @@ async function realizarCheckout(req, res) {
       reserva: reservaAtualizada,
     });
   } catch (error) {
-    if (client) {
+    if (
+      client &&
+      transacaoIniciada
+    ) {
       try {
         await client.query("ROLLBACK");
       } catch (erroRollback) {
@@ -760,19 +845,21 @@ async function realizarCheckout(req, res) {
   }
 }
 
+
 /*
  * Cancela uma reserva que ainda não recebeu check-in.
  *
- * Não excluímos a reserva porque o cancelamento também
- * faz parte do histórico operacional do Hotel.
+ * Reservas canceladas permanecem no banco para preservar
+ * o histórico operacional.
  */
 async function cancelarReserva(req, res) {
   let client;
+  let transacaoIniciada = false;
 
   try {
-    client = await pool.connect();
+    const reservaId =
+      Number(req.params.id);
 
-    const reservaId = Number(req.params.id);
     const { motivo } = req.body;
 
     if (
@@ -785,12 +872,8 @@ async function cancelarReserva(req, res) {
       });
     }
 
-    /*
-     * Exigimos um motivo para que futuramente seja
-     * possível entender por que a reserva foi cancelada.
-     */
     if (
-      !motivo ||
+      typeof motivo !== "string" ||
       !motivo.trim()
     ) {
       return res.status(400).json({
@@ -799,7 +882,23 @@ async function cancelarReserva(req, res) {
       });
     }
 
+    const motivoNormalizado =
+      motivo.trim();
+
+    if (
+      motivoNormalizado.length >
+      LIMITE_MOTIVO_CANCELAMENTO
+    ) {
+      return res.status(400).json({
+        mensagem:
+          `O motivo do cancelamento deve possuir no máximo ${LIMITE_MOTIVO_CANCELAMENTO} caracteres.`,
+      });
+    }
+
+    client = await pool.connect();
+
     await client.query("BEGIN");
+    transacaoIniciada = true;
 
     const resultadoReserva =
       await client.query(
@@ -808,9 +907,12 @@ async function cancelarReserva(req, res) {
             h.*,
             p.nome AS pet_nome
           FROM hotel h
+
           INNER JOIN pets p
             ON p.id = h.pet_id
+
           WHERE h.id = $1
+
           FOR UPDATE
         `,
         [reservaId]
@@ -820,6 +922,7 @@ async function cancelarReserva(req, res) {
       resultadoReserva.rows.length === 0
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(404).json({
         mensagem:
@@ -832,13 +935,14 @@ async function cancelarReserva(req, res) {
 
     /*
      * Uma hospedagem que já recebeu check-in deve seguir
-     * o fluxo de check-out, não o de cancelamento.
+     * o fluxo de check-out e não pode ser cancelada.
      */
     if (
       reservaAnterior.status !==
       "AGENDADO"
     ) {
       await client.query("ROLLBACK");
+      transacaoIniciada = false;
 
       return res.status(409).json({
         mensagem:
@@ -859,7 +963,7 @@ async function cancelarReserva(req, res) {
           RETURNING *
         `,
         [
-          motivo.trim(),
+          motivoNormalizado,
           req.usuario.id,
           reservaId,
         ]
@@ -869,6 +973,7 @@ async function cancelarReserva(req, res) {
       resultadoAtualizacao.rows[0];
 
     await client.query("COMMIT");
+    transacaoIniciada = false;
 
     try {
       await registrarLog({
@@ -893,7 +998,10 @@ async function cancelarReserva(req, res) {
       reserva: reservaAtualizada,
     });
   } catch (error) {
-    if (client) {
+    if (
+      client &&
+      transacaoIniciada
+    ) {
       try {
         await client.query("ROLLBACK");
       } catch (erroRollback) {
@@ -920,18 +1028,39 @@ async function cancelarReserva(req, res) {
   }
 }
 
+
 /*
  * Lista o histórico completo do Hotel.
  *
- * Diferentemente da rota /ativos, esta consulta também
- * retorna hospedagens FINALIZADO e reservas CANCELADO.
- *
- * A busca pode ser feita pelo nome do pet ou do tutor.
+ * A busca permite localizar pelo nome do pet ou tutor.
+ * Limitamos o parâmetro para evitar entradas excessivamente
+ * grandes em uma consulta operacional.
  */
 async function listarHistorico(req, res) {
   try {
+    const buscaRecebida =
+      req.query.busca ?? "";
+
+    if (
+      typeof buscaRecebida !== "string"
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "A busca informada é inválida.",
+      });
+    }
+
     const busca =
-      req.query.busca?.trim() || "";
+      buscaRecebida.trim();
+
+    if (
+      busca.length > LIMITE_BUSCA
+    ) {
+      return res.status(400).json({
+        mensagem:
+          `A busca deve possuir no máximo ${LIMITE_BUSCA} caracteres.`,
+      });
+    }
 
     const resultado = await pool.query(
       `
@@ -1030,18 +1159,19 @@ async function listarHistorico(req, res) {
   }
 }
 
+
 /*
- * Retorna todos os dados de uma reserva/hospedagem.
- *
- * Esta consulta é usada na tela de detalhes e inclui
- * os funcionários responsáveis por cada operação,
- * além das observações registradas durante o fluxo.
+ * Retorna os detalhes completos de uma reserva/hospedagem.
  */
 async function buscarHotelPorId(req, res) {
   try {
-    const id = Number(req.params.id);
+    const id =
+      Number(req.params.id);
 
-    if (!Number.isInteger(id) || id <= 0) {
+    if (
+      !Number.isInteger(id) ||
+      id <= 0
+    ) {
       return res.status(400).json({
         mensagem:
           "ID da hospedagem inválido.",
@@ -1123,7 +1253,9 @@ async function buscarHotelPorId(req, res) {
       [id]
     );
 
-    if (resultado.rows.length === 0) {
+    if (
+      resultado.rows.length === 0
+    ) {
       return res.status(404).json({
         mensagem:
           "Reserva ou hospedagem não encontrada.",

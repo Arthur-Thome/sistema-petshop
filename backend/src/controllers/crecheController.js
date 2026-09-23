@@ -1,33 +1,111 @@
 const pool = require("../database/connection");
 
-// padrão utilizado para log
+// Serviço central utilizado para registrar ações importantes na auditoria.
 const { registrarLog } = require("../services/logService");
 
+const LIMITE_OBSERVACOES = 2000;
+const LIMITE_BUSCA = 100;
+
+
 /*
- * Registra a entrada de um pet na creche.
+ * Normaliza um campo de observações.
  *
- * Somente pets existentes e ativos podem entrar.
- * A proteção contra uma segunda permanência aberta
- * também existe no PostgreSQL.
+ * Strings contendo somente espaços são transformadas em null,
+ * evitando armazenar valores vazios desnecessariamente no banco.
+ */
+function normalizarObservacoes(valor) {
+  if (valor === undefined || valor === null) {
+    return null;
+  }
+
+  if (typeof valor !== "string") {
+    return null;
+  }
+
+  const texto = valor.trim();
+
+  return texto || null;
+}
+
+
+/*
+ * Valida as observações recebidas nas operações da Creche.
+ *
+ * O banco utiliza TEXT e, portanto, não possui limite próprio.
+ * Aplicamos um limite na API para impedir entradas excessivamente
+ * grandes e manter o campo adequado ao seu objetivo operacional.
+ */
+function validarObservacoes(valor) {
+  if (
+    valor !== undefined &&
+    valor !== null &&
+    typeof valor !== "string"
+  ) {
+    return "As observações devem ser um texto.";
+  }
+
+  const texto = normalizarObservacoes(valor);
+
+  if (
+    texto &&
+    texto.length > LIMITE_OBSERVACOES
+  ) {
+    return `As observações devem possuir no máximo ${LIMITE_OBSERVACOES} caracteres.`;
+  }
+
+  return null;
+}
+
+
+/*
+ * Registra a entrada de um pet na Creche.
+ *
+ * A operação utiliza uma transação para manter a consulta do pet
+ * e o cadastro da permanência dentro da mesma unidade de trabalho.
+ *
+ * O índice UNIQUE parcial existente no PostgreSQL continua sendo
+ * a proteção definitiva contra duas permanências abertas para
+ * o mesmo pet.
  */
 async function registrarEntrada(req, res) {
+  let client;
+
   try {
     const { pet_id, observacoes } = req.body;
 
     const petId = Number(pet_id);
 
-    if (!Number.isInteger(petId) || petId <= 0) {
+    if (
+      !Number.isInteger(petId) ||
+      petId <= 0
+    ) {
       return res.status(400).json({
         mensagem: "Informe um pet válido.",
       });
     }
 
+    const erroObservacoes =
+      validarObservacoes(observacoes);
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarObservacoes(observacoes);
+
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+
     /*
-     * Verificamos o cadastro diretamente no banco.
-     * Pets inativos permanecem no histórico, mas não
-     * podem iniciar um novo atendimento.
+     * Bloqueamos o registro do pet durante esta operação.
+     * Isso evita que alterações concorrentes no cadastro
+     * ocorram enquanto a entrada está sendo processada.
      */
-    const resultadoPet = await pool.query(
+    const resultadoPet = await client.query(
       `
         SELECT
           id,
@@ -36,11 +114,14 @@ async function registrarEntrada(req, res) {
           ativo
         FROM pets
         WHERE id = $1
+        FOR UPDATE
       `,
       [petId]
     );
 
     if (resultadoPet.rows.length === 0) {
+      await client.query("ROLLBACK");
+
       return res.status(404).json({
         mensagem: "Pet não encontrado.",
       });
@@ -49,6 +130,8 @@ async function registrarEntrada(req, res) {
     const pet = resultadoPet.rows[0];
 
     if (!pet.ativo) {
+      await client.query("ROLLBACK");
+
       return res.status(400).json({
         mensagem:
           "Não é possível registrar a entrada de um pet inativo.",
@@ -56,13 +139,13 @@ async function registrarEntrada(req, res) {
     }
 
     /*
-     * Essa verificação permite devolver uma mensagem
-     * amigável ao funcionário antes do INSERT.
+     * Esta consulta fornece uma mensagem amigável quando já
+     * existe uma permanência aberta.
      *
-     * O índice UNIQUE parcial existente no PostgreSQL
-     * continua sendo a proteção definitiva.
+     * A restrição UNIQUE do banco continua necessária porque
+     * somente ela garante a regra contra concorrência.
      */
-    const resultadoAberto = await pool.query(
+    const resultadoAberto = await client.query(
       `
         SELECT id
         FROM creche
@@ -74,12 +157,14 @@ async function registrarEntrada(req, res) {
     );
 
     if (resultadoAberto.rows.length > 0) {
+      await client.query("ROLLBACK");
+
       return res.status(409).json({
         mensagem: "Este pet já está na creche.",
       });
     }
 
-    const resultado = await pool.query(
+    const resultado = await client.query(
       `
         INSERT INTO creche (
           pet_id,
@@ -91,16 +176,18 @@ async function registrarEntrada(req, res) {
       `,
       [
         petId,
-        observacoes?.trim() || null,
+        observacoesNormalizadas,
         req.usuario.id,
       ]
     );
 
     const registro = resultado.rows[0];
 
+    await client.query("COMMIT");
+
     /*
-     * A tabela creche guarda o histórico operacional.
-     * O log geral registra a ação para auditoria.
+     * A operação principal já foi confirmada no banco.
+     * Uma falha eventual no log não desfaz a entrada.
      */
     try {
       await registrarLog({
@@ -124,10 +211,21 @@ async function registrarEntrada(req, res) {
       registro,
     });
   } catch (error) {
+    if (client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao desfazer transação da Creche:",
+          erroRollback
+        );
+      }
+    }
+
     /*
-     * 23505 é a violação de UNIQUE do PostgreSQL.
-     * Isso cobre inclusive duas requisições simultâneas
-     * tentando registrar o mesmo pet.
+     * 23505 representa violação de UNIQUE no PostgreSQL.
+     * Essa proteção cobre inclusive duas requisições
+     * simultâneas tentando registrar o mesmo pet.
      */
     if (error.code === "23505") {
       return res.status(409).json({
@@ -144,6 +242,10 @@ async function registrarEntrada(req, res) {
       mensagem:
         "Erro interno ao registrar entrada na creche.",
     });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 }
 
@@ -151,8 +253,8 @@ async function registrarEntrada(req, res) {
 /*
  * Retorna somente as permanências atualmente abertas.
  *
- * Pet, tutor e funcionário são retornados na mesma
- * consulta para simplificar a futura tela da Creche.
+ * Pet, tutor e funcionário são retornados na mesma consulta
+ * para simplificar a tela operacional da Creche.
  */
 async function listarPetsNaCreche(req, res) {
   try {
@@ -209,28 +311,17 @@ async function listarPetsNaCreche(req, res) {
   }
 }
 
+
 /*
  * Registra a saída de um pet da Creche.
  *
- * O registro original não é excluído. Ele é finalizado,
- * preservando entrada, saída, observações e responsáveis.
- */
-/*
- * Registra a saída de um pet da Creche.
- *
- * A permanência não é excluída. O registro é finalizado
- * para preservar todo o histórico de entrada e saída.
+ * O registro não é excluído. A permanência é finalizada para
+ * preservar entrada, saída, observações e responsáveis.
  */
 async function registrarSaida(req, res) {
   let client;
 
   try {
-    /*
-     * A conexão é obtida dentro do try para que uma
-     * eventual falha do PostgreSQL também seja tratada.
-     */
-    client = await pool.connect();
-
     const registroId = Number(req.params.id);
     const { observacoes } = req.body;
 
@@ -244,11 +335,30 @@ async function registrarSaida(req, res) {
       });
     }
 
+    const erroObservacoes =
+      validarObservacoes(observacoes);
+
+    if (erroObservacoes) {
+      return res.status(400).json({
+        mensagem: erroObservacoes,
+      });
+    }
+
+    const observacoesNormalizadas =
+      normalizarObservacoes(observacoes);
+
+    /*
+     * A conexão somente é obtida depois das validações básicas,
+     * evitando ocupar uma conexão do pool para requisições
+     * que já sabemos serem inválidas.
+     */
+    client = await pool.connect();
+
     await client.query("BEGIN");
 
     /*
-     * O FOR UPDATE impede que dois usuários registrem
-     * a saída da mesma permanência simultaneamente.
+     * FOR UPDATE impede dois usuários de registrarem a saída
+     * da mesma permanência simultaneamente.
      */
     const resultadoAtual = await client.query(
       `
@@ -256,9 +366,12 @@ async function registrarSaida(req, res) {
           c.*,
           p.nome AS pet_nome
         FROM creche c
+
         INNER JOIN pets p
           ON p.id = c.pet_id
+
         WHERE c.id = $1
+
         FOR UPDATE
       `,
       [registroId]
@@ -301,7 +414,7 @@ async function registrarSaida(req, res) {
         RETURNING *
       `,
       [
-        observacoes?.trim() || null,
+        observacoesNormalizadas,
         req.usuario.id,
         registroId,
       ]
@@ -313,9 +426,8 @@ async function registrarSaida(req, res) {
     await client.query("COMMIT");
 
     /*
-     * O log é registrado depois da transação principal.
-     * Uma eventual falha na auditoria não desfaz uma
-     * saída que já foi confirmada no banco.
+     * O log é criado depois da confirmação da transação.
+     * Falha de auditoria não deve desfazer uma saída válida.
      */
     try {
       await registrarLog({
@@ -340,10 +452,6 @@ async function registrarSaida(req, res) {
       registro: registroAtualizado,
     });
   } catch (error) {
-    /*
-     * Se a transação tiver sido iniciada e ocorrer algum
-     * erro, tentamos desfazer as alterações.
-     */
     if (client) {
       try {
         await client.query("ROLLBACK");
@@ -365,10 +473,6 @@ async function registrarSaida(req, res) {
         "Erro interno ao registrar saída da creche.",
     });
   } finally {
-    /*
-     * A conexão só é devolvida ao pool caso tenha
-     * sido obtida com sucesso.
-     */
     if (client) {
       client.release();
     }
@@ -377,17 +481,32 @@ async function registrarSaida(req, res) {
 
 
 /*
- * Lista o histórico completo da Creche.
+ * Lista o histórico da Creche.
  *
- * Permite pesquisar pelo nome do pet ou do tutor.
- * Mantemos tanto permanências abertas quanto finalizadas
- * porque essa tela também servirá para consultas futuras.
+ * A busca é limitada para evitar consultas com parâmetros
+ * excessivamente grandes. A pesquisa continua permitindo
+ * localizar pelo nome do pet ou do tutor.
  */
 async function listarHistorico(req, res) {
   try {
-    const { busca = "" } = req.query;
+    const buscaRecebida = req.query.busca ?? "";
 
-    const termo = `%${busca.trim()}%`;
+    if (typeof buscaRecebida !== "string") {
+      return res.status(400).json({
+        mensagem: "A busca informada é inválida.",
+      });
+    }
+
+    const busca = buscaRecebida.trim();
+
+    if (busca.length > LIMITE_BUSCA) {
+      return res.status(400).json({
+        mensagem:
+          `A busca deve possuir no máximo ${LIMITE_BUSCA} caracteres.`,
+      });
+    }
+
+    const termo = `%${busca}%`;
 
     const resultado = await pool.query(
       `
@@ -451,9 +570,10 @@ async function listarHistorico(req, res) {
   }
 }
 
+
 module.exports = {
-    registrarEntrada,
-    listarPetsNaCreche,
-    registrarSaida,
-    listarHistorico,
+  registrarEntrada,
+  listarPetsNaCreche,
+  registrarSaida,
+  listarHistorico,
 };

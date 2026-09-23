@@ -30,6 +30,102 @@ function converterNumero(valor) {
 
 
 /*
+ * Normaliza campos textuais antes da validação
+ * e da gravação no banco.
+ */
+function normalizarDadosProduto(dados) {
+  const normalizarTexto = (valor) => {
+    if (typeof valor !== "string") {
+      return "";
+    }
+
+    return valor.trim();
+  };
+
+  return {
+    nome:
+      normalizarTexto(dados.nome),
+
+    categoria:
+      normalizarTexto(
+        dados.categoria
+      ),
+
+    descricao:
+      normalizarTexto(
+        dados.descricao
+      ),
+
+    unidade:
+      normalizarTexto(
+        dados.unidade
+      ),
+
+    valor_unitario:
+      dados.valor_unitario,
+
+    quantidade_atual:
+      dados.quantidade_atual,
+
+    quantidade_minima:
+      dados.quantidade_minima,
+
+    observacoes:
+      normalizarTexto(
+        dados.observacoes
+      ),
+  };
+}
+
+
+/*
+ * Valida os campos textuais do produto.
+ *
+ * Os limites evitam entradas excessivamente grandes
+ * e também mantêm os dados consistentes.
+ */
+function validarTextosProduto(dados) {
+  if (!dados.nome) {
+    return "O nome do produto é obrigatório.";
+  }
+
+  if (!dados.unidade) {
+    return "A unidade de medida é obrigatória.";
+  }
+
+  const limites = [
+    ["nome", 150, "Nome"],
+    ["categoria", 100, "Categoria"],
+    ["descricao", 1000, "Descrição"],
+    ["unidade", 50, "Unidade"],
+    [
+      "observacoes",
+      2000,
+      "Observações",
+    ],
+  ];
+
+  for (const [
+    campo,
+    limite,
+    nomeCampo,
+  ] of limites) {
+    if (
+      dados[campo] &&
+      dados[campo].length > limite
+    ) {
+      return (
+        `${nomeCampo} deve possuir no máximo ` +
+        `${limite} caracteres.`
+      );
+    }
+  }
+
+  return null;
+}
+
+
+/*
  * Cadastra um produto/insumo utilizado pelo pet shop.
  *
  * Não existe uma lista fixa de produtos. O usuário poderá
@@ -39,42 +135,44 @@ function converterNumero(valor) {
  */
 async function cadastrarProduto(req, res) {
   try {
-    const {
-      nome,
-      categoria,
-      descricao,
-      unidade = "un",
-      valor_unitario,
-      quantidade_atual = 0,
-      quantidade_minima = 0,
-      observacoes,
-    } = req.body;
+    /*
+     * Aplicamos os valores padrão antes da normalização.
+     */
+    const dadosRecebidos = {
+      unidade: "un",
+      quantidade_atual: 0,
+      quantidade_minima: 0,
+      ...req.body,
+    };
 
+    const dados =
+      normalizarDadosProduto(
+        dadosRecebidos
+      );
 
-    if (!nome?.trim()) {
+    const erroTexto =
+      validarTextosProduto(dados);
+
+    if (erroTexto) {
       return res.status(400).json({
-        mensagem:
-          "O nome do produto é obrigatório.",
+        mensagem: erroTexto,
       });
     }
-
-
-    if (!unidade?.trim()) {
-      return res.status(400).json({
-        mensagem:
-          "A unidade de medida é obrigatória.",
-      });
-    }
-
 
     const valorUnitario =
-      converterNumero(valor_unitario);
+      converterNumero(
+        dados.valor_unitario
+      );
 
     const quantidadeAtual =
-      converterNumero(quantidade_atual);
+      converterNumero(
+        dados.quantidade_atual
+      );
 
     const quantidadeMinima =
-      converterNumero(quantidade_minima);
+      converterNumero(
+        dados.quantidade_minima
+      );
 
 
     /*
@@ -85,7 +183,9 @@ async function cadastrarProduto(req, res) {
     if (
       valorUnitario !== null &&
       (
-        !Number.isFinite(valorUnitario) ||
+        !Number.isFinite(
+          valorUnitario
+        ) ||
         valorUnitario < 0
       )
     ) {
@@ -97,63 +197,71 @@ async function cadastrarProduto(req, res) {
 
 
     /*
-    * O estoque é controlado por embalagens/unidades inteiras.
-    * Não aceitamos quantidades fracionadas.
-    */
+     * O estoque é controlado por embalagens/unidades
+     * inteiras. Quantidades fracionadas não são aceitas.
+     */
     if (
-    !Number.isInteger(quantidadeAtual) ||
-    quantidadeAtual < 0
+      !Number.isInteger(
+        quantidadeAtual
+      ) ||
+      quantidadeAtual < 0
     ) {
-    return res.status(400).json({
+      return res.status(400).json({
         mensagem:
-        "A quantidade inicial deve ser um número inteiro maior ou igual a zero.",
-    });
+          "A quantidade inicial deve ser um número inteiro maior ou igual a zero.",
+      });
     }
 
 
     if (
-    !Number.isInteger(quantidadeMinima) ||
-    quantidadeMinima < 0
+      !Number.isInteger(
+        quantidadeMinima
+      ) ||
+      quantidadeMinima < 0
     ) {
-    return res.status(400).json({
+      return res.status(400).json({
         mensagem:
-        "A quantidade mínima deve ser um número inteiro maior ou igual a zero.",
-    });
+          "A quantidade mínima deve ser um número inteiro maior ou igual a zero.",
+      });
     }
 
 
-    const resultado = await pool.query(
-      `
-        INSERT INTO produtos (
-          nome,
-          categoria,
-          descricao,
-          unidade,
-          valor_unitario,
-          quantidade_atual,
-          quantidade_minima,
-          observacoes
-        )
-        VALUES (
-          $1, $2, $3, $4,
-          $5, $6, $7, $8
-        )
-        RETURNING *
-      `,
-      [
-        nome.trim(),
-        categoria?.trim() || null,
-        descricao?.trim() || null,
-        unidade.trim(),
-        valorUnitario,
-        quantidadeAtual,
-        quantidadeMinima,
-        observacoes?.trim() || null,
-      ]
-    );
+    const resultado =
+      await pool.query(
+        `
+          INSERT INTO produtos (
+            nome,
+            categoria,
+            descricao,
+            unidade,
+            valor_unitario,
+            quantidade_atual,
+            quantidade_minima,
+            observacoes
+          )
+
+          VALUES (
+            $1, $2, $3, $4,
+            $5, $6, $7, $8
+          )
+
+          RETURNING *
+        `,
+        [
+          dados.nome,
+          dados.categoria || null,
+          dados.descricao || null,
+          dados.unidade,
+          valorUnitario,
+          quantidadeAtual,
+          quantidadeMinima,
+          dados.observacoes || null,
+        ]
+      );
 
 
-    const produto = resultado.rows[0];
+    const produto =
+      resultado.rows[0];
 
 
     await registrarLog({
@@ -170,6 +278,7 @@ async function cadastrarProduto(req, res) {
     return res.status(201).json({
       mensagem:
         "Produto cadastrado com sucesso.",
+
       produto,
     });
   } catch (error) {
@@ -194,45 +303,58 @@ async function cadastrarProduto(req, res) {
  */
 async function listarProdutos(req, res) {
   try {
-    const busca =
-      req.query.busca?.trim() || "";
+    let busca = req.query.busca;
+
+    if (typeof busca === "string") {
+      busca = busca.trim();
+
+      if (busca.length > 100) {
+        return res.status(400).json({
+          mensagem:
+            "A busca deve possuir no máximo 100 caracteres.",
+        });
+      }
+    } else {
+      busca = "";
+    }
 
 
-    const resultado = await pool.query(
-      `
-        SELECT
-          id,
-          nome,
-          categoria,
-          descricao,
-          unidade,
-          valor_unitario,
-          quantidade_atual,
-          quantidade_minima,
-          observacoes,
-          ativo,
-          criado_em,
-          atualizado_em,
+    const resultado =
+      await pool.query(
+        `
+          SELECT
+            id,
+            nome,
+            categoria,
+            descricao,
+            unidade,
+            valor_unitario,
+            quantidade_atual,
+            quantidade_minima,
+            observacoes,
+            ativo,
+            criado_em,
+            atualizado_em,
 
-          CASE
-            WHEN quantidade_atual <= quantidade_minima
-            THEN TRUE
-            ELSE FALSE
-          END AS estoque_baixo
+            CASE
+              WHEN quantidade_atual <= quantidade_minima
+              THEN TRUE
+              ELSE FALSE
+            END AS estoque_baixo
 
-        FROM produtos
+          FROM produtos
 
-        WHERE
-          $1 = ''
-          OR nome ILIKE '%' || $1 || '%'
-          OR categoria ILIKE '%' || $1 || '%'
-          OR descricao ILIKE '%' || $1 || '%'
-          OR observacoes ILIKE '%' || $1 || '%'
+          WHERE
+            $1 = ''
+            OR nome ILIKE '%' || $1 || '%'
+            OR categoria ILIKE '%' || $1 || '%'
+            OR descricao ILIKE '%' || $1 || '%'
+            OR observacoes ILIKE '%' || $1 || '%'
 
-        ORDER BY nome
-      `,
-      [busca]
-    );
+          ORDER BY nome
+        `,
+        [busca]
+      );
 
 
     return res.status(200).json(
@@ -255,30 +377,47 @@ async function listarProdutos(req, res) {
 /*
  * Retorna todas as informações de um produto específico.
  */
-async function buscarProdutoPorId(req, res) {
+async function buscarProdutoPorId(
+  req,
+  res
+) {
   try {
-    const { id } = req.params;
+    const produtoId =
+      Number(req.params.id);
+
+    if (
+      !Number.isInteger(produtoId) ||
+      produtoId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de produto inválido.",
+      });
+    }
 
 
-    const resultado = await pool.query(
-      `
-        SELECT
-          *,
+    const resultado =
+      await pool.query(
+        `
+          SELECT
+            *,
 
-          CASE
-            WHEN quantidade_atual <= quantidade_minima
-            THEN TRUE
-            ELSE FALSE
-          END AS estoque_baixo
+            CASE
+              WHEN quantidade_atual <= quantidade_minima
+              THEN TRUE
+              ELSE FALSE
+            END AS estoque_baixo
 
-        FROM produtos
-        WHERE id = $1
-      `,
-      [id]
-    );
+          FROM produtos
+          WHERE id = $1
+        `,
+        [produtoId]
+      );
 
 
-    if (resultado.rows.length === 0) {
+    if (
+      resultado.rows.length === 0
+    ) {
       return res.status(404).json({
         mensagem:
           "Produto não encontrado.",
@@ -302,6 +441,7 @@ async function buscarProdutoPorId(req, res) {
   }
 }
 
+
 /*
  * Edita os dados cadastrais do produto.
  *
@@ -311,60 +451,46 @@ async function buscarProdutoPorId(req, res) {
  */
 async function atualizarProduto(req, res) {
   try {
-    const { id } = req.params;
+    const produtoId =
+      Number(req.params.id);
 
-    const {
-      nome,
-      categoria,
-      descricao,
-      unidade,
-      valor_unitario,
-      quantidade_minima,
-      observacoes,
-    } = req.body;
-
-
-    const resultadoAnterior = await pool.query(
-      `
-        SELECT *
-        FROM produtos
-        WHERE id = $1
-      `,
-      [id]
-    );
-
-
-    if (resultadoAnterior.rows.length === 0) {
-      return res.status(404).json({
-        mensagem: "Produto não encontrado.",
+    if (
+      !Number.isInteger(produtoId) ||
+      produtoId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de produto inválido.",
       });
     }
 
 
-    const produtoAnterior =
-      resultadoAnterior.rows[0];
+    const dados =
+      normalizarDadosProduto(
+        req.body
+      );
 
 
-    if (!nome?.trim()) {
+    const erroTexto =
+      validarTextosProduto(dados);
+
+    if (erroTexto) {
       return res.status(400).json({
-        mensagem: "Informe o nome do produto.",
-      });
-    }
-
-
-    if (!unidade?.trim()) {
-      return res.status(400).json({
-        mensagem: "Informe a unidade de controle.",
+        mensagem: erroTexto,
       });
     }
 
 
     const minimoNumerico =
-      Number(quantidade_minima);
+      converterNumero(
+        dados.quantidade_minima
+      );
 
 
     if (
-      !Number.isInteger(minimoNumerico) ||
+      !Number.isInteger(
+        minimoNumerico
+      ) ||
       minimoNumerico < 0
     ) {
       return res.status(400).json({
@@ -374,57 +500,88 @@ async function atualizarProduto(req, res) {
     }
 
 
-    let valorNumerico = null;
+    const valorNumerico =
+      converterNumero(
+        dados.valor_unitario
+      );
+
 
     if (
-      valor_unitario !== null &&
-      valor_unitario !== undefined &&
-      valor_unitario !== ""
-    ) {
-      valorNumerico =
-        Number(valor_unitario);
-
-      if (
-        !Number.isFinite(valorNumerico) ||
+      valorNumerico !== null &&
+      (
+        !Number.isFinite(
+          valorNumerico
+        ) ||
         valorNumerico < 0
-      ) {
-        return res.status(400).json({
-          mensagem:
-            "Informe um valor unitário válido.",
-        });
-      }
+      )
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um valor unitário válido.",
+      });
     }
 
 
-    const resultado = await pool.query(
-      `
-        UPDATE produtos
+    /*
+     * Recuperamos o estado anterior somente depois que
+     * os dados básicos da requisição foram validados.
+     */
+    const resultadoAnterior =
+      await pool.query(
+        `
+          SELECT *
+          FROM produtos
+          WHERE id = $1
+        `,
+        [produtoId]
+      );
 
-        SET
-          nome = $1,
-          categoria = $2,
-          descricao = $3,
-          unidade = $4,
-          valor_unitario = $5,
-          quantidade_minima = $6,
-          observacoes = $7,
-          atualizado_em = CURRENT_TIMESTAMP
 
-        WHERE id = $8
+    if (
+      resultadoAnterior.rows.length ===
+      0
+    ) {
+      return res.status(404).json({
+        mensagem:
+          "Produto não encontrado.",
+      });
+    }
 
-        RETURNING *
-      `,
-      [
-        nome.trim(),
-        categoria?.trim() || null,
-        descricao?.trim() || null,
-        unidade.trim(),
-        valorNumerico,
-        minimoNumerico,
-        observacoes?.trim() || null,
-        id,
-      ]
-    );
+
+    const produtoAnterior =
+      resultadoAnterior.rows[0];
+
+
+    const resultado =
+      await pool.query(
+        `
+          UPDATE produtos
+
+          SET
+            nome = $1,
+            categoria = $2,
+            descricao = $3,
+            unidade = $4,
+            valor_unitario = $5,
+            quantidade_minima = $6,
+            observacoes = $7,
+            atualizado_em = CURRENT_TIMESTAMP
+
+          WHERE id = $8
+
+          RETURNING *
+        `,
+        [
+          dados.nome,
+          dados.categoria || null,
+          dados.descricao || null,
+          dados.unidade,
+          valorNumerico,
+          minimoNumerico,
+          dados.observacoes || null,
+          produtoId,
+        ]
+      );
 
 
     const produtoAtualizado =
@@ -436,9 +593,11 @@ async function atualizarProduto(req, res) {
         usuarioId: req.usuario.id,
         acao: "ALTERAR_PRODUTO",
         entidade: "produtos",
-        registroId: Number(id),
-        valorAnterior: produtoAnterior,
-        valorNovo: produtoAtualizado,
+        registroId: produtoId,
+        valorAnterior:
+          produtoAnterior,
+        valorNovo:
+          produtoAtualizado,
         ip: req.ip,
       });
     } catch (erroLog) {
@@ -453,9 +612,9 @@ async function atualizarProduto(req, res) {
       mensagem:
         "Produto atualizado com sucesso.",
 
-      produto: produtoAtualizado,
+      produto:
+        produtoAtualizado,
     });
-
   } catch (error) {
     console.error(
       "Erro ao atualizar produto:",
@@ -469,16 +628,33 @@ async function atualizarProduto(req, res) {
   }
 }
 
+
 /*
  * Produtos não são excluídos definitivamente.
  *
  * A inativação preserva o histórico de estoque
  * e os registros de auditoria.
  */
-async function alterarStatusProduto(req, res) {
+async function alterarStatusProduto(
+  req,
+  res
+) {
   try {
-    const { id } = req.params;
+    const produtoId =
+      Number(req.params.id);
+
     const { ativo } = req.body;
+
+
+    if (
+      !Number.isInteger(produtoId) ||
+      produtoId <= 0
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "ID de produto inválido.",
+      });
+    }
 
 
     if (typeof ativo !== "boolean") {
@@ -496,11 +672,14 @@ async function alterarStatusProduto(req, res) {
           FROM produtos
           WHERE id = $1
         `,
-        [id]
+        [produtoId]
       );
 
 
-    if (resultadoAnterior.rows.length === 0) {
+    if (
+      resultadoAnterior.rows.length ===
+      0
+    ) {
       return res.status(404).json({
         mensagem:
           "Produto não encontrado.",
@@ -512,20 +691,39 @@ async function alterarStatusProduto(req, res) {
       resultadoAnterior.rows[0];
 
 
-    const resultado = await pool.query(
-      `
-        UPDATE produtos
+    /*
+     * Evita registrar uma alteração que não modifica
+     * efetivamente o estado do produto.
+     */
+    if (
+      produtoAnterior.ativo === ativo
+    ) {
+      return res.status(400).json({
+        mensagem: ativo
+          ? "O produto já está ativo."
+          : "O produto já está inativo.",
+      });
+    }
 
-        SET
-          ativo = $1,
-          atualizado_em = CURRENT_TIMESTAMP
 
-        WHERE id = $2
+    const resultado =
+      await pool.query(
+        `
+          UPDATE produtos
 
-        RETURNING *
-      `,
-      [ativo, id]
-    );
+          SET
+            ativo = $1,
+            atualizado_em = CURRENT_TIMESTAMP
+
+          WHERE id = $2
+
+          RETURNING *
+        `,
+        [
+          ativo,
+          produtoId,
+        ]
+      );
 
 
     const produtoAtualizado =
@@ -542,14 +740,16 @@ async function alterarStatusProduto(req, res) {
             : "DESATIVAR_PRODUTO",
 
         entidade: "produtos",
-        registroId: Number(id),
+        registroId: produtoId,
 
         valorAnterior: {
-          ativo: produtoAnterior.ativo,
+          ativo:
+            produtoAnterior.ativo,
         },
 
         valorNovo: {
-          ativo: produtoAtualizado.ativo,
+          ativo:
+            produtoAtualizado.ativo,
         },
 
         ip: req.ip,
@@ -568,9 +768,9 @@ async function alterarStatusProduto(req, res) {
           ? "Produto ativado com sucesso."
           : "Produto inativado com sucesso.",
 
-      produto: produtoAtualizado,
+      produto:
+        produtoAtualizado,
     });
-
   } catch (error) {
     console.error(
       "Erro ao alterar status do produto:",
@@ -583,6 +783,7 @@ async function alterarStatusProduto(req, res) {
     });
   }
 }
+
 
 module.exports = {
   cadastrarProduto,

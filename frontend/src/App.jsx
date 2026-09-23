@@ -50,6 +50,7 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import Usuarios from "./pages/Usuarios";
 import FormularioUsuario from "./pages/FormularioUsuario";
 import GerenciarUsuario from "./pages/GerenciarUsuario";
+import HistoricoEstoque from "./pages/HistoricoEstoque";
 
 function App() {
   return (
@@ -255,6 +256,11 @@ function App() {
           <Route
             path="produtos/:id/movimentar"
             element={<MovimentarEstoque />}
+          />
+
+          <Route
+            path="produtos/:id/historico"
+            element={<HistoricoEstoque />}
           />
 
           <Route
