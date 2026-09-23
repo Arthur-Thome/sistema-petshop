@@ -14,6 +14,8 @@ import ModalConfirmacaoSenha from "../components/ModalConfirmacaoSenha";
 
 import "../styles/DetalhesPet.css";
 
+import ModalConfirmacao from "../components/ModalConfirmacao";
+
 
 function DetalhesPet() {
   const { id } = useParams();
@@ -69,6 +71,17 @@ function DetalhesPet() {
     mensagemTutor,
     setMensagemTutor,
   ] = useState("");
+
+  /*
+  * Tutor aguardando confirmação de desvinculação.
+  *
+  * Guardamos o objeto temporariamente para que o modal
+  * possa mostrar quem será desvinculado antes da operação.
+  */
+  const [
+    tutorParaDesvincular,
+    setTutorParaDesvincular,
+  ] = useState(null);
 
 
   // Estados utilizados pela confirmação de operações críticas.
@@ -253,47 +266,36 @@ function DetalhesPet() {
   }
 
 
-  /*
-   * Desvincular remove somente a relação Pet <-> Tutor.
-   *
-   * O tutor e o pet continuam cadastrados no sistema.
-   * O backend também impede que o último tutor seja removido.
-   */
-  async function desvincularTutor(
-    tutor
-  ) {
-    const confirmar =
-      window.confirm(
-        `Deseja desvincular ${tutor.nome} deste pet?`
-      );
-
-    if (!confirmar) {
-      return;
-    }
-
-    try {
-      setProcessandoTutor(true);
-      setErroTutor("");
-      setMensagemTutor("");
-
-      await api.delete(
-        `/pets/${pet.id}/tutores/${tutor.id}`
-      );
-
-      await carregarPet();
-
-      setMensagemTutor(
-        "Tutor desvinculado com sucesso."
-      );
-    } catch (error) {
-      setErroTutor(
-        error.response?.data?.mensagem ||
-          "Não foi possível desvincular o tutor."
-      );
-    } finally {
-      setProcessandoTutor(false);
-    }
+ async function desvincularTutor() {
+  if (!tutorParaDesvincular) {
+    return;
   }
+
+  try {
+    setProcessandoTutor(true);
+    setErroTutor("");
+    setMensagemTutor("");
+
+    await api.delete(
+      `/pets/${pet.id}/tutores/${tutorParaDesvincular.id}`
+    );
+
+    setTutorParaDesvincular(null);
+
+    await carregarPet();
+
+    setMensagemTutor(
+      "Tutor desvinculado com sucesso."
+    );
+  } catch (error) {
+    setErroTutor(
+      error.response?.data?.mensagem ||
+        "Não foi possível desvincular o tutor."
+    );
+  } finally {
+    setProcessandoTutor(false);
+  }
+}
 
 
   // Inativar ou reativar um pet é considerado uma operação
@@ -684,11 +686,13 @@ function DetalhesPet() {
                             disabled={
                               processandoTutor
                             }
-                            onClick={() =>
-                              desvincularTutor(
+                            onClick={() =>{
+                              setErroTutor("");
+                              setMensagemTutor("");
+                              setTutorParaDesvincular(
                                 tutor
                               )
-                            }
+                            }}
                           >
                             Desvincular
                           </button>
@@ -931,6 +935,34 @@ function DetalhesPet() {
           </div>
         </div>
       )}
+
+      <ModalConfirmacao
+        aberto={
+          Boolean(
+            tutorParaDesvincular
+          )
+        }
+        titulo="Desvincular tutor?"
+        mensagem={
+          tutorParaDesvincular
+            ? `Deseja desvincular ${tutorParaDesvincular.nome} de ${pet.nome}? O cadastro do tutor e do pet será mantido.`
+            : ""
+        }
+        textoConfirmar="Desvincular"
+        processando={
+          processandoTutor
+        }
+        onConfirmar={
+          desvincularTutor
+        }
+        onCancelar={() => {
+          if (!processandoTutor) {
+            setTutorParaDesvincular(
+              null
+            );
+          }
+        }}
+      />
 
 
       <ModalConfirmacaoSenha
