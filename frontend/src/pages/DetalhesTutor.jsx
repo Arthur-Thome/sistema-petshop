@@ -1,36 +1,156 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import api from "../services/api";
+
 import "../styles/DetalhesTutor.css";
-import ModalConfirmacaoSenha from "../components/ModalConfirmacaoSenha";
+
+import ModalConfirmacaoSenha
+  from "../components/ModalConfirmacaoSenha";
+
 
 function DetalhesTutor() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const [tutor, setTutor] = useState(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState("");
-  // Controla a confirmação das operações críticas do tutor.
-  const [modalAberto, setModalAberto] = useState(false);
-  const [processandoStatus, setProcessandoStatus] = useState(false);
-  const [erroConfirmacao, setErroConfirmacao] = useState("");
-  // Pets relacionados ao tutor atualmente exibido.
-  const [petsTutor, setPetsTutor] = useState([]);
-  const [carregandoPets, setCarregandoPets] = useState(true);
+  const [tutor, setTutor] =
+    useState(null);
 
-// Carrega os animais relacionados ao tutor.
-// O relacionamento é feito através de pets.tutor_id.
-useEffect(() => {
+  const [carregando, setCarregando] =
+    useState(true);
+
+  const [erro, setErro] =
+    useState("");
+
+
+  // Controla a confirmação das operações críticas do tutor.
+  const [
+    modalAberto,
+    setModalAberto,
+  ] = useState(false);
+
+  const [
+    processandoStatus,
+    setProcessandoStatus,
+  ] = useState(false);
+
+  const [
+    erroConfirmacao,
+    setErroConfirmacao,
+  ] = useState("");
+
+
+  /*
+   * Pets vinculados ao tutor através de pet_tutores.
+   *
+   * O mesmo tutor pode possuir vários pets e cada pet
+   * também pode possuir mais de um tutor.
+   */
+  const [
+    petsTutor,
+    setPetsTutor,
+  ] = useState([]);
+
+  const [
+    carregandoPets,
+    setCarregandoPets,
+  ] = useState(true);
+
+
+  /*
+   * Estados usados para vincular um pet já existente
+   * ao tutor atualmente exibido.
+   */
+  const [
+    modalPetAberto,
+    setModalPetAberto,
+  ] = useState(false);
+
+  const [
+    petsDisponiveis,
+    setPetsDisponiveis,
+  ] = useState([]);
+
+  const [
+    petSelecionado,
+    setPetSelecionado,
+  ] = useState("");
+
+  const [
+    carregandoDisponiveis,
+    setCarregandoDisponiveis,
+  ] = useState(false);
+
+  const [
+    processandoPet,
+    setProcessandoPet,
+  ] = useState(false);
+
+  const [
+    erroPet,
+    setErroPet,
+  ] = useState("");
+
+  const [
+    mensagemPet,
+    setMensagemPet,
+  ] = useState("");
+
+
+  /*
+   * Busca os dados cadastrais atuais do tutor.
+   */
+  async function carregarTutor() {
+    try {
+      setCarregando(true);
+      setErro("");
+
+      const resposta =
+        await api.get(
+          `/tutores/${id}`
+        );
+
+      setTutor(
+        resposta.data
+      );
+    } catch (error) {
+      setErro(
+        error.response?.data?.mensagem ||
+          "Não foi possível carregar o tutor."
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+
+  /*
+   * Busca todos os pets relacionados ao tutor.
+   *
+   * O endpoint já utiliza pet_tutores, portanto também
+   * retorna pets em que este tutor não é o principal.
+   */
   async function carregarPetsTutor() {
     try {
       setCarregandoPets(true);
 
-      const resposta = await api.get(
-        `/pets/tutor/${id}`
-      );
+      const resposta =
+        await api.get(
+          `/pets/tutor/${id}`
+        );
 
-      setPetsTutor(resposta.data);
+      setPetsTutor(
+        Array.isArray(resposta.data)
+          ? resposta.data
+          : []
+      );
     } catch (error) {
       console.error(
         "Erro ao carregar pets do tutor:",
@@ -43,67 +163,211 @@ useEffect(() => {
     }
   }
 
-  carregarPetsTutor();
-}, [id]);
 
-  // Busca sempre os dados atuais do tutor diretamente da API.
   useEffect(() => {
-    async function carregarTutor() {
-      try {
-        setCarregando(true);
-        setErro("");
-
-        const resposta = await api.get(`/tutores/${id}`);
-
-        setTutor(resposta.data);
-      } catch (error) {
-        setErro(
-          error.response?.data?.mensagem ||
-            "Não foi possível carregar o tutor."
-        );
-      } finally {
-        setCarregando(false);
-      }
-    }
-
     carregarTutor();
+    carregarPetsTutor();
   }, [id]);
 
-  async function confirmarAlteracaoStatus(senha) {
-  try {
-    setProcessandoStatus(true);
-    setErroConfirmacao("");
 
-    const novoStatus = !tutor.ativo;
+  /*
+   * Abre a seleção de pets existentes.
+   *
+   * Pets que já possuem vínculo com este tutor são
+   * removidos da lista para impedir relações duplicadas.
+   */
+  async function abrirModalPet() {
+    try {
+      setModalPetAberto(true);
+      setCarregandoDisponiveis(true);
 
-    // O backend exige a senha atual no cabeçalho para
-    // autorizar operações consideradas críticas.
-    const resposta = await api.patch(
-      `/tutores/${tutor.id}/status`,
-      {
-        ativo: novoStatus,
-      },
-      {
-        headers: {
-          "X-Confirm-Password": senha,
-        },
-      }
-    );
+      setErroPet("");
+      setMensagemPet("");
+      setPetSelecionado("");
 
-    // Atualiza a tela com o objeto retornado pelo backend,
-    // evitando uma segunda consulta desnecessária.
-    setTutor(resposta.data.tutor);
+      const resposta =
+        await api.get("/pets");
 
-    setModalAberto(false);
-  } catch (error) {
-    setErroConfirmacao(
-      error.response?.data?.mensagem ||
-        "Não foi possível alterar o status do tutor."
-    );
-  } finally {
-    setProcessandoStatus(false);
+      /*
+       * A listagem de pets pode possuir paginação ou retornar
+       * diretamente um array, dependendo da implementação
+       * utilizada pela tela geral de pets.
+       */
+      const lista =
+        Array.isArray(resposta.data)
+          ? resposta.data
+          : Array.isArray(
+                resposta.data?.pets
+              )
+            ? resposta.data.pets
+            : Array.isArray(
+                  resposta.data?.dados
+                )
+              ? resposta.data.dados
+              : [];
+
+      const vinculados =
+        new Set(
+          petsTutor.map(
+            (pet) =>
+              Number(pet.id)
+          )
+        );
+
+      const disponiveis =
+        lista.filter(
+          (pet) =>
+            pet.ativo &&
+            !vinculados.has(
+              Number(pet.id)
+            )
+        );
+
+      setPetsDisponiveis(
+        disponiveis
+      );
+    } catch (error) {
+      setErroPet(
+        error.response?.data?.mensagem ||
+          "Não foi possível carregar os pets."
+      );
+    } finally {
+      setCarregandoDisponiveis(false);
+    }
   }
-}
+
+
+  /*
+   * Para vincular pelo lado do tutor utilizamos a mesma
+   * API criada para Pet -> Tutor.
+   *
+   * Portanto o ID selecionado é usado na URL do pet e o
+   * tutor atual é enviado no corpo da requisição.
+   */
+  async function vincularPet() {
+    if (!petSelecionado) {
+      setErroPet(
+        "Selecione um pet."
+      );
+
+      return;
+    }
+
+    try {
+      setProcessandoPet(true);
+      setErroPet("");
+
+      await api.post(
+        `/pets/${petSelecionado}/tutores`,
+        {
+          tutor_id:
+            Number(id),
+        }
+      );
+
+      setModalPetAberto(false);
+      setPetSelecionado("");
+
+      await carregarPetsTutor();
+
+      setMensagemPet(
+        "Pet vinculado com sucesso."
+      );
+    } catch (error) {
+      setErroPet(
+        error.response?.data?.mensagem ||
+          "Não foi possível vincular o pet."
+      );
+    } finally {
+      setProcessandoPet(false);
+    }
+  }
+
+
+  /*
+   * Desvincula somente a relação entre este tutor e o pet.
+   *
+   * Nenhum dos dois cadastros é excluído.
+   * O backend impede que um pet fique sem nenhum tutor.
+   */
+  async function desvincularPet(
+    pet
+  ) {
+    const confirmar =
+      window.confirm(
+        `Deseja desvincular ${pet.nome} deste tutor?`
+      );
+
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      setProcessandoPet(true);
+      setErroPet("");
+      setMensagemPet("");
+
+      await api.delete(
+        `/pets/${pet.id}/tutores/${id}`
+      );
+
+      await carregarPetsTutor();
+
+      setMensagemPet(
+        "Pet desvinculado com sucesso."
+      );
+    } catch (error) {
+      setErroPet(
+        error.response?.data?.mensagem ||
+          "Não foi possível desvincular o pet."
+      );
+    } finally {
+      setProcessandoPet(false);
+    }
+  }
+
+
+  async function confirmarAlteracaoStatus(
+    senha
+  ) {
+    try {
+      setProcessandoStatus(true);
+      setErroConfirmacao("");
+
+      const novoStatus =
+        !tutor.ativo;
+
+      // O backend exige novamente a senha atual para
+      // operações consideradas críticas.
+      const resposta =
+        await api.patch(
+          `/tutores/${tutor.id}/status`,
+          {
+            ativo: novoStatus,
+          },
+          {
+            headers: {
+              "X-Confirm-Password":
+                senha,
+            },
+          }
+        );
+
+      setTutor(
+        resposta.data.tutor
+      );
+
+      setModalAberto(false);
+    } catch (error) {
+      setErroConfirmacao(
+        error.response?.data?.mensagem ||
+          "Não foi possível alterar o status do tutor."
+      );
+    } finally {
+      setProcessandoStatus(false);
+    }
+  }
+
 
   if (carregando) {
     return (
@@ -112,6 +376,7 @@ useEffect(() => {
       </div>
     );
   }
+
 
   if (erro) {
     return (
@@ -122,7 +387,9 @@ useEffect(() => {
 
         <button
           className="back-button"
-          onClick={() => navigate("/tutores")}
+          onClick={() =>
+            navigate("/tutores")
+          }
         >
           ← Voltar
         </button>
@@ -130,16 +397,21 @@ useEffect(() => {
     );
   }
 
+
   if (!tutor) {
     return null;
   }
 
+
   return (
     <div className="details-page">
+
       <div className="page-header">
         <div>
           <div className="title-with-status">
-            <h1>{tutor.nome}</h1>
+            <h1>
+              {tutor.nome}
+            </h1>
 
             <span
               className={
@@ -148,17 +420,24 @@ useEffect(() => {
                   : "status status-inactive"
               }
             >
-              {tutor.ativo ? "Ativo" : "Inativo"}
+              {tutor.ativo
+                ? "Ativo"
+                : "Inativo"}
             </span>
           </div>
 
-          <p>Ficha cadastral do tutor.</p>
+          <p>
+            Ficha cadastral do tutor.
+          </p>
         </div>
+
 
         <div className="header-actions">
           <button
             className="back-button"
-            onClick={() => navigate("/tutores")}
+            onClick={() =>
+              navigate("/tutores")
+            }
           >
             ← Voltar
           </button>
@@ -166,7 +445,9 @@ useEffect(() => {
           <button
             className="primary-button"
             onClick={() =>
-              navigate(`/tutores/${tutor.id}/editar`)
+              navigate(
+                `/tutores/${tutor.id}/editar`
+              )
             }
           >
             Editar
@@ -174,9 +455,12 @@ useEffect(() => {
         </div>
       </div>
 
+
       <section className="details-card">
         <div className="details-card-header">
-          <h2>Dados pessoais</h2>
+          <h2>
+            Dados pessoais
+          </h2>
         </div>
 
         <div className="details-grid">
@@ -202,9 +486,12 @@ useEffect(() => {
         </div>
       </section>
 
+
       <section className="details-card">
         <div className="details-card-header">
-          <h2>Endereço</h2>
+          <h2>
+            Endereço
+          </h2>
         </div>
 
         <div className="details-grid">
@@ -245,9 +532,217 @@ useEffect(() => {
         </div>
       </section>
 
+
+      {/*
+       * A área de pets possui estrutura visual própria.
+       * Ela representa relacionamentos do tutor, e não
+       * simplesmente informações cadastrais.
+       */}
+      <section className="tutor-pets-panel">
+
+        <div className="tutor-pets-panel-header">
+          <div>
+            <span className="tutor-pets-eyebrow">
+              Animais vinculados
+            </span>
+
+            <h2>
+              Pets deste tutor
+            </h2>
+
+            <p>
+              {petsTutor.length === 0
+                ? "Nenhum pet está vinculado a este tutor."
+                : `${petsTutor.length} ${
+                    petsTutor.length === 1
+                      ? "pet vinculado"
+                      : "pets vinculados"
+                  } a este tutor.`}
+            </p>
+          </div>
+
+          <div className="tutor-pets-header-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() =>
+                navigate(
+                  `/pets/novo?tutor=${tutor.id}`
+                )
+              }
+            >
+              + Cadastrar Novo Pet
+            </button>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={
+                abrirModalPet
+              }
+            >
+              + Vincular Pet
+            </button>
+          </div>
+        </div>
+
+
+        {mensagemPet && (
+          <div className="tutor-pet-feedback success">
+            {mensagemPet}
+          </div>
+        )}
+
+
+        {erroPet &&
+          !modalPetAberto && (
+            <div className="tutor-pet-feedback error">
+              {erroPet}
+            </div>
+          )}
+
+
+        {carregandoPets ? (
+          <div className="tutor-pets-loading">
+            Carregando pets...
+          </div>
+        ) : petsTutor.length === 0 ? (
+          <div className="tutor-pets-empty">
+            <div className="tutor-pets-empty-icon">
+              +
+            </div>
+
+            <h3>
+              Este tutor ainda não possui pets
+            </h3>
+
+            <p>
+              Você pode cadastrar um novo pet
+              para este tutor ou vinculá-lo a
+              um pet que já existe no sistema.
+            </p>
+
+            <div className="tutor-pets-empty-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() =>
+                  navigate(
+                    `/pets/novo?tutor=${tutor.id}`
+                  )
+                }
+              >
+                Cadastrar Novo Pet
+              </button>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={
+                  abrirModalPet
+                }
+              >
+                Vincular Pet Existente
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="tutor-pets-grid">
+            {petsTutor.map(
+              (pet) => (
+                <article
+                  key={pet.id}
+                  className="tutor-pet-card"
+                >
+                  <div className="tutor-pet-card-top">
+                    <div className="tutor-pet-initial">
+                      {pet.nome
+                        ?.charAt(0)
+                        ?.toUpperCase() ||
+                        "P"}
+                    </div>
+
+                    <div className="tutor-pet-title">
+                      <div className="tutor-pet-name-row">
+                        <h3>
+                          {pet.nome}
+                        </h3>
+
+                        {pet.principal && (
+                          <span className="tutor-pet-principal-badge">
+                            Tutor principal
+                          </span>
+                        )}
+                      </div>
+
+                      <p>
+                        {pet.especie ||
+                          "Espécie não informada"}
+
+                        {pet.raca
+                          ? ` • ${pet.raca}`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+
+
+                  <div className="tutor-pet-card-status">
+                    <span
+                      className={
+                        pet.ativo
+                          ? "status-badge active"
+                          : "status-badge inactive"
+                      }
+                    >
+                      {pet.ativo
+                        ? "Ativo"
+                        : "Inativo"}
+                    </span>
+                  </div>
+
+
+                  <div className="tutor-pet-card-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        navigate(
+                          `/pets/${pet.id}`
+                        )
+                      }
+                    >
+                      Visualizar Pet
+                    </button>
+
+                    <button
+                      type="button"
+                      className="tutor-pet-unlink-button"
+                      disabled={
+                        processandoPet
+                      }
+                      onClick={() =>
+                        desvincularPet(
+                          pet
+                        )
+                      }
+                    >
+                      Desvincular
+                    </button>
+                  </div>
+                </article>
+              )
+            )}
+          </div>
+        )}
+      </section>
+
+
       <section className="details-card">
         <div className="details-card-header">
-          <h2>Observações</h2>
+          <h2>
+            Observações
+          </h2>
         </div>
 
         <p className="observations">
@@ -256,57 +751,6 @@ useEffect(() => {
         </p>
       </section>
 
-      <section className="details-card">
-        <div className="details-card-header">
-          <h2>Pets deste tutor</h2>
-        </div>
-
-          <div className="tutor-pets-list">
-            {carregandoPets ? (
-              <p>Carregando pets...</p>
-            ) : petsTutor.length === 0 ? (
-              <p>Nenhum pet cadastrado para este tutor.</p>
-            ) : (
-              petsTutor.map((pet) => (
-                <div
-                  key={pet.id}
-                  className="tutor-pet-item"
-                >
-                  <div>
-                    <strong>{pet.nome}</strong>
-
-                    <span>
-                      {pet.raca ||
-                        pet.especie ||
-                        "Não informado"}
-                    </span>
-                  </div>
-
-                  <span
-                    className={
-                      pet.ativo
-                        ? "status-badge active"
-                        : "status-badge inactive"
-                    }
-                  >
-                    {pet.ativo
-                      ? "Ativo"
-                      : "Inativo"}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(`/pets/${pet.id}`)
-                    }
-                  >
-                    Visualizar
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-      </section>
 
       <div className="danger-zone">
         <div>
@@ -339,39 +783,222 @@ useEffect(() => {
             : "Reativar Tutor"}
         </button>
       </div>
+
+
+      {/*
+       * Modal usado para selecionar um pet que já existe.
+       * O vínculo é criado sem alterar ou duplicar o cadastro.
+       */}
+      {modalPetAberto && (
+        <div
+          className="tutor-pet-modal-overlay"
+          onMouseDown={(evento) => {
+            if (
+              evento.target ===
+              evento.currentTarget
+            ) {
+              setModalPetAberto(false);
+            }
+          }}
+        >
+          <div className="tutor-pet-modal">
+
+            <div className="tutor-pet-modal-header">
+              <div>
+                <span>
+                  Novo vínculo
+                </span>
+
+                <h2>
+                  Vincular Pet
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="tutor-pet-modal-close"
+                onClick={() =>
+                  setModalPetAberto(
+                    false
+                  )
+                }
+              >
+                ×
+              </button>
+            </div>
+
+
+            <p>
+              Selecione um pet ativo
+              para vinculá-lo ao tutor{" "}
+              <strong>
+                {tutor.nome}
+              </strong>.
+            </p>
+
+
+            {erroPet && (
+              <div className="tutor-pet-feedback error">
+                {erroPet}
+              </div>
+            )}
+
+
+            {carregandoDisponiveis ? (
+              <div className="tutor-pets-loading">
+                Carregando pets...
+              </div>
+            ) : petsDisponiveis.length ===
+              0 ? (
+              <div className="tutor-no-available-pets">
+                <strong>
+                  Nenhum pet disponível
+                </strong>
+
+                <p>
+                  Todos os pets ativos
+                  encontrados já estão
+                  vinculados a este tutor
+                  ou ainda não existem
+                  outros pets cadastrados.
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() =>
+                    navigate(
+                      `/pets/novo?tutor=${tutor.id}`
+                    )
+                  }
+                >
+                  Cadastrar Novo Pet
+                </button>
+              </div>
+            ) : (
+              <>
+                <label className="tutor-pet-select-field">
+                  <span>
+                    Pet
+                  </span>
+
+                  <select
+                    value={
+                      petSelecionado
+                    }
+                    onChange={(evento) => {
+                      setPetSelecionado(
+                        evento.target.value
+                      );
+
+                      setErroPet("");
+                    }}
+                  >
+                    <option value="">
+                      Selecione...
+                    </option>
+
+                    {petsDisponiveis.map(
+                      (pet) => (
+                        <option
+                          key={pet.id}
+                          value={pet.id}
+                        >
+                          {pet.nome}
+                          {pet.raca
+                            ? ` — ${pet.raca}`
+                            : pet.especie
+                              ? ` — ${pet.especie}`
+                              : ""}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </label>
+
+
+                <div className="tutor-pet-modal-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={
+                      processandoPet
+                    }
+                    onClick={() =>
+                      setModalPetAberto(
+                        false
+                      )
+                    }
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={
+                      processandoPet
+                    }
+                    onClick={
+                      vincularPet
+                    }
+                  >
+                    {processandoPet
+                      ? "Vinculando..."
+                      : "Vincular Pet"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+
       <ModalConfirmacaoSenha
-            aberto={modalAberto}
-            titulo={
-                tutor.ativo
-                ? "Inativar tutor?"
-                : "Reativar tutor?"
-            }
-            mensagem={
-                tutor.ativo
-                ? "Confirme sua senha para inativar este tutor. O cadastro permanecerá armazenado no sistema."
-                : "Confirme sua senha para reativar este tutor."
-            }
-            textoConfirmar={
-                tutor.ativo
-                ? "Inativar Tutor"
-                : "Reativar Tutor"
-            }
-            processando={processandoStatus}
-            erro={erroConfirmacao}
-            onConfirmar={confirmarAlteracaoStatus}
-            onCancelar={() => {
-                setModalAberto(false);
-                setErroConfirmacao("");
-            }}
-        />
+        aberto={modalAberto}
+        titulo={
+          tutor.ativo
+            ? "Inativar tutor?"
+            : "Reativar tutor?"
+        }
+        mensagem={
+          tutor.ativo
+            ? "Confirme sua senha para inativar este tutor. O cadastro permanecerá armazenado no sistema."
+            : "Confirme sua senha para reativar este tutor."
+        }
+        textoConfirmar={
+          tutor.ativo
+            ? "Inativar Tutor"
+            : "Reativar Tutor"
+        }
+        processando={
+          processandoStatus
+        }
+        erro={erroConfirmacao}
+        onConfirmar={
+          confirmarAlteracaoStatus
+        }
+        onCancelar={() => {
+          setModalAberto(false);
+          setErroConfirmacao("");
+        }}
+      />
+
     </div>
   );
 }
 
-function Informacao({ titulo, valor }) {
+
+function Informacao({
+  titulo,
+  valor,
+}) {
   return (
     <div className="information-item">
-      <span>{titulo}</span>
+      <span>
+        {titulo}
+      </span>
 
       <strong>
         {valor || "-"}
@@ -379,5 +1006,6 @@ function Informacao({ titulo, valor }) {
     </div>
   );
 }
+
 
 export default DetalhesTutor;

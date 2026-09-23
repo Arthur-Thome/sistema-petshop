@@ -289,9 +289,16 @@ function validarDadosPet(dados) {
 
 
 // Cadastra um pet e obrigatoriamente o relaciona a um tutor.
-// O vínculo tutor-pet é validado no backend, portanto não
-// dependemos apenas das opções apresentadas pelo frontend.
+//
+// O primeiro tutor informado no cadastro passa a ser também
+// o tutor principal do animal em pet_tutores.
+//
+// pets.tutor_id continua sendo preenchido temporariamente
+// para manter compatibilidade com partes do sistema que
+// ainda não foram totalmente migradas para pet_tutores.
 async function cadastrarPet(req, res) {
+  let client;
+
   try {
     const dados =
       normalizarDadosPet(req.body);
@@ -310,38 +317,83 @@ async function cadastrarPet(req, res) {
       pesoNormalizado,
     } = validacao;
 
-    // Confirma que o tutor realmente existe antes de criar
-    // o relacionamento entre os registros.
+
+    /*
+     * Utilizamos uma conexão dedicada porque a criação do Pet
+     * e do vínculo com o Tutor precisam acontecer na mesma
+     * transação.
+     *
+     * Assim não existe a possibilidade de criar um Pet sem
+     * registrar o relacionamento correspondente em pet_tutores.
+     */
+    client =
+      await pool.connect();
+
+    await client.query("BEGIN");
+
+
+    /*
+     * O tutor é validado dentro da própria transação.
+     *
+     * FOR UPDATE evita que o registro seja modificado por outra
+     * operação enquanto estamos criando o vínculo inicial.
+     */
     const resultadoTutor =
-      await pool.query(
-        `SELECT id, nome, ativo
+      await client.query(
+        `SELECT
+           id,
+           nome,
+           ativo
+
          FROM tutores
-         WHERE id = $1`,
+
+         WHERE id = $1
+
+         FOR UPDATE`,
         [tutorId]
       );
+
 
     if (
       resultadoTutor.rows.length === 0
     ) {
+      await client.query(
+        "ROLLBACK"
+      );
+
       return res.status(404).json({
         mensagem:
           "Tutor não encontrado.",
       });
     }
 
+
     const tutor =
       resultadoTutor.rows[0];
 
-    // Não permitimos novos pets em um tutor inativo.
+
+    // Um novo Pet não pode ser relacionado inicialmente
+    // a um Tutor que esteja inativo.
     if (!tutor.ativo) {
+      await client.query(
+        "ROLLBACK"
+      );
+
       return res.status(400).json({
         mensagem:
           "Não é possível cadastrar um pet para um tutor inativo.",
       });
     }
 
+
+    /*
+     * pets.tutor_id permanece temporariamente no banco.
+     *
+     * Durante esta fase da migração ele sempre representa
+     * o mesmo Tutor marcado como principal em pet_tutores.
+     */
     const resultado =
-      await pool.query(
+      await client.query(
         `INSERT INTO pets
         (
           tutor_id,
@@ -355,7 +407,17 @@ async function cadastrarPet(req, res) {
           observacoes
         )
         VALUES
-        ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9
+        )
         RETURNING *`,
         [
           tutorId,
@@ -371,48 +433,157 @@ async function cadastrarPet(req, res) {
         ]
       );
 
+
     const pet =
       resultado.rows[0];
 
-    await registrarLog({
-      usuarioId: req.usuario.id,
-      acao: "CRIAR_PET",
-      entidade: "pets",
-      registroId: pet.id,
-      valorNovo: pet,
-      ip: req.ip,
-    });
+
+    /*
+     * Todo Pet recém-cadastrado precisa possuir pelo menos
+     * um Tutor.
+     *
+     * O primeiro relacionamento criado automaticamente
+     * recebe principal = TRUE.
+     */
+    await client.query(
+      `INSERT INTO pet_tutores
+      (
+        pet_id,
+        tutor_id,
+        principal
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        TRUE
+      )`,
+      [
+        pet.id,
+        tutorId,
+      ]
+    );
+
+
+    /*
+     * Somente confirmamos a transação depois que os dois
+     * registros foram criados corretamente.
+     */
+    await client.query(
+      "COMMIT"
+    );
+
+
+    /*
+     * A auditoria acontece depois do COMMIT.
+     *
+     * Se exclusivamente o registro de auditoria falhar,
+     * não devemos apagar um Pet que já foi cadastrado
+     * corretamente.
+     */
+    try {
+      await registrarLog({
+        usuarioId:
+          req.usuario.id,
+
+        acao:
+          "CRIAR_PET",
+
+        entidade:
+          "pets",
+
+        registroId:
+          pet.id,
+
+        valorNovo: {
+          ...pet,
+
+          tutor_principal_id:
+            tutorId,
+        },
+
+        ip:
+          req.ip,
+      });
+    } catch (erroLog) {
+      console.error(
+        "Pet cadastrado, mas houve erro ao registrar auditoria:",
+        erroLog
+      );
+    }
+
 
     return res.status(201).json({
       mensagem:
         "Pet cadastrado com sucesso.",
+
       pet,
     });
+
   } catch (erro) {
+
+    /*
+     * Caso qualquer operação dentro da transação falhe,
+     * desfazemos todas as alterações realizadas nela.
+     */
+    if (client) {
+      try {
+        await client.query(
+          "ROLLBACK"
+        );
+      } catch (erroRollback) {
+        console.error(
+          "Erro ao executar rollback do cadastro do pet:",
+          erroRollback
+        );
+      }
+    }
+
+
     console.error(
       "Erro ao cadastrar pet:",
       erro
     );
 
+
     return res.status(500).json({
       mensagem:
         "Erro interno do servidor.",
     });
+
+  } finally {
+
+    /*
+     * A conexão precisa sempre voltar para o Pool,
+     * independentemente do resultado da operação.
+     */
+    if (client) {
+      client.release();
+    }
   }
 }
 
-
-// Lista os pets juntamente com informações básicas do tutor.
-// A pesquisa permite localizar pelo nome do pet, raça,
-// espécie ou nome do tutor.
+// Lista os Pets utilizando pet_tutores como fonte oficial
+// do relacionamento entre Pets e Tutores.
+//
+// A pesquisa pelo nome do Tutor considera qualquer Tutor
+// vinculado ao Pet, não somente o Tutor principal.
 async function listarPets(req, res) {
   try {
-    let { busca } = req.query;
+    let { busca } =
+      req.query;
 
-    if (typeof busca === "string") {
-      busca = busca.trim();
 
-      if (busca.length > 100) {
+    if (
+      typeof busca === "string"
+    ) {
+      busca =
+        busca.trim();
+
+
+      if (
+        busca.length > 100
+      ) {
         return res.status(400).json({
           mensagem:
             "A busca deve possuir no máximo 100 caracteres.",
@@ -422,8 +593,23 @@ async function listarPets(req, res) {
       busca = "";
     }
 
+
+    /*
+     * pet_tutores passa a ser a fonte do relacionamento.
+     *
+     * pt_busca/t_busca:
+     * utilizados para permitir pesquisar o Pet pelo nome
+     * de qualquer Tutor vinculado.
+     *
+     * tp:
+     * subconsulta responsável por recuperar especificamente
+     * o Tutor marcado como principal.
+     *
+     * p.tutor_id continua retornado temporariamente para
+     * compatibilidade com telas ainda em migração.
+     */
     let consulta = `
-      SELECT
+      SELECT DISTINCT
         p.id,
         p.tutor_id,
         p.nome,
@@ -437,34 +623,76 @@ async function listarPets(req, res) {
         p.ativo,
         p.criado_em,
 
-        t.nome AS tutor_nome,
-        t.telefone AS tutor_telefone
+        tp.tutor_id
+          AS tutor_principal_id,
+
+        tp.nome
+          AS tutor_nome,
+
+        tp.telefone
+          AS tutor_telefone
 
       FROM pets p
 
-      INNER JOIN tutores t
-        ON t.id = p.tutor_id
+      INNER JOIN pet_tutores pt_busca
+        ON pt_busca.pet_id = p.id
+
+      INNER JOIN tutores t_busca
+        ON t_busca.id =
+           pt_busca.tutor_id
+
+      LEFT JOIN
+      (
+        SELECT
+          pt.pet_id,
+
+          t.id
+            AS tutor_id,
+
+          t.nome,
+
+          t.telefone
+
+        FROM pet_tutores pt
+
+        INNER JOIN tutores t
+          ON t.id =
+             pt.tutor_id
+
+        WHERE
+          pt.principal = TRUE
+      ) tp
+        ON tp.pet_id = p.id
     `;
 
+
     const parametros = [];
+
 
     if (busca) {
       consulta += `
         WHERE
           p.nome ILIKE $1
+
           OR p.raca ILIKE $1
+
           OR p.especie ILIKE $1
-          OR t.nome ILIKE $1
+
+          OR t_busca.nome ILIKE $1
       `;
+
 
       parametros.push(
         `%${busca}%`
       );
     }
 
+
     consulta += `
-      ORDER BY p.nome ASC
+      ORDER BY
+        p.nome ASC
     `;
+
 
     const resultado =
       await pool.query(
@@ -472,14 +700,17 @@ async function listarPets(req, res) {
         parametros
       );
 
+
     return res.status(200).json(
       resultado.rows
     );
+
   } catch (erro) {
     console.error(
       "Erro ao listar pets:",
       erro
     );
+
 
     return res.status(500).json({
       mensagem:
@@ -489,8 +720,12 @@ async function listarPets(req, res) {
 }
 
 
-// Recupera a ficha completa de um pet e também os dados
-// principais do tutor responsável por ele.
+// Recupera a ficha completa de um pet.
+//
+// O sistema agora permite vários tutores por pet.
+// Mesmo assim, mantemos temporariamente os campos antigos
+// do tutor principal para não quebrar telas e módulos que
+// ainda utilizam pets.tutor_id.
 async function buscarPetPorId(req, res) {
   try {
     const petId =
@@ -506,6 +741,14 @@ async function buscarPetPorId(req, res) {
       });
     }
 
+
+    /*
+     * Primeiro recuperamos o pet e o tutor principal
+     * utilizando a estrutura antiga.
+     *
+     * pets.tutor_id continuará sincronizado com
+     * pet_tutores.principal durante a migração.
+     */
     const resultado =
       await pool.query(
         `SELECT
@@ -525,6 +768,7 @@ async function buscarPetPorId(req, res) {
         [petId]
       );
 
+
     if (
       resultado.rows.length === 0
     ) {
@@ -534,14 +778,56 @@ async function buscarPetPorId(req, res) {
       });
     }
 
+
+    /*
+     * Recuperamos todos os tutores vinculados ao pet.
+     *
+     * O principal aparece primeiro para manter uma
+     * apresentação previsível no frontend.
+     */
+    const resultadoTutores =
+      await pool.query(
+        `SELECT
+           t.id,
+           t.nome,
+           t.cpf,
+           t.telefone,
+           t.email,
+           t.ativo,
+
+           pt.principal,
+           pt.criado_em AS vinculado_em
+
+         FROM pet_tutores pt
+
+         INNER JOIN tutores t
+           ON t.id = pt.tutor_id
+
+         WHERE pt.pet_id = $1
+
+         ORDER BY
+           pt.principal DESC,
+           t.nome ASC,
+           t.id ASC`,
+        [petId]
+      );
+
+
     return res.status(200).json({
-      pet: resultado.rows[0],
+      pet: {
+        ...resultado.rows[0],
+
+        tutores:
+          resultadoTutores.rows,
+      },
     });
+
   } catch (erro) {
     console.error(
       "Erro ao buscar pet:",
       erro
     );
+
 
     return res.status(500).json({
       mensagem:
@@ -997,7 +1283,12 @@ async function atualizarFotoPet(req, res) {
 
 
 // Lista todos os pets vinculados a um tutor específico.
-// Essa consulta alimenta a seção "Pets deste tutor".
+//
+// A relação agora utiliza pet_tutores porque um tutor pode
+// possuir vários pets e um pet pode possuir vários tutores.
+//
+// O campo "principal" informa se este tutor é o responsável
+// principal daquele pet.
 async function listarPetsPorTutor(
   req,
   res
@@ -1005,6 +1296,7 @@ async function listarPetsPorTutor(
   try {
     const tutorId =
       Number(req.params.tutorId);
+
 
     if (
       !Number.isInteger(tutorId) ||
@@ -1016,7 +1308,9 @@ async function listarPetsPorTutor(
       });
     }
 
-    // Primeiro confirmamos se o tutor existe.
+
+    // Confirmamos a existência do tutor separadamente para
+    // diferenciar "tutor inexistente" de "tutor sem pets".
     const resultadoTutor =
       await pool.query(
         `SELECT id
@@ -1024,6 +1318,7 @@ async function listarPetsPorTutor(
          WHERE id = $1`,
         [tutorId]
       );
+
 
     if (
       resultadoTutor.rows.length === 0
@@ -1034,34 +1329,48 @@ async function listarPetsPorTutor(
       });
     }
 
+
     const resultado =
       await pool.query(
         `SELECT
-           id,
-           tutor_id,
-           nome,
-           especie,
-           raca,
-           sexo,
-           data_nascimento,
-           peso,
-           cor,
-           foto,
-           ativo
-         FROM pets
-         WHERE tutor_id = $1
-         ORDER BY nome ASC`,
+           p.id,
+           p.tutor_id,
+           p.nome,
+           p.especie,
+           p.raca,
+           p.sexo,
+           p.data_nascimento,
+           p.peso,
+           p.cor,
+           p.foto,
+           p.ativo,
+
+           pt.principal
+
+         FROM pet_tutores pt
+
+         INNER JOIN pets p
+           ON p.id = pt.pet_id
+
+         WHERE pt.tutor_id = $1
+
+         ORDER BY
+           p.nome ASC,
+           p.id ASC`,
         [tutorId]
       );
+
 
     return res.status(200).json(
       resultado.rows
     );
+
   } catch (erro) {
     console.error(
       "Erro ao listar pets do tutor:",
       erro
     );
+
 
     return res.status(500).json({
       mensagem:

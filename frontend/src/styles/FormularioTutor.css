@@ -176,6 +176,62 @@
   color: #166534;
 }
 
+/*
+ * =========================================================
+ * PET DE ORIGEM
+ * =========================================================
+ *
+ * Mostra quando o cadastro de Tutor foi iniciado
+ * diretamente pela ficha de um Pet.
+ */
+
+.tutor-pet-origin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  border: 1px solid #dfe5ec;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+
+.tutor-pet-origin div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+.tutor-pet-origin span {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.65;
+}
+
+
+.tutor-pet-origin strong {
+  font-size: 18px;
+}
+
+
+.tutor-pet-origin p {
+  margin: 0;
+  max-width: 420px;
+}
+
+
+@media (max-width: 700px) {
+  .tutor-pet-origin {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 800px) {
   .form-grid {
     grid-template-columns: 1fr;
