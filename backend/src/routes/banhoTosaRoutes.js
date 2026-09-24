@@ -15,6 +15,12 @@ const {
 );
 
 const {
+  gerarComprovantePdf,
+} = require(
+  "../controllers/comprovanteAtendimentoController"
+);
+
+const {
   listarPagamentosPendentes,
 } = require(
   "../controllers/pagamentoController"
@@ -33,8 +39,7 @@ const router = express.Router();
 /*
  * Todo o módulo exige autenticação.
  *
- * Diferentemente do cadastro do catálogo de serviços,
- * a operação diária de Banho e Tosa pode ser realizada
+ * A operação diária de Atendimentos pode ser realizada
  * pelos funcionários autenticados.
  */
 router.use(autenticar);
@@ -65,14 +70,27 @@ router.get(
   listarHistorico
 );
 
-router.get(
-  "/:id",
-  buscarAtendimentoPorId
-);
-
 router.post(
   "/agendamentos",
   criarAgendamento
+);
+
+/*
+ * O PDF é produzido no backend usando somente dados
+ * recuperados do banco.
+ *
+ * A rota fica antes de "/:id" por organização e para
+ * deixar explícito que se trata de um recurso pertencente
+ * ao atendimento.
+ */
+router.get(
+  "/:id/comprovante/pdf",
+  gerarComprovantePdf
+);
+
+router.get(
+  "/:id/pix",
+  gerarPixAtendimento
 );
 
 router.patch(
@@ -107,9 +125,13 @@ router.patch(
   confirmarPagamento
 );
 
+/*
+ * A rota genérica fica por último entre as rotas GET
+ * baseadas em ID.
+ */
 router.get(
-  "/:id/pix",
-  gerarPixAtendimento
+  "/:id",
+  buscarAtendimentoPorId
 );
 
 module.exports = router;

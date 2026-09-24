@@ -20,19 +20,28 @@ function ComprovanteBanhoTosa() {
     useState(true);
 
   const [erro, setErro] =
-        useState("");
+    useState("");
 
-    const [pix, setPix] =
-        useState(null);
+  const [pix, setPix] =
+    useState(null);
 
-    const [carregandoPix, setCarregandoPix] =
-        useState(false);
+  const [carregandoPix, setCarregandoPix] =
+    useState(false);
 
-    const [erroPix, setErroPix] =
-        useState("");
+  const [erroPix, setErroPix] =
+    useState("");
 
-    const [pixCopiado, setPixCopiado] =
-        useState(false);
+  const [pixCopiado, setPixCopiado] =
+    useState(false);
+
+  /*
+   * Controla separadamente a geração do PDF.
+   *
+   * Isso impede múltiplos downloads simultâneos caso
+   * o operador clique várias vezes no botão.
+   */
+  const [gerandoPdf, setGerandoPdf] =
+    useState(false);
 
 
   /*
@@ -58,7 +67,6 @@ function ComprovanteBanhoTosa() {
           resposta.data.atendimento ||
           resposta.data
         );
-
       } catch (error) {
         console.error(
           "Erro ao carregar comprovante:",
@@ -69,31 +77,30 @@ function ComprovanteBanhoTosa() {
           error.response?.data?.mensagem ||
           "Não foi possível carregar o comprovante."
         );
-
       } finally {
         setCarregando(false);
       }
     }
 
-
     carregarAtendimento();
   }, [id]);
 
+
   useEffect(() => {
-  /*
-   * Não tentamos gerar cobrança para pagamentos
-   * já concluídos ou cancelados.
-   */
-  if (
-    atendimento?.pagamento_status ===
-    "PENDENTE"
-  ) {
-    carregarPix();
-  }
-}, [
-  atendimento?.pagamento_status,
-  id,
-]);
+    /*
+     * Não tentamos gerar cobrança para pagamentos
+     * já concluídos ou cancelados.
+     */
+    if (
+      atendimento?.pagamento_status ===
+      "PENDENTE"
+    ) {
+      carregarPix();
+    }
+  }, [
+    atendimento?.pagamento_status,
+    id,
+  ]);
 
 
   function formatarDataHora(data) {
@@ -134,9 +141,11 @@ function ComprovanteBanhoTosa() {
         "Cartão de Crédito",
     };
 
-    return metodos[metodo] ||
+    return (
+      metodos[metodo] ||
       metodo ||
-      "-";
+      "-"
+    );
   }
 
 
@@ -147,160 +156,264 @@ function ComprovanteBanhoTosa() {
       CANCELADO: "Cancelado",
     };
 
-    return statusPagamento[status] ||
+    return (
+      statusPagamento[status] ||
       status ||
-      "Pendente";
+      "Pendente"
+    );
   }
 
-    /*
-    * Busca o QR Code e o Pix Copia e Cola somente
-    * quando o pagamento ainda estiver pendente.
-    *
-    * O valor é definido pelo backend e nunca pelo
-    * navegador.
-    */
-    async function carregarPix() {
+
+  /*
+   * Busca o QR Code e o Pix Copia e Cola somente
+   * quando o pagamento ainda estiver pendente.
+   *
+   * O valor é definido pelo backend e nunca pelo
+   * navegador.
+   */
+  async function carregarPix() {
     try {
-        setCarregandoPix(true);
-        setErroPix("");
+      setCarregandoPix(true);
+      setErroPix("");
 
-        const resposta =
+      const resposta =
         await api.get(
-            `/atendimentos/${id}/pix`
+          `/atendimentos/${id}/pix`
         );
 
-        setPix(
+      setPix(
         resposta.data.pix
-        );
-
+      );
     } catch (error) {
-        console.error(
+      console.error(
         "Erro ao carregar Pix:",
         error
-        );
+      );
 
-        setErroPix(
+      setErroPix(
         error.response?.data?.mensagem ||
         "Não foi possível gerar o Pix."
-        );
-
+      );
     } finally {
-        setCarregandoPix(false);
+      setCarregandoPix(false);
     }
-    }
+  }
 
 
-    /*
-    * Copia o payload completo para que o cliente
-    * também possa utilizar o Pix Copia e Cola.
-    */
-    async function copiarPix() {
+  /*
+   * Copia o payload completo para que o cliente
+   * também possa utilizar o Pix Copia e Cola.
+   */
+  async function copiarPix() {
     if (!pix?.copia_cola) {
-        return;
+      return;
     }
 
     try {
-        await navigator.clipboard.writeText(
+      await navigator.clipboard.writeText(
         pix.copia_cola
-        );
+      );
 
-        setPixCopiado(true);
+      setPixCopiado(true);
 
-        setTimeout(() => {
+      setTimeout(() => {
         setPixCopiado(false);
-        }, 2000);
-
+      }, 2000);
     } catch (error) {
-        console.error(
+      console.error(
         "Erro ao copiar Pix:",
         error
-        );
+      );
 
-        setErroPix(
+      setErroPix(
         "Não foi possível copiar o código Pix."
-        );
+      );
     }
-    }
+  }
 
-    /*
-    * Abre a caixa de impressão do navegador.
-    *
-    * O CSS de impressão remove menus e botões,
-    * deixando somente o comprovante. O usuário
-    * poderá então selecionar "Salvar como PDF".
-    */
-    function gerarPDF() {
+
+  /*
+   * Solicita ao backend o comprovante oficial.
+   *
+   * responseType "blob" é necessário porque a resposta
+   * não é JSON: ela contém os bytes do arquivo PDF.
+   *
+   * O axios configurado no projeto continua enviando
+   * normalmente o JWT de autenticação.
+   */
+  async function baixarPdf() {
+    try {
+      setGerandoPdf(true);
+      setErro("");
+
+      const resposta =
+        await api.get(
+          `/atendimentos/${id}/comprovante/pdf`,
+          {
+            responseType: "blob",
+          }
+        );
+
+      /*
+       * Criamos uma URL temporária apontando para os
+       * bytes recebidos e simulamos um clique em um link.
+       *
+       * Assim o navegador baixa o arquivo sem abrir uma
+       * nova página e sem expor o token na URL.
+       */
+      const arquivo =
+        new Blob(
+          [resposta.data],
+          {
+            type: "application/pdf",
+          }
+        );
+
+      const url =
+        window.URL.createObjectURL(
+          arquivo
+        );
+
+      const link =
+        document.createElement("a");
+
+      link.href = url;
+
+      link.download =
+        `Comprovante de Atendimento do ${atendimento.pet_nome}.pdf`;
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      document.body.removeChild(
+        link
+      );
+
+      window.URL.revokeObjectURL(
+        url
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao baixar PDF:",
+        error
+      );
+
+      /*
+       * Como responseType é blob, respostas de erro do
+       * backend também podem chegar como Blob.
+       *
+       * Tentamos recuperar a mensagem JSON antes de usar
+       * uma mensagem genérica.
+       */
+      let mensagem =
+        "Não foi possível gerar o PDF do comprovante.";
+
+      const dadosErro =
+        error.response?.data;
+
+      if (dadosErro instanceof Blob) {
+        try {
+          const texto =
+            await dadosErro.text();
+
+          const json =
+            JSON.parse(texto);
+
+          if (json.mensagem) {
+            mensagem =
+              json.mensagem;
+          }
+        } catch {
+          // Mantemos a mensagem genérica.
+        }
+      } else if (
+        dadosErro?.mensagem
+      ) {
+        mensagem =
+          dadosErro.mensagem;
+      }
+
+      setErro(mensagem);
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
+
+
+  /*
+   * Mantemos a impressão do navegador como recurso
+   * independente do PDF oficial gerado pelo backend.
+   */
+  function imprimirComprovante() {
     window.print();
+  }
+
+
+  /*
+   * Abre a conversa do WhatsApp utilizando o telefone
+   * cadastrado no tutor e prepara uma mensagem referente
+   * ao atendimento.
+   *
+   * Nesta versão o WhatsApp é aberto pelo navegador.
+   * O PDF deve ser anexado manualmente na conversa.
+   */
+  function enviarWhatsApp() {
+    const telefone =
+      atendimento?.tutor_telefone;
+
+    if (!telefone) {
+      alert(
+        "O tutor não possui telefone cadastrado."
+      );
+
+      return;
     }
 
     /*
-        * Abre a conversa do WhatsApp utilizando o telefone
-        * cadastrado no tutor e prepara uma mensagem referente
-        * ao atendimento.
-        *
-        * Nesta versão o WhatsApp é aberto pelo navegador.
-        * O PDF deve ser anexado manualmente na conversa.
-        */
-        function enviarWhatsApp() {
-        const telefone =
-            atendimento?.tutor_telefone;
+     * O WhatsApp espera somente números.
+     *
+     * Como o sistema é utilizado no Brasil, adicionamos
+     * o código do país 55 caso ainda não esteja presente.
+     */
+    let numero =
+      String(telefone).replace(
+        /\D/g,
+        ""
+      );
 
-        if (!telefone) {
-            alert(
-            "O tutor não possui telefone cadastrado."
-            );
+    if (!numero.startsWith("55")) {
+      numero = `55${numero}`;
+    }
 
-            return;
-        }
+    const nomeTutor =
+      atendimento.tutor_nome ||
+      "cliente";
 
+    const nomePet =
+      atendimento.pet_nome ||
+      "pet";
 
-        /*
-        * O WhatsApp espera somente números.
-        *
-        * Como o sistema é utilizado no Brasil, adicionamos
-        * o código do país 55 caso ainda não esteja presente.
-        */
-        let numero =
-            String(telefone).replace(
-            /\D/g,
-            ""
-            );
+    const mensagem =
+      `Olá, ${nomeTutor}! 😊\n\n` +
+      `O atendimento de ${nomePet} foi concluído.\n\n` +
+      `Segue o comprovante referente aos serviços realizados.\n\n` +
+      `Agradecemos pela preferência!`;
 
+    const url =
+      `https://wa.me/${numero}` +
+      `?text=${encodeURIComponent(
+        mensagem
+      )}`;
 
-        if (!numero.startsWith("55")) {
-            numero = `55${numero}`;
-        }
-
-
-        const nomeTutor =
-            atendimento.tutor_nome ||
-            "cliente";
-
-        const nomePet =
-            atendimento.pet_nome ||
-            "pet";
-
-
-        const mensagem =
-            `Olá, ${nomeTutor}! 😊\n\n` +
-            `O atendimento de ${nomePet} foi concluído.\n\n` +
-            `Segue o comprovante referente aos serviços realizados.\n\n` +
-            `Agradecemos pela preferência!`;
-
-
-        const url =
-            `https://wa.me/${numero}` +
-            `?text=${encodeURIComponent(
-            mensagem
-            )}`;
-
-
-        window.open(
-            url,
-            "_blank",
-            "noopener,noreferrer"
-        );
-        }
+    window.open(
+      url,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
 
 
   if (carregando) {
@@ -369,23 +482,39 @@ function ComprovanteBanhoTosa() {
             Voltar
           </button>
 
-            <button
-                type="button"
-                className="primary-button"
-                onClick={gerarPDF}
-            >
-                Gerar PDF
-            </button>
-            {atendimento.status === "FINALIZADO" &&
+          <button
+            type="button"
+            className="primary-button"
+            onClick={baixarPdf}
+            disabled={gerandoPdf}
+          >
+            {gerandoPdf
+              ? "Gerando PDF..."
+              : "Baixar PDF"}
+          </button>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={imprimirComprovante}
+          >
+            Imprimir
+          </button>
+
+          {atendimento.status ===
+            "FINALIZADO" &&
             atendimento.tutor_telefone && (
-                <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={enviarWhatsApp}
-                    >
-                    Enviar pelo WhatsApp
-                </button>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={enviarWhatsApp}
+              >
+                Enviar pelo WhatsApp
+              </button>
+
             )}
+
         </div>
 
       </div>
@@ -560,120 +689,122 @@ function ComprovanteBanhoTosa() {
 
 
           <div className="banho-tosa-comprovante-grid">
+
             {atendimento.pagamento_status ===
-                "PENDENTE" && (
+              "PENDENTE" && (
 
-                <div className="banho-tosa-pix">
+              <div className="banho-tosa-pix">
 
-                    <div className="banho-tosa-pix-titulo">
+                <div className="banho-tosa-pix-titulo">
 
-                    <h4>
-                        Pagamento via Pix
-                    </h4>
+                  <h4>
+                    Pagamento via Pix
+                  </h4>
 
-                    <p>
-                        Escaneie o QR Code com o
-                        aplicativo do seu banco ou utilize
-                        o Pix Copia e Cola.
-                    </p>
-
-                    </div>
-
-
-                    {carregandoPix && (
-
-                    <div className="banho-tosa-mensagem">
-                        Gerando Pix...
-                    </div>
-
-                    )}
-
-
-                    {erroPix && (
-
-                    <div className="banho-tosa-erro">
-                        {erroPix}
-                    </div>
-
-                    )}
-
-
-                    {pix && !carregandoPix && (
-
-                    <>
-                        <div className="banho-tosa-pix-conteudo">
-
-                        <div className="banho-tosa-pix-qrcode">
-
-                            <img
-                            src={pix.qr_code}
-                            alt="QR Code para pagamento via Pix"
-                            />
-
-                        </div>
-
-
-                        <div className="banho-tosa-pix-informacoes">
-
-                            <div>
-                            <span>
-                                Valor
-                            </span>
-
-                            <strong className="banho-tosa-pix-valor">
-                                {formatarValor(
-                                pix.valor
-                                )}
-                            </strong>
-                            </div>
-
-
-                            <div>
-                            <span>
-                                Identificação
-                            </span>
-
-                            <strong>
-                                {pix.txid}
-                            </strong>
-                            </div>
-
-                        </div>
-
-                        </div>
-
-
-                        <div className="banho-tosa-pix-copia-cola">
-
-                        <label>
-                            Pix Copia e Cola
-                        </label>
-
-                        <textarea
-                            value={pix.copia_cola}
-                            readOnly
-                            rows="4"
-                        />
-
-
-                        <button
-                            type="button"
-                            className="secondary-button"
-                            onClick={copiarPix}
-                        >
-                            {pixCopiado
-                            ? "Código copiado!"
-                            : "Copiar código Pix"}
-                        </button>
-
-                        </div>
-                    </>
-
-                    )}
+                  <p>
+                    Escaneie o QR Code com o
+                    aplicativo do seu banco ou utilize
+                    o Pix Copia e Cola.
+                  </p>
 
                 </div>
 
+
+                {carregandoPix && (
+
+                  <div className="banho-tosa-mensagem">
+                    Gerando Pix...
+                  </div>
+
                 )}
+
+
+                {erroPix && (
+
+                  <div className="banho-tosa-erro">
+                    {erroPix}
+                  </div>
+
+                )}
+
+
+                {pix && !carregandoPix && (
+
+                  <>
+                    <div className="banho-tosa-pix-conteudo">
+
+                      <div className="banho-tosa-pix-qrcode">
+
+                        <img
+                          src={pix.qr_code}
+                          alt="QR Code para pagamento via Pix"
+                        />
+
+                      </div>
+
+
+                      <div className="banho-tosa-pix-informacoes">
+
+                        <div>
+                          <span>
+                            Valor
+                          </span>
+
+                          <strong className="banho-tosa-pix-valor">
+                            {formatarValor(
+                              pix.valor
+                            )}
+                          </strong>
+                        </div>
+
+
+                        <div>
+                          <span>
+                            Identificação
+                          </span>
+
+                          <strong>
+                            {pix.txid}
+                          </strong>
+                        </div>
+
+                      </div>
+
+                    </div>
+
+
+                    <div className="banho-tosa-pix-copia-cola">
+
+                      <label>
+                        Pix Copia e Cola
+                      </label>
+
+                      <textarea
+                        value={pix.copia_cola}
+                        readOnly
+                        rows="4"
+                      />
+
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={copiarPix}
+                      >
+                        {pixCopiado
+                          ? "Código copiado!"
+                          : "Copiar código Pix"}
+                      </button>
+
+                    </div>
+                  </>
+
+                )}
+
+              </div>
+
+            )}
+
 
             <div>
               <span>Status</span>
@@ -685,19 +816,23 @@ function ComprovanteBanhoTosa() {
               </strong>
             </div>
 
-             {atendimento.pagamento_metodo && (   
-                <div>
+
+            {atendimento.pagamento_metodo && (
+
+              <div>
                 <span>
-                    Forma de pagamento
+                  Forma de pagamento
                 </span>
 
                 <strong>
-                    {formatarMetodo(
+                  {formatarMetodo(
                     atendimento.pagamento_metodo
-                    )}
+                  )}
                 </strong>
-                </div>
+              </div>
+
             )}
+
 
             {atendimento.pagamento_pago_em && (
 
