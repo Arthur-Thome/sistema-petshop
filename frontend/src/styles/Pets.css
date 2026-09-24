@@ -10,9 +10,7 @@
 .pets-message {
   margin-top: 22px;
   padding: 20px;
-
   background: #ffffff;
-
   border: 1px solid #e5e7eb;
   border-radius: 10px;
 }
@@ -24,14 +22,10 @@
 
 .pets-search-form input {
   flex: 1;
-
   padding: 11px 12px;
-
   border: 1px solid #d1d5db;
   border-radius: 7px;
-
   font-size: 14px;
-
   outline: none;
 }
 
@@ -44,12 +38,9 @@
 .secondary-button,
 .table-action-button {
   padding: 10px 16px;
-
   border: none;
   border-radius: 7px;
-
   font-weight: 600;
-
   cursor: pointer;
 }
 
@@ -61,7 +52,6 @@
 
 .secondary-button {
   border: 1px solid #d1d5db;
-
   background: #ffffff;
   color: #374151;
 }
@@ -73,43 +63,83 @@
 
 .pets-table {
   width: 100%;
-
   border-collapse: collapse;
 }
 
 .pets-table th,
 .pets-table td {
   padding: 13px 12px;
-
   border-bottom: 1px solid #e5e7eb;
-
   text-align: left;
   vertical-align: middle;
-
   font-size: 14px;
 }
 
 .pets-table th {
   color: #6b7280;
-
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.pet-name-cell {
-  display: flex;
+
+/*
+ * =====================================================
+ * IDENTIFICAÇÃO CLICÁVEL DO PET
+ * =====================================================
+ *
+ * Foto e nome funcionam como acesso direto à ficha.
+ * O botão mantém aparência de conteúdo da tabela para
+ * não competir visualmente com a ação "Visualizar".
+ */
+
+.pet-name-button {
+  display: inline-flex;
   align-items: center;
   gap: 11px;
+
+  padding: 3px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #1f2937;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.pet-name-button strong {
+  transition: color 0.15s ease;
+}
+
+.pet-name-button:hover strong {
+  color: #2563eb;
+}
+
+.pet-name-button:hover .pet-avatar,
+.pet-name-button:hover .pet-avatar-placeholder {
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.12);
+}
+
+.pet-name-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
 }
 
 .pet-avatar,
 .pet-avatar-placeholder {
   width: 42px;
   height: 42px;
-
   flex-shrink: 0;
-
   border-radius: 50%;
+
+  transition:
+    box-shadow 0.15s ease;
 }
 
 .pet-avatar {
@@ -120,20 +150,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #e5e7eb;
   color: #374151;
-
   font-weight: 700;
 }
 
 .status-badge {
   display: inline-flex;
-
   padding: 5px 9px;
-
   border-radius: 999px;
-
   font-size: 12px;
   font-weight: 600;
 }
@@ -150,27 +175,27 @@
 
 .table-action-button {
   border: 1px solid #d1d5db;
-
   background: #ffffff;
   color: #374151;
 }
 
+.table-action-button:hover {
+  background: #f3f4f6;
+}
+
 .pets-empty {
   text-align: center;
-
   color: #6b7280;
 }
 
 .pets-empty h3 {
   margin-top: 0;
-
   color: #374151;
 }
 
 .pets-message.error {
   background: #fee2e2;
   color: #991b1b;
-
   border-color: #fecaca;
 }
 

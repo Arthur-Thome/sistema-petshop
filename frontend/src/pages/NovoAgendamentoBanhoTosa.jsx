@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import api from "../services/api";
 
@@ -9,15 +17,36 @@ import "../styles/BanhoTosa.css";
 function NovoAgendamentoBanhoTosa() {
   const navigate = useNavigate();
 
-  const [pets, setPets] = useState([]);
-  const [servicos, setServicos] = useState([]);
+  const [searchParams] =
+    useSearchParams();
 
-  const [formData, setFormData] = useState({
-    pet_id: "",
-    servicos: [],
-    agendado_para: "",
-    observacoes_agendamento: "",
-  });
+
+  /*
+   * Quando o atendimento é iniciado pela ficha de um Pet,
+   * recebemos /atendimentos/novo?pet=123.
+   *
+   * O ID é validado contra a lista carregada da API antes
+   * de ser utilizado no formulário.
+   */
+  const petOrigemId =
+    searchParams.get("pet");
+
+
+  const [pets, setPets] =
+    useState([]);
+
+  const [servicos, setServicos] =
+    useState([]);
+
+
+  const [formData, setFormData] =
+    useState({
+      pet_id: "",
+      servicos: [],
+      agendado_para: "",
+      observacoes_agendamento: "",
+    });
+
 
   const [carregando, setCarregando] =
     useState(true);
@@ -30,17 +59,17 @@ function NovoAgendamentoBanhoTosa() {
 
 
   /*
-   * Carrega os pets e os serviços disponíveis.
+   * Carrega pets e serviços ativos.
    *
-   * Somente registros ativos são exibidos no
-   * formulário, embora o backend também faça
-   * essa validação por segurança.
+   * Se um Pet foi informado pela URL, ele somente será
+   * pré-selecionado se realmente existir e estiver ativo.
    */
   useEffect(() => {
     async function carregarDados() {
       try {
         setCarregando(true);
         setErro("");
+
 
         const [
           respostaPets,
@@ -52,29 +81,76 @@ function NovoAgendamentoBanhoTosa() {
 
 
         const listaPets =
-          Array.isArray(respostaPets.data)
+          Array.isArray(
+            respostaPets.data
+          )
             ? respostaPets.data
-            : respostaPets.data.pets || [];
+            : respostaPets.data.pets ||
+              [];
 
 
         const listaServicos =
-          Array.isArray(respostaServicos.data)
+          Array.isArray(
+            respostaServicos.data
+          )
             ? respostaServicos.data
-            : respostaServicos.data.servicos || [];
+            : respostaServicos.data
+                .servicos || [];
 
 
-        setPets(
+        const petsAtivos =
           listaPets.filter(
             (pet) => pet.ativo
-          )
-        );
+          );
 
+
+        const servicosAtivos =
+          listaServicos.filter(
+            (servico) =>
+              servico.ativo
+          );
+
+
+        setPets(petsAtivos);
 
         setServicos(
-          listaServicos.filter(
-            (servico) => servico.ativo
-          )
+          servicosAtivos
         );
+
+
+        /*
+         * Nunca confiamos apenas no parâmetro da URL.
+         *
+         * O Pet precisa existir na lista ativa devolvida
+         * pelo backend para ser selecionado.
+         */
+        if (petOrigemId) {
+          const petOrigem =
+            petsAtivos.find(
+              (pet) =>
+                Number(pet.id) ===
+                Number(petOrigemId)
+            );
+
+
+          if (petOrigem) {
+            setFormData(
+              (dadosAnteriores) => ({
+                ...dadosAnteriores,
+
+                pet_id:
+                  String(
+                    petOrigem.id
+                  ),
+              })
+            );
+
+          } else {
+            setErro(
+              "O pet informado não foi encontrado ou está inativo."
+            );
+          }
+        }
 
       } catch (error) {
         console.error(
@@ -82,9 +158,11 @@ function NovoAgendamentoBanhoTosa() {
           error
         );
 
+
         setErro(
-          error.response?.data?.mensagem ||
-          "Não foi possível carregar os dados do agendamento."
+          error.response?.data
+            ?.mensagem ||
+            "Não foi possível carregar os dados do agendamento."
         );
 
       } finally {
@@ -94,17 +172,47 @@ function NovoAgendamentoBanhoTosa() {
 
 
     carregarDados();
-  }, []);
+
+  }, [petOrigemId]);
 
 
   /*
-   * Atualiza campos simples do formulário.
+   * Se o atendimento começou pela ficha de um Pet,
+   * Voltar e Cancelar retornam para essa ficha.
+   *
+   * No fluxo normal retornamos para Atendimentos.
    */
+  function voltar() {
+    const petOrigem =
+      pets.find(
+        (pet) =>
+          Number(pet.id) ===
+          Number(petOrigemId)
+      );
+
+
+    if (
+      petOrigemId &&
+      petOrigem
+    ) {
+      navigate(
+        `/pets/${petOrigem.id}`
+      );
+
+      return;
+    }
+
+
+    navigate("/atendimentos");
+  }
+
+
   function alterarCampo(event) {
     const {
       name,
       value,
     } = event.target;
+
 
     setFormData(
       (dadosAnteriores) => ({
@@ -118,51 +226,59 @@ function NovoAgendamentoBanhoTosa() {
   /*
    * Adiciona ou remove um serviço da seleção.
    *
-   * Guardamos somente os IDs no estado porque
-   * os preços definitivos serão validados novamente
-   * pelo backend no momento do agendamento.
+   * Guardamos somente IDs. O backend continua responsável
+   * pela validação e pelos preços oficiais.
    */
-  function alterarServico(servicoId) {
+  function alterarServico(
+    servicoId
+  ) {
     setFormData(
       (dadosAnteriores) => {
 
         const selecionado =
-          dadosAnteriores.servicos.includes(
-            servicoId
-          );
+          dadosAnteriores
+            .servicos
+            .includes(
+              servicoId
+            );
 
 
         const novosServicos =
           selecionado
-            ? dadosAnteriores.servicos.filter(
-                (id) => id !== servicoId
-              )
+            ? dadosAnteriores
+                .servicos
+                .filter(
+                  (id) =>
+                    id !== servicoId
+                )
             : [
-                ...dadosAnteriores.servicos,
+                ...dadosAnteriores
+                  .servicos,
+
                 servicoId,
               ];
 
 
         return {
           ...dadosAnteriores,
-          servicos: novosServicos,
+
+          servicos:
+            novosServicos,
         };
       }
     );
   }
 
 
-  /*
-   * Recupera os objetos completos dos serviços
-   * selecionados para montar o resumo visual.
-   */
   const servicosSelecionados =
     useMemo(() => {
       return servicos.filter(
         (servico) =>
-          formData.servicos.includes(
-            servico.id
-          )
+          formData
+            .servicos
+            .includes(
+              servico.id
+            )
       );
     }, [
       servicos,
@@ -171,34 +287,54 @@ function NovoAgendamentoBanhoTosa() {
 
 
   /*
-   * O cálculo abaixo é apenas uma prévia para
-   * o funcionário.
-   *
-   * O valor oficial continuará sendo calculado
-   * pelo backend usando os preços do banco.
+   * Os totais abaixo são somente uma prévia visual.
+   * O backend continua calculando os valores oficiais.
    */
   const valorTotal =
     useMemo(() => {
-      return servicosSelecionados.reduce(
-        (total, servico) =>
-          total +
-          Number(servico.valor || 0),
-        0
-      );
-    }, [servicosSelecionados]);
+      return servicosSelecionados
+        .reduce(
+          (total, servico) =>
+            total +
+            Number(
+              servico.valor || 0
+            ),
+          0
+        );
+    }, [
+      servicosSelecionados,
+    ]);
 
 
   const duracaoTotal =
     useMemo(() => {
-      return servicosSelecionados.reduce(
-        (total, servico) =>
-          total +
-          Number(
-            servico.duracao_minutos || 0
-          ),
-        0
+      return servicosSelecionados
+        .reduce(
+          (total, servico) =>
+            total +
+            Number(
+              servico
+                .duracao_minutos ||
+                0
+            ),
+          0
+        );
+    }, [
+      servicosSelecionados,
+    ]);
+
+
+  const petSelecionado =
+    useMemo(() => {
+      return pets.find(
+        (pet) =>
+          Number(pet.id) ===
+          Number(formData.pet_id)
       );
-    }, [servicosSelecionados]);
+    }, [
+      pets,
+      formData.pet_id,
+    ]);
 
 
   function formatarValor(valor) {
@@ -217,6 +353,7 @@ function NovoAgendamentoBanhoTosa() {
   async function salvar(event) {
     event.preventDefault();
 
+
     if (!formData.pet_id) {
       setErro(
         "Selecione um pet."
@@ -227,7 +364,8 @@ function NovoAgendamentoBanhoTosa() {
 
 
     if (
-      formData.servicos.length === 0
+      formData.servicos.length ===
+      0
     ) {
       setErro(
         "Selecione pelo menos um serviço."
@@ -237,7 +375,9 @@ function NovoAgendamentoBanhoTosa() {
     }
 
 
-    if (!formData.agendado_para) {
+    if (
+      !formData.agendado_para
+    ) {
       setErro(
         "Informe a data e o horário do agendamento."
       );
@@ -248,29 +388,25 @@ function NovoAgendamentoBanhoTosa() {
 
     try {
       setSalvando(true);
+
       setErro("");
 
 
-      /*
-       * O frontend utiliza somente a nova rota oficial
-       * de Atendimentos.
-       *
-       * A rota antiga continua temporariamente disponível
-       * no backend apenas para compatibilidade durante
-       * a migração do restante do sistema.
-       */
       const resposta =
         await api.post(
           "/atendimentos/agendamentos",
           {
             pet_id:
-              Number(formData.pet_id),
+              Number(
+                formData.pet_id
+              ),
 
             servicos:
               formData.servicos,
 
             agendado_para:
-              formData.agendado_para,
+              formData
+                .agendado_para,
 
             observacoes_agendamento:
               formData
@@ -279,10 +415,6 @@ function NovoAgendamentoBanhoTosa() {
         );
 
 
-      /*
-       * Após criar o agendamento, abrimos diretamente
-       * os detalhes do novo atendimento.
-       */
       const atendimento =
         resposta.data.atendimento;
 
@@ -297,9 +429,11 @@ function NovoAgendamentoBanhoTosa() {
         error
       );
 
+
       setErro(
-        error.response?.data?.mensagem ||
-        "Não foi possível criar o agendamento."
+        error.response?.data
+          ?.mensagem ||
+          "Não foi possível criar o agendamento."
       );
 
     } finally {
@@ -327,12 +461,19 @@ function NovoAgendamentoBanhoTosa() {
       <div className="banho-tosa-header">
 
         <div>
-          <h1>Novo Agendamento</h1>
+
+          <h1>
+            Novo Agendamento
+          </h1>
+
 
           <p>
-            Selecione o pet e os serviços
-            que serão realizados.
+            {petSelecionado &&
+            petOrigemId
+              ? `Novo atendimento para ${petSelecionado.nome}.`
+              : "Selecione o pet e os serviços que serão realizados."}
           </p>
+
         </div>
 
 
@@ -341,9 +482,7 @@ function NovoAgendamentoBanhoTosa() {
           <button
             type="button"
             className="secondary-button"
-            onClick={() =>
-              navigate("/atendimentos")
-            }
+            onClick={voltar}
             disabled={salvando}
           >
             Voltar
@@ -371,11 +510,16 @@ function NovoAgendamentoBanhoTosa() {
               Pet *
             </label>
 
+
             <select
               id="pet_id"
               name="pet_id"
-              value={formData.pet_id}
-              onChange={alterarCampo}
+              value={
+                formData.pet_id
+              }
+              onChange={
+                alterarCampo
+              }
               required
             >
 
@@ -383,7 +527,9 @@ function NovoAgendamentoBanhoTosa() {
                 Selecione um pet
               </option>
 
+
               {pets.map((pet) => (
+
                 <option
                   key={pet.id}
                   value={pet.id}
@@ -394,11 +540,25 @@ function NovoAgendamentoBanhoTosa() {
                     ? ` — ${pet.tutor_nome}`
                     : ""}
                 </option>
+
               ))}
 
             </select>
 
           </div>
+
+
+          {petSelecionado &&
+            petOrigemId && (
+
+            <div className="banho-tosa-mensagem">
+              Pet selecionado pela ficha:{" "}
+              <strong>
+                {petSelecionado.nome}
+              </strong>
+            </div>
+
+          )}
 
 
           <div className="banho-tosa-form-campo">
@@ -408,13 +568,15 @@ function NovoAgendamentoBanhoTosa() {
             </label>
 
 
-            {servicos.length === 0 ? (
+            {servicos.length ===
+            0 ? (
 
               <div className="banho-tosa-sem-servicos">
 
                 <p>
                   Nenhum serviço ativo cadastrado.
                 </p>
+
 
                 <button
                   type="button"
@@ -438,9 +600,11 @@ function NovoAgendamentoBanhoTosa() {
                   (servico) => {
 
                     const selecionado =
-                      formData.servicos.includes(
-                        servico.id
-                      );
+                      formData
+                        .servicos
+                        .includes(
+                          servico.id
+                        );
 
 
                     return (
@@ -450,12 +614,16 @@ function NovoAgendamentoBanhoTosa() {
                             ? "banho-tosa-servico-item selecionado"
                             : "banho-tosa-servico-item"
                         }
-                        key={servico.id}
+                        key={
+                          servico.id
+                        }
                       >
 
                         <input
                           type="checkbox"
-                          checked={selecionado}
+                          checked={
+                            selecionado
+                          }
                           onChange={() =>
                             alterarServico(
                               servico.id
@@ -469,8 +637,11 @@ function NovoAgendamentoBanhoTosa() {
                           <div className="banho-tosa-servico-topo">
 
                             <strong>
-                              {servico.nome}
+                              {
+                                servico.nome
+                              }
                             </strong>
+
 
                             <strong>
                               {formatarValor(
@@ -482,11 +653,13 @@ function NovoAgendamentoBanhoTosa() {
 
 
                           {servico.descricao && (
+
                             <p>
                               {
                                 servico.descricao
                               }
                             </p>
+
                           )}
 
 
@@ -510,7 +683,8 @@ function NovoAgendamentoBanhoTosa() {
           </div>
 
 
-          {servicosSelecionados.length > 0 && (
+          {servicosSelecionados
+            .length > 0 && (
 
             <div className="banho-tosa-resumo-agendamento">
 
@@ -525,13 +699,16 @@ function NovoAgendamentoBanhoTosa() {
                   (servico) => (
 
                     <div
-                      key={servico.id}
+                      key={
+                        servico.id
+                      }
                       className="banho-tosa-resumo-linha"
                     >
 
                       <span>
                         {servico.nome}
                       </span>
+
 
                       <strong>
                         {formatarValor(
@@ -553,6 +730,7 @@ function NovoAgendamentoBanhoTosa() {
                   Duração estimada
                 </span>
 
+
                 <strong>
                   {duracaoTotal > 0
                     ? `${duracaoTotal} minutos`
@@ -567,6 +745,7 @@ function NovoAgendamentoBanhoTosa() {
                 <span>
                   Total
                 </span>
+
 
                 <strong>
                   {formatarValor(
@@ -587,14 +766,18 @@ function NovoAgendamentoBanhoTosa() {
               Data e horário *
             </label>
 
+
             <input
               id="agendado_para"
               name="agendado_para"
               type="datetime-local"
               value={
-                formData.agendado_para
+                formData
+                  .agendado_para
               }
-              onChange={alterarCampo}
+              onChange={
+                alterarCampo
+              }
               required
             />
 
@@ -603,11 +786,10 @@ function NovoAgendamentoBanhoTosa() {
 
           <div className="banho-tosa-form-campo">
 
-            <label
-              htmlFor="observacoes_agendamento"
-            >
+            <label htmlFor="observacoes_agendamento">
               Observações
             </label>
+
 
             <textarea
               id="observacoes_agendamento"
@@ -616,7 +798,9 @@ function NovoAgendamentoBanhoTosa() {
                 formData
                   .observacoes_agendamento
               }
-              onChange={alterarCampo}
+              onChange={
+                alterarCampo
+              }
               rows="5"
               placeholder="Informações importantes para o atendimento..."
             />
@@ -629,9 +813,7 @@ function NovoAgendamentoBanhoTosa() {
             <button
               type="button"
               className="secondary-button"
-              onClick={() =>
-                navigate("/atendimentos")
-              }
+              onClick={voltar}
               disabled={salvando}
             >
               Cancelar

@@ -672,7 +672,16 @@ const [
                     <div className="tutor-pet-title">
                       <div className="tutor-pet-name-row">
                         <h3>
-                          {pet.nome}
+                          <button
+                            type="button"
+                            className="tutor-pet-name-link"
+                            onClick={() =>
+                              navigate(`/pets/${pet.id}`)
+                            }
+                            title={`Abrir ficha de ${pet.nome}`}
+                          >
+                            {pet.nome}
+                          </button>
                         </h3>
 
                         {pet.principal && (

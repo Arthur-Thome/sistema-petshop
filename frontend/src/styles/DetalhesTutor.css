@@ -746,6 +746,36 @@
   text-align: center;
 }
 
+/* =========================================================
+   LINK DIRETO PARA A FICHA DO PET
+   ========================================================= */
+
+/*
+ * O nome funciona como atalho para a ficha do animal,
+ * mas mantém a aparência de título do card.
+ */
+.tutor-pet-name-link {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tutor-pet-name-link:hover {
+  text-decoration: underline;
+}
+
+.tutor-pet-name-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
 
 /* =========================================================
    RESPONSIVIDADE

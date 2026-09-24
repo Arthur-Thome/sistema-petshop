@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -10,7 +11,6 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api";
-
 import "../styles/FormularioPet.css";
 
 import SeletorTutor
@@ -30,6 +30,15 @@ const formInicial = {
 };
 
 
+/*
+ * Tamanho da fotografia final enviada ao backend.
+ *
+ * Todas as fotos passam a ter o mesmo formato quadrado,
+ * facilitando a exibição nas listas e fichas do sistema.
+ */
+const TAMANHO_FOTO_FINAL = 800;
+
+
 function FormularioPet() {
   const navigate = useNavigate();
 
@@ -38,23 +47,9 @@ function FormularioPet() {
   const [searchParams] =
     useSearchParams();
 
-
-  /*
-   * A presença do ID determina se estamos cadastrando
-   * um novo Pet ou editando um Pet existente.
-   */
   const modoEdicao =
     Boolean(id);
 
-
-  /*
-   * Quando o cadastro é iniciado pela ficha de um Tutor,
-   * recebemos o ID através da URL:
-   *
-   * /pets/novo?tutor=123
-   *
-   * Esse parâmetro é utilizado somente no cadastro.
-   */
   const tutorOrigemId =
     !modoEdicao
       ? searchParams.get("tutor")
@@ -64,72 +59,43 @@ function FormularioPet() {
   const [form, setForm] =
     useState(formInicial);
 
-
   const [tutores, setTutores] =
     useState([]);
-
 
   const [
     carregandoTutores,
     setCarregandoTutores,
   ] = useState(!modoEdicao);
 
-
   const [salvando, setSalvando] =
     useState(false);
-
 
   const [erro, setErro] =
     useState("");
 
-
   const [sucesso, setSucesso] =
     useState("");
-
 
   const [
     carregandoPet,
     setCarregandoPet,
   ] = useState(modoEdicao);
 
-
-  /*
-   * Arquivo selecionado pelo usuário.
-   *
-   * Ele permanece somente no navegador até que
-   * seja enviado ao backend.
-   */
   const [
     arquivoFoto,
     setArquivoFoto,
   ] = useState(null);
 
-
-  /*
-   * URL temporária utilizada para mostrar a nova
-   * imagem antes do upload.
-   */
   const [
     previewFoto,
     setPreviewFoto,
   ] = useState("");
 
-
-  /*
-   * Caminho da foto que já está armazenada
-   * no backend.
-   */
   const [
     fotoAtual,
     setFotoAtual,
   ] = useState("");
 
-
-  /*
-   * Guarda o Tutor de origem quando o cadastro
-   * do Pet foi iniciado diretamente pela ficha
-   * desse Tutor.
-   */
   const [
     tutorOrigem,
     setTutorOrigem,
@@ -138,14 +104,93 @@ function FormularioPet() {
 
   /*
    * =====================================================
-   * CARREGAMENTO DOS TUTORES
+   * EDITOR DE FOTO
    * =====================================================
-   *
-   * A lista de Tutores somente precisa ser carregada
-   * quando estamos CADASTRANDO um novo Pet.
-   *
-   * Na edição, os relacionamentos com Tutores são
-   * administrados exclusivamente na ficha do Pet.
+   */
+
+  const [
+    editorAberto,
+    setEditorAberto,
+  ] = useState(false);
+
+  const [
+    imagemEditor,
+    setImagemEditor,
+  ] = useState("");
+
+  const [
+    nomeArquivoOriginal,
+    setNomeArquivoOriginal,
+  ] = useState("");
+
+  const [zoom, setZoom] =
+    useState(1);
+
+  const [posicao, setPosicao] =
+    useState({
+      x: 0,
+      y: 0,
+    });
+
+  const [
+    arrastando,
+    setArrastando,
+  ] = useState(false);
+
+  const inicioArrasteRef =
+    useRef(null);
+
+  const imagemEditorRef =
+    useRef(null);
+
+  const areaEditorRef =
+    useRef(null);
+
+
+  /*
+   * =====================================================
+   * PREVENÇÃO DE PET DUPLICADO
+   * =====================================================
+   */
+
+  const [
+    petsDoTutor,
+    setPetsDoTutor,
+  ] = useState([]);
+
+  const [
+    carregandoPetsTutor,
+    setCarregandoPetsTutor,
+  ] = useState(false);
+
+  const [
+    petDuplicado,
+    setPetDuplicado,
+  ] = useState(null);
+
+  const [
+    duplicidadeIgnorada,
+    setDuplicidadeIgnorada,
+  ] = useState("");
+
+
+  function normalizarNome(valor) {
+    return String(valor || "")
+      .trim()
+      .toLocaleLowerCase("pt-BR")
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(/\s+/g, " ");
+  }
+
+
+  /*
+   * =====================================================
+   * TUTORES
+   * =====================================================
    */
   useEffect(() => {
     if (modoEdicao) {
@@ -159,42 +204,24 @@ function FormularioPet() {
       try {
         setCarregandoTutores(true);
 
-
         const resposta =
-          await api.get(
-            "/tutores"
-          );
-
+          await api.get("/tutores");
 
         const lista =
           Array.isArray(resposta.data)
             ? resposta.data
             : [];
 
-
-        /*
-         * Um novo Pet somente pode ser relacionado
-         * inicialmente a um Tutor ativo.
-         */
         const tutoresAtivos =
           lista.filter(
-            (tutor) =>
-              tutor.ativo
+            (tutor) => tutor.ativo
           );
-
 
         setTutores(
           tutoresAtivos
         );
 
 
-        /*
-         * Se o cadastro começou pela ficha de um Tutor,
-         * tentamos selecioná-lo automaticamente.
-         *
-         * Não confiamos somente no parâmetro da URL.
-         * O Tutor precisa existir e estar ativo.
-         */
         if (tutorOrigemId) {
           const tutorEncontrado =
             tutoresAtivos.find(
@@ -209,7 +236,6 @@ function FormularioPet() {
               tutorEncontrado
             );
 
-
             setForm(
               (anterior) => ({
                 ...anterior,
@@ -222,7 +248,6 @@ function FormularioPet() {
             );
           } else {
             setTutorOrigem(null);
-
 
             setErro(
               "O tutor informado na origem não foi encontrado ou está inativo. Selecione outro tutor."
@@ -241,7 +266,6 @@ function FormularioPet() {
 
 
     carregarTutores();
-
   }, [
     modoEdicao,
     tutorOrigemId,
@@ -250,17 +274,168 @@ function FormularioPet() {
 
   /*
    * =====================================================
-   * CARREGAMENTO DO PET
+   * PETS DO TUTOR SELECIONADO
    * =====================================================
-   *
-   * Na edição recuperamos os dados atuais do animal.
-   *
-   * tutor_id continua sendo mantido INTERNAMENTE durante
-   * esta fase da migração porque o backend ainda utiliza
-   * esse campo em parte da validação.
-   *
-   * Entretanto, o usuário não poderá alterar o Tutor
-   * através desta tela.
+   */
+  useEffect(() => {
+    if (
+      modoEdicao ||
+      !form.tutor_id
+    ) {
+      setPetsDoTutor([]);
+      setPetDuplicado(null);
+      setDuplicidadeIgnorada("");
+
+      return;
+    }
+
+
+    async function carregarPetsDoTutor() {
+      try {
+        setCarregandoPetsTutor(true);
+
+        const resposta =
+          await api.get(
+            `/pets/tutor/${form.tutor_id}`
+          );
+
+        const lista =
+          Array.isArray(
+            resposta.data
+          )
+            ? resposta.data
+            : Array.isArray(
+                resposta.data?.pets
+              )
+              ? resposta.data.pets
+              : [];
+
+        setPetsDoTutor(lista);
+      } catch (error) {
+        console.error(
+          "Não foi possível verificar os pets do tutor:",
+          error
+        );
+
+        setPetsDoTutor([]);
+      } finally {
+        setCarregandoPetsTutor(false);
+      }
+    }
+
+
+    carregarPetsDoTutor();
+  }, [
+    form.tutor_id,
+    modoEdicao,
+  ]);
+
+
+  /*
+   * =====================================================
+   * DETECÇÃO DE PET DUPLICADO
+   * =====================================================
+   */
+  useEffect(() => {
+    if (
+      modoEdicao ||
+      !form.tutor_id
+    ) {
+      return;
+    }
+
+
+    const nomeDigitado =
+      normalizarNome(
+        form.nome
+      );
+
+
+    if (!nomeDigitado) {
+      setPetDuplicado(null);
+      setDuplicidadeIgnorada("");
+
+      return;
+    }
+
+
+    const chaveAtual =
+      `${form.tutor_id}:${nomeDigitado}`;
+
+
+    if (
+      duplicidadeIgnorada &&
+      duplicidadeIgnorada !==
+        chaveAtual
+    ) {
+      setDuplicidadeIgnorada("");
+    }
+
+
+    const encontrado =
+      petsDoTutor.find(
+        (pet) =>
+          normalizarNome(
+            pet.nome
+          ) === nomeDigitado
+      );
+
+
+    if (!encontrado) {
+      setPetDuplicado(null);
+
+      return;
+    }
+
+
+    if (
+      duplicidadeIgnorada ===
+      chaveAtual
+    ) {
+      return;
+    }
+
+
+    setPetDuplicado(
+      encontrado
+    );
+  }, [
+    form.nome,
+    form.tutor_id,
+    modoEdicao,
+    petsDoTutor,
+    duplicidadeIgnorada,
+  ]);
+
+
+  function continuarMesmoPet() {
+    const chaveAtual =
+      `${form.tutor_id}:${normalizarNome(
+        form.nome
+      )}`;
+
+    setDuplicidadeIgnorada(
+      chaveAtual
+    );
+
+    setPetDuplicado(null);
+  }
+
+
+  function abrirPetExistente() {
+    if (!petDuplicado) {
+      return;
+    }
+
+    navigate(
+      `/pets/${petDuplicado.id}`
+    );
+  }
+
+    /*
+   * =====================================================
+   * CARREGAMENTO DO PET NA EDIÇÃO
+   * =====================================================
    */
   useEffect(() => {
     if (!modoEdicao) {
@@ -271,32 +446,21 @@ function FormularioPet() {
     async function carregarPet() {
       try {
         setCarregandoPet(true);
-
         setErro("");
-
 
         const resposta =
           await api.get(
             `/pets/${id}`
           );
 
-
         const pet =
           resposta.data.pet;
-
 
         setFotoAtual(
           pet.foto || ""
         );
 
-
         setForm({
-          /*
-           * Mantido somente por compatibilidade temporária
-           * com o backend.
-           *
-           * Este campo NÃO será exibido na edição.
-           */
           tutor_id:
             String(
               pet.tutor_id || ""
@@ -315,12 +479,6 @@ function FormularioPet() {
           sexo:
             pet.sexo || "",
 
-          /*
-           * O PostgreSQL pode retornar a data acompanhada
-           * de horário.
-           *
-           * O input date precisa somente de YYYY-MM-DD.
-           */
           data_nascimento:
             pet.data_nascimento
               ? String(
@@ -337,7 +495,6 @@ function FormularioPet() {
           observacoes:
             pet.observacoes || "",
         });
-
       } catch (error) {
         setErro(
           error.response?.data?.mensagem ||
@@ -350,7 +507,6 @@ function FormularioPet() {
 
 
     carregarPet();
-
   }, [
     id,
     modoEdicao,
@@ -358,8 +514,8 @@ function FormularioPet() {
 
 
   /*
-   * Libera a URL temporária criada para a
-   * pré-visualização quando ela não for mais necessária.
+   * URLs criadas pelo navegador precisam ser liberadas
+   * quando deixam de ser utilizadas.
    */
   useEffect(() => {
     return () => {
@@ -372,22 +528,28 @@ function FormularioPet() {
   }, [previewFoto]);
 
 
-  /*
-   * Atualização genérica dos campos do formulário.
-   */
+  useEffect(() => {
+    return () => {
+      if (imagemEditor) {
+        URL.revokeObjectURL(
+          imagemEditor
+        );
+      }
+    };
+  }, [imagemEditor]);
+
+
   function atualizarCampo(event) {
     const {
       name,
       value,
     } = event.target;
 
-
     setForm(
       (anterior) => ({
         ...anterior,
 
-        [name]:
-          value,
+        [name]: value,
       })
     );
   }
@@ -395,12 +557,17 @@ function FormularioPet() {
 
   /*
    * =====================================================
-   * FOTO
+   * ABRIR EDITOR DE FOTO
    * =====================================================
+   *
+   * A foto ainda não é enviada ao backend neste momento.
+   * Primeiro o usuário define o enquadramento.
    */
   function selecionarFoto(event) {
     const arquivo =
       event.target.files?.[0];
+
+    event.target.value = "";
 
 
     if (!arquivo) {
@@ -408,11 +575,6 @@ function FormularioPet() {
     }
 
 
-    /*
-     * Mantemos no frontend as mesmas restrições
-     * principais existentes no backend para dar
-     * retorno imediato ao usuário.
-     */
     const tiposPermitidos = [
       "image/jpeg",
       "image/png",
@@ -429,9 +591,6 @@ function FormularioPet() {
         "Selecione uma imagem JPG, PNG ou WEBP."
       );
 
-
-      event.target.value = "";
-
       return;
     }
 
@@ -444,50 +603,469 @@ function FormularioPet() {
         "A imagem deve ter no máximo 5 MB."
       );
 
-
-      event.target.value = "";
-
       return;
     }
 
 
     setErro("");
 
-    setArquivoFoto(
-      arquivo
-    );
 
-
-    /*
-     * Remove a URL temporária anterior antes de
-     * criar uma nova.
-     */
-    if (previewFoto) {
+    if (imagemEditor) {
       URL.revokeObjectURL(
-        previewFoto
+        imagemEditor
       );
     }
 
 
-    const preview =
+    const url =
       URL.createObjectURL(
         arquivo
       );
 
 
-    setPreviewFoto(
-      preview
+    setImagemEditor(url);
+
+    setNomeArquivoOriginal(
+      arquivo.name
     );
+
+    setZoom(1);
+
+    setPosicao({
+      x: 0,
+      y: 0,
+    });
+
+    setEditorAberto(true);
   }
 
 
   /*
-   * Envia a fotografia separadamente dos dados
-   * cadastrais.
-   *
-   * O Pet precisa existir primeiro porque o ID
-   * faz parte da rota.
+   * =====================================================
+   * ARRASTAR A FOTO
+   * =====================================================
    */
+
+  function iniciarArraste(event) {
+    event.preventDefault();
+
+
+    const ponto =
+      obterPonto(event);
+
+
+    inicioArrasteRef.current = {
+      x: ponto.x,
+      y: ponto.y,
+
+      posicaoX:
+        posicao.x,
+
+      posicaoY:
+        posicao.y,
+    };
+
+
+    setArrastando(true);
+  }
+
+
+  function moverImagem(event) {
+    if (
+      !arrastando ||
+      !inicioArrasteRef.current
+    ) {
+      return;
+    }
+
+
+    event.preventDefault();
+
+
+    const ponto =
+      obterPonto(event);
+
+
+    const diferencaX =
+      ponto.x -
+      inicioArrasteRef.current.x;
+
+    const diferencaY =
+      ponto.y -
+      inicioArrasteRef.current.y;
+
+
+    setPosicao({
+      x:
+        inicioArrasteRef.current
+          .posicaoX +
+        diferencaX,
+
+      y:
+        inicioArrasteRef.current
+          .posicaoY +
+        diferencaY,
+    });
+  }
+
+
+  function finalizarArraste() {
+    setArrastando(false);
+
+    inicioArrasteRef.current =
+      null;
+  }
+
+
+  function obterPonto(event) {
+    if (
+      event.touches &&
+      event.touches.length > 0
+    ) {
+      return {
+        x:
+          event.touches[0]
+            .clientX,
+
+        y:
+          event.touches[0]
+            .clientY,
+      };
+    }
+
+
+    return {
+      x: event.clientX,
+      y: event.clientY,
+    };
+  }
+
+
+  function alterarZoom(event) {
+    setZoom(
+      Number(
+        event.target.value
+      )
+    );
+  }
+
+
+  function centralizarFoto() {
+    setZoom(1);
+
+    setPosicao({
+      x: 0,
+      y: 0,
+    });
+  }
+
+
+  function cancelarEdicaoFoto() {
+    setEditorAberto(false);
+
+    setArrastando(false);
+
+    setNomeArquivoOriginal("");
+
+
+    if (imagemEditor) {
+      URL.revokeObjectURL(
+        imagemEditor
+      );
+
+      setImagemEditor("");
+    }
+  }
+
+
+  /*
+   * =====================================================
+   * GERAR FOTO RECORTADA
+   * =====================================================
+   *
+   * O Canvas reproduz exatamente o enquadramento mostrado
+   * no editor e gera um JPEG quadrado.
+   */
+  async function confirmarEdicaoFoto() {
+    const imagem =
+      imagemEditorRef.current;
+
+    const area =
+      areaEditorRef.current;
+
+
+    if (
+      !imagem ||
+      !area ||
+      !imagem.naturalWidth ||
+      !imagem.naturalHeight
+    ) {
+      setErro(
+        "Não foi possível processar a imagem selecionada."
+      );
+
+      return;
+    }
+
+
+    try {
+      const tamanhoVisual =
+        area.clientWidth;
+
+
+      /*
+       * object-fit: cover faz a imagem preencher toda
+       * a área quadrada antes de aplicar o zoom.
+       */
+      const escalaBase =
+        Math.max(
+          tamanhoVisual /
+            imagem.naturalWidth,
+
+          tamanhoVisual /
+            imagem.naturalHeight
+        );
+
+
+      const escalaVisual =
+        escalaBase * zoom;
+
+
+      const larguraVisual =
+        imagem.naturalWidth *
+        escalaVisual;
+
+      const alturaVisual =
+        imagem.naturalHeight *
+        escalaVisual;
+
+
+      /*
+       * Posição da imagem dentro da janela quadrada.
+       */
+      const esquerdaVisual =
+        (
+          tamanhoVisual -
+          larguraVisual
+        ) /
+          2 +
+        posicao.x;
+
+      const topoVisual =
+        (
+          tamanhoVisual -
+          alturaVisual
+        ) /
+          2 +
+        posicao.y;
+
+
+      /*
+       * Converte a região visível novamente para
+       * coordenadas da fotografia original.
+       */
+      const origemX =
+        Math.max(
+          0,
+          -esquerdaVisual /
+            escalaVisual
+        );
+
+      const origemY =
+        Math.max(
+          0,
+          -topoVisual /
+            escalaVisual
+        );
+
+
+      const larguraOrigem =
+        Math.min(
+          tamanhoVisual /
+            escalaVisual,
+
+          imagem.naturalWidth -
+            origemX
+        );
+
+      const alturaOrigem =
+        Math.min(
+          tamanhoVisual /
+            escalaVisual,
+
+          imagem.naturalHeight -
+            origemY
+        );
+
+
+      const canvas =
+        document.createElement(
+          "canvas"
+        );
+
+
+      canvas.width =
+        TAMANHO_FOTO_FINAL;
+
+      canvas.height =
+        TAMANHO_FOTO_FINAL;
+
+
+      const contexto =
+        canvas.getContext("2d");
+
+
+      /*
+       * Fundo branco evita transparência inesperada
+       * quando a imagem original for PNG.
+       */
+      contexto.fillStyle =
+        "#ffffff";
+
+      contexto.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+
+      const destinoX =
+        Math.max(
+          0,
+          esquerdaVisual /
+            tamanhoVisual *
+            TAMANHO_FOTO_FINAL
+        );
+
+      const destinoY =
+        Math.max(
+          0,
+          topoVisual /
+            tamanhoVisual *
+            TAMANHO_FOTO_FINAL
+        );
+
+
+      const larguraDestino =
+        larguraOrigem *
+        escalaVisual /
+        tamanhoVisual *
+        TAMANHO_FOTO_FINAL;
+
+      const alturaDestino =
+        alturaOrigem *
+        escalaVisual /
+        tamanhoVisual *
+        TAMANHO_FOTO_FINAL;
+
+
+      contexto.drawImage(
+        imagem,
+
+        origemX,
+        origemY,
+        larguraOrigem,
+        alturaOrigem,
+
+        destinoX,
+        destinoY,
+        larguraDestino,
+        alturaDestino
+      );
+
+
+      const blob =
+        await new Promise(
+          (resolve) => {
+            canvas.toBlob(
+              resolve,
+              "image/jpeg",
+              0.9
+            );
+          }
+        );
+
+
+      if (!blob) {
+        throw new Error(
+          "Não foi possível gerar a foto."
+        );
+      }
+
+
+      const nomeBase =
+        nomeArquivoOriginal
+          .replace(
+            /\.[^.]+$/,
+            ""
+          )
+          .replace(
+            /[^a-zA-Z0-9_-]/g,
+            "_"
+          ) ||
+        "pet";
+
+
+      const arquivoFinal =
+        new File(
+          [blob],
+          `${nomeBase}-recortada.jpg`,
+          {
+            type:
+              "image/jpeg",
+          }
+        );
+
+
+      if (previewFoto) {
+        URL.revokeObjectURL(
+          previewFoto
+        );
+      }
+
+
+      const novaPreview =
+        URL.createObjectURL(
+          arquivoFinal
+        );
+
+
+      setArquivoFoto(
+        arquivoFinal
+      );
+
+      setPreviewFoto(
+        novaPreview
+      );
+
+      setEditorAberto(false);
+
+
+      if (imagemEditor) {
+        URL.revokeObjectURL(
+          imagemEditor
+        );
+
+        setImagemEditor("");
+      }
+
+
+      setNomeArquivoOriginal("");
+      setErro("");
+    } catch (error) {
+      console.error(
+        "Erro ao recortar foto:",
+        error
+      );
+
+      setErro(
+        "Não foi possível recortar a foto. Tente selecionar a imagem novamente."
+      );
+    }
+  }
+
+
   async function enviarFoto(
     petId
   ) {
@@ -512,42 +1090,18 @@ function FormularioPet() {
     );
   }
 
-
-  /*
+    /*
    * =====================================================
    * SALVAR PET
    * =====================================================
-   *
-   * CADASTRO:
-   *
-   * tutor_id representa o primeiro Tutor do Pet.
-   * O backend cria também o relacionamento em
-   * pet_tutores e define esse Tutor como principal.
-   *
-   *
-   * EDIÇÃO:
-   *
-   * A tela não permite escolher outro Tutor.
-   *
-   * O tutor_id atual é enviado temporariamente somente
-   * porque o backend ainda utiliza o campo durante
-   * a validação da atualização.
-   *
-   * O backend NÃO deve utilizar esse campo para trocar
-   * o relacionamento.
    */
   async function salvarPet(event) {
     event.preventDefault();
 
-
     setErro("");
-
     setSucesso("");
 
 
-    /*
-     * Nome e espécie são obrigatórios em qualquer modo.
-     */
     if (
       !form.nome.trim() ||
       !form.especie
@@ -560,10 +1114,6 @@ function FormularioPet() {
     }
 
 
-    /*
-     * Tutor somente precisa ser escolhido pelo usuário
-     * durante o cadastro.
-     */
     if (
       !modoEdicao &&
       !form.tutor_id
@@ -576,10 +1126,6 @@ function FormularioPet() {
     }
 
 
-    /*
-     * Durante a migração, uma edição também precisa ter
-     * o tutor_id interno carregado corretamente.
-     */
     if (
       modoEdicao &&
       !form.tutor_id
@@ -592,13 +1138,15 @@ function FormularioPet() {
     }
 
 
+    if (petDuplicado) {
+      return;
+    }
+
+
     try {
       setSalvando(true);
 
 
-      /*
-       * Dados cadastrais comuns aos dois modos.
-       */
       const dados = {
         nome:
           form.nome.trim(),
@@ -639,69 +1187,38 @@ function FormularioPet() {
 
 
       if (modoEdicao) {
-        /*
-         * IMPORTANTE:
-         *
-         * tutor_id é enviado apenas para satisfazer a
-         * compatibilidade temporária da API.
-         *
-         * O usuário não consegue alterá-lo por esta tela.
-         *
-         * A troca de Tutor principal deve acontecer na
-         * ficha do Pet.
-         */
-        const dadosEdicao = {
-          ...dados,
-
-          tutor_id:
-            Number(
-              form.tutor_id
-            ),
-        };
-
-
         await api.put(
           `/pets/${id}`,
-          dadosEdicao
+          {
+            ...dados,
+
+            tutor_id:
+              Number(
+                form.tutor_id
+              ),
+          }
         );
 
-
         petId = id;
-
       } else {
-        /*
-         * No cadastro, tutor_id possui função real:
-         * representa o primeiro Tutor responsável.
-         */
-        const dadosCadastro = {
-          ...dados,
-
-          tutor_id:
-            Number(
-              form.tutor_id
-            ),
-        };
-
-
         const resposta =
           await api.post(
             "/pets",
-            dadosCadastro
-          );
+            {
+              ...dados,
 
+              tutor_id:
+                Number(
+                  form.tutor_id
+                ),
+            }
+          );
 
         petId =
           resposta.data.pet.id;
       }
 
 
-      /*
-       * A fotografia é enviada depois que os dados
-       * cadastrais foram salvos.
-       *
-       * Uma falha exclusivamente no upload não deve
-       * desfazer o cadastro já concluído.
-       */
       if (arquivoFoto) {
         try {
           await enviarFoto(
@@ -713,20 +1230,17 @@ function FormularioPet() {
             error
           );
 
-
           setSucesso(
             modoEdicao
               ? "Os dados do Pet foram atualizados, mas não foi possível atualizar a foto."
               : "O Pet foi cadastrado, mas não foi possível enviar a foto."
           );
 
-
           setTimeout(() => {
             navigate(
               `/pets/${petId}`
             );
           }, 1500);
-
 
           return;
         }
@@ -747,7 +1261,6 @@ function FormularioPet() {
           `/pets/${petId}`
         );
       }, 700);
-
     } catch (error) {
       setErro(
         error.response?.data?.mensagem ||
@@ -763,14 +1276,6 @@ function FormularioPet() {
   }
 
 
-  /*
-   * =====================================================
-   * VOLTAR
-   * =====================================================
-   *
-   * Quando o cadastro foi aberto pela ficha do Tutor,
-   * Voltar/Cancelar retorna para essa mesma ficha.
-   */
   function voltar() {
     if (
       !modoEdicao &&
@@ -792,10 +1297,6 @@ function FormularioPet() {
   }
 
 
-  /*
-   * Durante a edição precisamos aguardar os dados
-   * atuais do Pet antes de montar o formulário.
-   */
   if (carregandoPet) {
     return (
       <div className="pet-form-loading">
@@ -815,7 +1316,6 @@ function FormularioPet() {
               ? "Editar Pet"
               : "Novo Pet"}
           </h1>
-
 
           <p>
             {modoEdicao
@@ -841,7 +1341,6 @@ function FormularioPet() {
         className="pet-form"
         onSubmit={salvarPet}
       >
-
         {erro && (
           <div className="form-alert error">
             {erro}
@@ -856,12 +1355,6 @@ function FormularioPet() {
         )}
 
 
-        {/*
-         * Quando o cadastro começou pela ficha de um Tutor,
-         * mostramos uma indicação visual da origem.
-         *
-         * Essa informação nunca aparece na edição.
-         */}
         {!modoEdicao &&
           tutorOrigem && (
             <div className="pet-form-origin">
@@ -870,12 +1363,10 @@ function FormularioPet() {
                   Tutor selecionado
                 </span>
 
-
                 <strong>
                   {tutorOrigem.nome}
                 </strong>
               </div>
-
 
               <p>
                 Este tutor será definido como
@@ -886,24 +1377,12 @@ function FormularioPet() {
           )}
 
 
-        {/*
-         * =================================================
-         * TUTOR RESPONSÁVEL
-         * =================================================
-         *
-         * Esta seção existe SOMENTE no cadastro.
-         *
-         * Durante a edição, adicionar, remover ou trocar
-         * o Tutor principal deve ser feito na ficha do Pet.
-         */}
         {!modoEdicao && (
           <section className="pet-form-section">
-
             <div className="section-heading">
               <h2>
                 Tutor responsável
               </h2>
-
 
               <p>
                 Selecione o responsável
@@ -913,9 +1392,7 @@ function FormularioPet() {
 
 
             <div className="pet-form-grid">
-
               <div className="pet-form-field full">
-
                 <label htmlFor="tutor_id">
                   Tutor *
                 </label>
@@ -923,18 +1400,16 @@ function FormularioPet() {
 
                 <SeletorTutor
                   tutores={tutores}
-
                   tutorSelecionadoId={
                     form.tutor_id
                   }
-
                   desabilitado={
                     carregandoTutores
                   }
+                  onSelecionar={(tutor) => {
+                    setPetDuplicado(null);
+                    setDuplicidadeIgnorada("");
 
-                  onSelecionar={(
-                    tutor
-                  ) => {
                     setForm(
                       (anterior) => ({
                         ...anterior,
@@ -949,13 +1424,6 @@ function FormularioPet() {
                     );
 
 
-                    /*
-                     * O parâmetro da URL funciona como
-                     * seleção inicial.
-                     *
-                     * O operador ainda pode escolher outro
-                     * Tutor antes de concluir o cadastro.
-                     */
                     if (
                       tutorOrigem &&
                       tutor &&
@@ -972,6 +1440,13 @@ function FormularioPet() {
                 />
 
 
+                {carregandoPetsTutor && (
+                  <span className="field-help">
+                    Verificando pets deste tutor...
+                  </span>
+                )}
+
+
                 {!carregandoTutores &&
                   tutores.length === 0 && (
                     <span className="field-help">
@@ -979,37 +1454,26 @@ function FormularioPet() {
                       Cadastre ou reative um tutor primeiro.
                     </span>
                   )}
-
               </div>
-
             </div>
-
           </section>
         )}
 
 
-        {/*
-         * =================================================
-         * FOTO
-         * =================================================
-         */}
         <section className="pet-form-section">
-
           <div className="section-heading">
             <h2>
               Foto do pet
             </h2>
 
-
             <p>
-              Adicione uma foto para facilitar
-              a identificação do animal.
+              Selecione uma foto e ajuste
+              o enquadramento antes de salvar.
             </p>
           </div>
 
 
           <div className="pet-photo-upload">
-
             <PreviewFoto
               preview={previewFoto}
               fotoAtual={fotoAtual}
@@ -1018,15 +1482,14 @@ function FormularioPet() {
 
 
             <div className="pet-photo-upload-controls">
-
               <label
                 htmlFor="foto"
                 className="photo-select-button"
               >
                 {fotoAtual ||
                 previewFoto
-                  ? "Trocar foto"
-                  : "Selecionar foto"}
+                  ? "Trocar e editar foto"
+                  : "Selecionar e editar foto"}
               </label>
 
 
@@ -1047,30 +1510,24 @@ function FormularioPet() {
 
 
               {arquivoFoto && (
-                <strong>
-                  {arquivoFoto.name}
-                </strong>
+                <>
+                  <strong>
+                    {arquivoFoto.name}
+                  </strong>
+
+                  <span className="pet-photo-ready">
+                    Foto enquadrada e pronta para salvar.
+                  </span>
+                </>
               )}
-
             </div>
-
           </div>
-
         </section>
 
 
-        {/*
-         * =================================================
-         * DADOS DO PET
-         * =================================================
-         */}
         <section className="pet-form-section">
-
           <div className="section-heading">
-            <h2>
-              Dados do pet
-            </h2>
-
+            <h2>Dados do pet</h2>
 
             <p>
               Informações principais para
@@ -1080,7 +1537,6 @@ function FormularioPet() {
 
 
           <div className="pet-form-grid">
-
             <Campo
               label="Nome"
               name="nome"
@@ -1093,11 +1549,9 @@ function FormularioPet() {
 
 
             <div className="pet-form-field">
-
               <label htmlFor="especie">
                 Espécie *
               </label>
-
 
               <select
                 id="especie"
@@ -1108,7 +1562,6 @@ function FormularioPet() {
                 }
                 required
               >
-
                 <option value="cachorro">
                   Cachorro
                 </option>
@@ -1120,9 +1573,7 @@ function FormularioPet() {
                 <option value="outro">
                   Outro
                 </option>
-
               </select>
-
             </div>
 
 
@@ -1137,11 +1588,9 @@ function FormularioPet() {
 
 
             <div className="pet-form-field">
-
               <label htmlFor="sexo">
                 Sexo
               </label>
-
 
               <select
                 id="sexo"
@@ -1151,7 +1600,6 @@ function FormularioPet() {
                   atualizarCampo
                 }
               >
-
                 <option value="">
                   Não informado
                 </option>
@@ -1163,9 +1611,7 @@ function FormularioPet() {
                 <option value="femea">
                   Fêmea
                 </option>
-
               </select>
-
             </div>
 
 
@@ -1203,24 +1649,15 @@ function FormularioPet() {
                 atualizarCampo
               }
             />
-
           </div>
-
         </section>
 
 
-        {/*
-         * =================================================
-         * OBSERVAÇÕES
-         * =================================================
-         */}
         <section className="pet-form-section">
-
           <div className="section-heading">
             <h2>
               Observações
             </h2>
-
 
             <p>
               Informações adicionais sobre
@@ -1230,7 +1667,6 @@ function FormularioPet() {
 
 
           <div className="pet-form-field full">
-
             <textarea
               name="observacoes"
               value={
@@ -1242,19 +1678,11 @@ function FormularioPet() {
               rows="5"
               placeholder="Comportamento, cuidados ou outras informações importantes..."
             />
-
           </div>
-
         </section>
 
 
-        {/*
-         * =================================================
-         * AÇÕES
-         * =================================================
-         */}
         <div className="pet-form-actions">
-
           <button
             type="button"
             className="secondary-button"
@@ -1268,22 +1696,12 @@ function FormularioPet() {
           <button
             type="submit"
             className="primary-button"
-
-            /*
-             * Na edição não dependemos da lista de Tutores.
-             *
-             * No cadastro, o botão permanece bloqueado
-             * enquanto os Tutores são carregados ou quando
-             * não existe nenhum Tutor ativo.
-             */
             disabled={
               salvando ||
+              carregandoTutores ||
               (
-                !modoEdicao &&
-                (
-                  carregandoTutores ||
-                  tutores.length === 0
-                )
+                tutores.length === 0 &&
+                !modoEdicao
               )
             }
           >
@@ -1293,20 +1711,259 @@ function FormularioPet() {
                 ? "Salvar Alterações"
                 : "Cadastrar Pet"}
           </button>
+        </div>
+      </form>
+
+            {/*
+       * ===================================================
+       * EDITOR DE FOTO
+       * ===================================================
+       */}
+      {editorAberto && (
+        <div className="pet-photo-editor-overlay">
+
+          <div className="pet-photo-editor-modal">
+
+            <div className="pet-photo-editor-header">
+              <div>
+                <span>
+                  Foto do pet
+                </span>
+
+                <h2>
+                  Ajustar enquadramento
+                </h2>
+
+                <p>
+                  Arraste a foto e use o zoom
+                  até chegar ao enquadramento desejado.
+                </p>
+              </div>
+            </div>
+
+
+            <div
+              ref={areaEditorRef}
+              className={`pet-photo-editor-area ${
+                arrastando
+                  ? "dragging"
+                  : ""
+              }`}
+              onMouseDown={
+                iniciarArraste
+              }
+              onMouseMove={
+                moverImagem
+              }
+              onMouseUp={
+                finalizarArraste
+              }
+              onMouseLeave={
+                finalizarArraste
+              }
+              onTouchStart={
+                iniciarArraste
+              }
+              onTouchMove={
+                moverImagem
+              }
+              onTouchEnd={
+                finalizarArraste
+              }
+            >
+              <img
+                ref={imagemEditorRef}
+                src={imagemEditor}
+                alt="Imagem sendo ajustada"
+                draggable="false"
+                style={{
+                  transform:
+                    `translate(${posicao.x}px, ${posicao.y}px) scale(${zoom})`,
+                }}
+              />
+
+              <div className="pet-photo-editor-guide" />
+            </div>
+
+
+            <div className="pet-photo-editor-controls">
+              <div className="pet-photo-zoom">
+                <div>
+                  <label htmlFor="pet-photo-zoom">
+                    Zoom
+                  </label>
+
+                  <strong>
+                    {Math.round(
+                      zoom * 100
+                    )}%
+                  </strong>
+                </div>
+
+                <input
+                  id="pet-photo-zoom"
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.05"
+                  value={zoom}
+                  onChange={
+                    alterarZoom
+                  }
+                />
+              </div>
+
+
+              <button
+                type="button"
+                className="pet-photo-center-button"
+                onClick={
+                  centralizarFoto
+                }
+              >
+                Centralizar foto
+              </button>
+            </div>
+
+
+            <div className="pet-photo-editor-help">
+              A área quadrada corresponde à foto
+              que será salva no cadastro do pet.
+            </div>
+
+
+            <div className="pet-photo-editor-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={
+                  cancelarEdicaoFoto
+                }
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={
+                  confirmarEdicaoFoto
+                }
+              >
+                Usar esta foto
+              </button>
+            </div>
+
+          </div>
 
         </div>
+      )}
 
-      </form>
+
+      {/*
+       * ===================================================
+       * POSSÍVEL PET DUPLICADO
+       * ===================================================
+       */}
+      {petDuplicado && (
+        <div
+          className="pet-duplicate-overlay"
+          role="presentation"
+        >
+          <div
+            className="pet-duplicate-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pet-duplicate-title"
+          >
+            <div className="pet-duplicate-marker">
+              !
+            </div>
+
+
+            <div className="pet-duplicate-content">
+              <span className="pet-duplicate-label">
+                Pet semelhante encontrado
+              </span>
+
+              <h2 id="pet-duplicate-title">
+                Este pet já pode estar cadastrado
+              </h2>
+
+              <p>
+                Este Tutor já possui um Pet com
+                o mesmo nome. Confira a ficha
+                existente antes de criar outro cadastro.
+              </p>
+
+
+              <div className="pet-duplicate-found">
+                <div>
+                  <span>
+                    Pet encontrado
+                  </span>
+
+                  <strong>
+                    {petDuplicado.nome}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Espécie
+                  </span>
+
+                  <strong>
+                    {petDuplicado.especie ||
+                      "Não informada"}
+                  </strong>
+                </div>
+
+                {petDuplicado.raca && (
+                  <div>
+                    <span>
+                      Raça
+                    </span>
+
+                    <strong>
+                      {petDuplicado.raca}
+                    </strong>
+                  </div>
+                )}
+              </div>
+
+
+              <div className="pet-duplicate-actions">
+                <button
+                  type="button"
+                  className="pet-duplicate-continue"
+                  onClick={
+                    continuarMesmoPet
+                  }
+                >
+                  Continuar Cadastro
+                </button>
+
+                <button
+                  type="button"
+                  className="pet-duplicate-open"
+                  onClick={
+                    abrirPetExistente
+                  }
+                >
+                  Ver Pet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
 }
 
 
-/*
- * Campo reutilizável para manter os inputs do
- * formulário com a mesma estrutura.
- */
 function Campo({
   label,
   name,
@@ -1319,7 +1976,6 @@ function Campo({
 }) {
   return (
     <div className="pet-form-field">
-
       <label htmlFor={name}>
         {label}
 
@@ -1327,7 +1983,6 @@ function Campo({
           ? " *"
           : ""}
       </label>
-
 
       <input
         id={name}
@@ -1339,16 +1994,11 @@ function Campo({
         min={min}
         step={step}
       />
-
     </div>
   );
 }
 
 
-/*
- * Responsável pela fotografia ou pelo placeholder
- * mostrado enquanto o Pet não possui imagem.
- */
 function PreviewFoto({
   preview,
   fotoAtual,
@@ -1358,29 +2008,14 @@ function PreviewFoto({
     preview;
 
 
-  /*
-   * Se nenhuma nova fotografia foi selecionada,
-   * mostramos a imagem que já está armazenada
-   * no backend.
-   */
   if (
     !imagem &&
     fotoAtual
   ) {
-    const apiUrl =
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:3001/api";
-
-
-    const servidorUrl =
-      apiUrl.replace(
-        /\/api\/?$/,
-        ""
-      );
-
-
     imagem =
-      `${servidorUrl}${fotoAtual}`;
+      fotoAtual.startsWith("http")
+        ? fotoAtual
+        : `http://localhost:3001${fotoAtual}`;
   }
 
 
@@ -1389,21 +2024,20 @@ function PreviewFoto({
       <img
         className="pet-photo-preview"
         src={imagem}
-        alt={`Foto de ${
-          nome || "pet"
-        }`}
+        alt={
+          nome
+            ? `Foto de ${nome}`
+            : "Foto do pet"
+        }
       />
     );
   }
 
 
-  /*
-   * Enquanto não existir fotografia,
-   * utilizamos a inicial do nome do Pet.
-   */
   return (
     <div className="pet-photo-preview-placeholder">
       {nome
+        ?.trim()
         ?.charAt(0)
         ?.toUpperCase() ||
         "P"}

@@ -29,12 +29,9 @@ function FormularioTutor() {
 
 
   /*
-   * Quando o cadastro é iniciado pela ficha de um Pet,
-   * recebemos:
+   * Quando o cadastro é iniciado pela ficha de um Pet:
    *
    * /tutores/novo?pet=123
-   *
-   * Esse ID será utilizado somente no cadastro.
    */
   const petOrigemId =
     !modoEdicao
@@ -94,11 +91,7 @@ function FormularioTutor() {
 
 
   /*
-   * Guarda informações básicas do Pet de origem.
-   *
-   * Isso permite mostrar claramente ao usuário que,
-   * após o cadastro, o novo Tutor será vinculado
-   * automaticamente àquele Pet.
+   * Guarda o Pet que originou o cadastro.
    */
   const [
     petOrigem,
@@ -108,13 +101,83 @@ function FormularioTutor() {
 
   /*
    * =====================================================
+   * PREVENÇÃO DE TUTORES DUPLICADOS
+   * =====================================================
+   *
+   * A prevenção visual utiliza SOMENTE o nome.
+   *
+   * CPF continua sendo validado pelo backend.
+   */
+  const [
+    tutoresExistentes,
+    setTutoresExistentes,
+  ] = useState([]);
+
+
+  /*
+   * Quando existe um Tutor com o mesmo nome digitado,
+   * guardamos o cadastro encontrado aqui.
+   *
+   * Enquanto possuir um valor, o modal será exibido.
+   */
+  const [
+    tutorDuplicado,
+    setTutorDuplicado,
+  ] = useState(null);
+
+
+  /*
+   * Se o operador escolher "Continuar cadastro",
+   * guardamos temporariamente o nome autorizado.
+   *
+   * Isso impede que o modal reapareça imediatamente
+   * enquanto o usuário continua preenchendo o mesmo
+   * cadastro.
+   */
+  const [
+    nomeDuplicadoIgnorado,
+    setNomeDuplicadoIgnorado,
+  ] = useState("");
+
+
+  /*
+   * =====================================================
+   * NORMALIZAÇÃO DO NOME
+   * =====================================================
+   *
+   * A comparação ignora:
+   *
+   * - letras maiúsculas/minúsculas;
+   * - acentos;
+   * - espaços extras.
+   *
+   * Portanto:
+   *
+   * "João da Silva"
+   * "JOAO DA SILVA"
+   * "  João   da Silva "
+   *
+   * são considerados o mesmo nome para o aviso.
+   */
+  function normalizarNome(valor) {
+    return String(valor || "")
+      .trim()
+      .toLocaleLowerCase("pt-BR")
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(/\s+/g, " ");
+  }
+
+
+  /*
+   * =====================================================
    * CARREGAMENTO DO TUTOR
    * =====================================================
    *
    * O mesmo formulário atende cadastro e edição.
-   *
-   * Quando existe um ID na rota, carregamos o cadastro
-   * atual para edição.
    */
   useEffect(() => {
     if (!modoEdicao) {
@@ -198,15 +261,193 @@ function FormularioTutor() {
 
   /*
    * =====================================================
-   * PET DE ORIGEM
+   * CARREGAMENTO DOS NOMES JÁ CADASTRADOS
    * =====================================================
    *
-   * Se o cadastro começou através da ficha de um Pet,
-   * buscamos esse Pet antes de permitir o vínculo
-   * automático.
+   * Somente precisamos dessa lista ao cadastrar.
    *
-   * O parâmetro recebido pela URL não é utilizado
-   * cegamente.
+   * Na edição não exibimos o aviso porque estamos
+   * alterando um cadastro que já existe.
+   */
+  useEffect(() => {
+    if (modoEdicao) {
+      return;
+    }
+
+
+    async function carregarTutoresExistentes() {
+      try {
+        const resposta =
+          await api.get(
+            "/tutores"
+          );
+
+
+        const lista =
+          Array.isArray(
+            resposta.data
+          )
+            ? resposta.data
+            : [];
+
+
+        setTutoresExistentes(
+          lista
+        );
+
+      } catch (error) {
+        /*
+         * Uma falha nesta consulta não deve impedir
+         * o cadastro.
+         *
+         * A validação definitiva continua existindo
+         * no backend.
+         */
+        console.error(
+          "Não foi possível carregar tutores para verificação de nomes:",
+          error
+        );
+
+
+        setTutoresExistentes(
+          []
+        );
+      }
+    }
+
+
+    carregarTutoresExistentes();
+
+  }, [modoEdicao]);
+
+
+  /*
+   * =====================================================
+   * DETECÇÃO IMEDIATA DE NOME DUPLICADO
+   * =====================================================
+   *
+   * Esta verificação acontece durante a digitação.
+   *
+   * Não é necessário clicar em "Salvar Tutor".
+   */
+  useEffect(() => {
+    if (modoEdicao) {
+      return;
+    }
+
+
+    const nomeDigitado =
+      normalizarNome(
+        form.nome
+      );
+
+
+    /*
+     * Evita alertas para campo vazio ou enquanto
+     * ainda não existe um nome completo correspondente.
+     */
+    if (!nomeDigitado) {
+      setTutorDuplicado(null);
+
+      setNomeDuplicadoIgnorado("");
+
+      return;
+    }
+
+
+    /*
+     * Se o usuário alterou o nome depois de escolher
+     * "Continuar cadastro", a autorização anterior
+     * deixa de valer.
+     */
+    if (
+      nomeDuplicadoIgnorado &&
+      nomeDigitado !==
+        nomeDuplicadoIgnorado
+    ) {
+      setNomeDuplicadoIgnorado("");
+    }
+
+
+    /*
+     * O aviso só aparece quando o nome digitado
+     * corresponde ao nome completo de um Tutor
+     * já cadastrado.
+     */
+    const tutorEncontrado =
+      tutoresExistentes.find(
+        (tutor) =>
+          normalizarNome(
+            tutor.nome
+          ) === nomeDigitado
+      );
+
+
+    if (!tutorEncontrado) {
+      setTutorDuplicado(null);
+
+      return;
+    }
+
+
+    /*
+     * O operador já confirmou que deseja continuar
+     * com esse mesmo nome.
+     */
+    if (
+      nomeDuplicadoIgnorado ===
+      nomeDigitado
+    ) {
+      return;
+    }
+
+
+    setTutorDuplicado(
+      tutorEncontrado
+    );
+
+  }, [
+    form.nome,
+    modoEdicao,
+    nomeDuplicadoIgnorado,
+    tutoresExistentes,
+  ]);
+
+
+  /*
+   * =====================================================
+   * AÇÕES DO AVISO DE DUPLICIDADE
+   * =====================================================
+   */
+
+  function continuarMesmoNome() {
+    setNomeDuplicadoIgnorado(
+      normalizarNome(
+        form.nome
+      )
+    );
+
+
+    setTutorDuplicado(null);
+  }
+
+
+  function abrirTutorExistente() {
+    if (!tutorDuplicado) {
+      return;
+    }
+
+
+    navigate(
+      `/tutores/${tutorDuplicado.id}`
+    );
+  }
+
+
+  /*
+   * =====================================================
+   * PET DE ORIGEM
+   * =====================================================
    */
   useEffect(() => {
     if (
@@ -252,13 +493,9 @@ function FormularioTutor() {
 
 
   /*
-   * Centraliza alterações dos campos.
-   *
-   * As máscaras existem apenas para melhorar a
-   * experiência de digitação.
-   *
-   * A validação definitiva continua sendo realizada
-   * pelo backend.
+   * =====================================================
+   * ALTERAÇÃO DOS CAMPOS
+   * =====================================================
    */
   function atualizarCampo(event) {
     const {
@@ -318,9 +555,6 @@ function FormularioTutor() {
    * =====================================================
    * CONSULTA DO CEP
    * =====================================================
-   *
-   * Se a consulta falhar, os campos continuam
-   * editáveis e podem ser preenchidos manualmente.
    */
   async function buscarCEP() {
     const cepNumeros =
@@ -392,10 +626,6 @@ function FormularioTutor() {
       );
 
 
-      /*
-       * Depois que o CEP preenche o endereço,
-       * direcionamos o usuário para o número.
-       */
       setTimeout(() => {
         numeroRef.current?.focus();
       }, 0);
@@ -414,9 +644,6 @@ function FormularioTutor() {
    * =====================================================
    * VOLTAR
    * =====================================================
-   *
-   * Se o cadastro começou pela ficha de um Pet,
-   * cancelar ou voltar retorna para esse Pet.
    */
   function voltar() {
     if (
@@ -451,21 +678,11 @@ function FormularioTutor() {
    * SALVAR TUTOR
    * =====================================================
    *
-   * Existem três fluxos possíveis:
+   * A verificação de nome duplicado NÃO acontece aqui.
    *
-   * 1. Editar Tutor existente.
+   * Ela já foi realizada durante a digitação.
    *
-   * 2. Cadastrar Tutor normalmente.
-   *
-   * 3. Cadastrar Tutor a partir da ficha de um Pet.
-   *
-   * No terceiro caso:
-   *
-   * Tutor é criado
-   *       ↓
-   * relacionamento pet_tutores é criado
-   *       ↓
-   * usuário retorna para a ficha do Pet
+   * O CPF continua sendo validado pelo backend.
    */
   async function salvarTutor(event) {
     event.preventDefault();
@@ -499,6 +716,18 @@ function FormularioTutor() {
         "Informe o endereço do tutor."
       );
 
+      return;
+    }
+
+
+    /*
+     * Segurança adicional:
+     *
+     * Se o modal estiver aberto, o formulário não deve
+     * ser enviado por Enter antes de o operador decidir
+     * o que fazer.
+     */
+    if (tutorDuplicado) {
       return;
     }
 
@@ -547,13 +776,6 @@ function FormularioTutor() {
         );
 
 
-      /*
-       * O backend pode devolver o Tutor diretamente
-       * ou dentro da propriedade tutor.
-       *
-       * Aceitamos os dois formatos para manter o
-       * frontend compatível com a resposta atual.
-       */
       const tutorCriado =
         resposta.data.tutor ||
         resposta.data;
@@ -574,9 +796,6 @@ function FormularioTutor() {
        * =================================================
        * CADASTRO INICIADO PELO PET
        * =================================================
-       *
-       * Se existe um Pet de origem válido, criamos
-       * imediatamente o relacionamento.
        */
       if (
         petOrigemId &&
@@ -595,11 +814,10 @@ function FormularioTutor() {
 
         } catch (erroVinculo) {
           /*
-           * Neste ponto o Tutor JÁ FOI CADASTRADO.
+           * O Tutor já foi cadastrado neste ponto.
            *
-           * Portanto não informamos simplesmente que
-           * "o cadastro falhou", pois isso induziria
-           * o usuário a tentar cadastrá-lo novamente.
+           * Deixamos isso explícito para evitar que
+           * o operador tente cadastrá-lo novamente.
            */
           setErro(
             erroVinculo.response?.data?.mensagem ||
@@ -632,9 +850,6 @@ function FormularioTutor() {
       }
 
 
-      /*
-       * Cadastro normal, iniciado pela área de Tutores.
-       */
       setSucesso(
         "Tutor cadastrado com sucesso."
       );
@@ -724,10 +939,6 @@ function FormularioTutor() {
         )}
 
 
-        {/*
-         * Mostra claramente quando o cadastro está
-         * associado a um Pet específico.
-         */}
         {!modoEdicao &&
           petOrigem && (
             <div className="tutor-pet-origin">
@@ -1001,6 +1212,106 @@ function FormularioTutor() {
 
       </form>
 
+
+      {/*
+       * ===================================================
+       * MODAL DE POSSÍVEL DUPLICIDADE
+       * ===================================================
+       *
+       * Ele aparece automaticamente quando o nome digitado
+       * já pertence a outro Tutor.
+       */}
+      {tutorDuplicado && (
+        <div
+          className="tutor-duplicate-overlay"
+          role="presentation"
+        >
+
+          <div
+            className="tutor-duplicate-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="duplicate-title"
+          >
+
+            <div className="tutor-duplicate-icon">
+              !
+            </div>
+
+
+            <div className="tutor-duplicate-content">
+
+              <span className="tutor-duplicate-label">
+                Cadastro semelhante encontrado
+              </span>
+
+
+              <h2 id="duplicate-title">
+                Este tutor já pode estar cadastrado
+              </h2>
+
+
+              <p>
+                Já existe um tutor com o nome
+                informado. Verifique o cadastro
+                existente antes de criar outro.
+              </p>
+
+
+              <div className="tutor-duplicate-person">
+
+                <span>
+                  Tutor encontrado
+                </span>
+
+
+                <strong>
+                  {tutorDuplicado.nome}
+                </strong>
+
+
+                {tutorDuplicado.telefone && (
+                  <small>
+                    Telefone:{" "}
+                    {tutorDuplicado.telefone}
+                  </small>
+                )}
+
+              </div>
+
+
+              <div className="tutor-duplicate-actions">
+
+                <button
+                  type="button"
+                  className="tutor-duplicate-continue"
+                  onClick={
+                    continuarMesmoNome
+                  }
+                >
+                  Continuar Cadastro
+                </button>
+
+
+                <button
+                  type="button"
+                  className="tutor-duplicate-open"
+                  onClick={
+                    abrirTutorExistente
+                  }
+                >
+                  Ver Tutor
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1062,8 +1373,8 @@ function Campo({
 /*
  * Máscaras utilizadas somente para apresentação.
  *
- * O backend não deve depender dessas máscaras para
- * realizar a validação dos dados.
+ * O backend continua responsável pela validação
+ * definitiva dos dados.
  */
 function formatarCPF(valor) {
   return valor

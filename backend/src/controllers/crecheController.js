@@ -283,8 +283,19 @@ async function listarPetsNaCreche(req, res) {
         INNER JOIN pets p
           ON p.id = c.pet_id
 
+        /*
+        * O tutor exibido nas operações da Creche vem da
+        * relação oficial pet_tutores.
+        *
+        * pets.tutor_id permanece apenas como compatibilidade
+        * temporária com partes antigas do sistema.
+        */
+        INNER JOIN pet_tutores pt
+          ON pt.pet_id = p.id
+          AND pt.principal = TRUE
+
         INNER JOIN tutores t
-          ON t.id = p.tutor_id
+          ON t.id = pt.tutor_id
 
         INNER JOIN usuarios u
           ON u.id = c.usuario_entrada_id
@@ -536,8 +547,19 @@ async function listarHistorico(req, res) {
         INNER JOIN pets p
           ON p.id = c.pet_id
 
+        /*
+        * O tutor exibido nas operações da Creche vem da
+        * relação oficial pet_tutores.
+        *
+        * pets.tutor_id permanece apenas como compatibilidade
+        * temporária com partes antigas do sistema.
+        */
+        INNER JOIN pet_tutores pt
+          ON pt.pet_id = p.id
+          AND pt.principal = TRUE
+
         INNER JOIN tutores t
-          ON t.id = p.tutor_id
+          ON t.id = pt.tutor_id
 
         INNER JOIN usuarios ue
           ON ue.id = c.usuario_entrada_id

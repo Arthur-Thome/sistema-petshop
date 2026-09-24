@@ -400,8 +400,18 @@ async function listarReservasAtivas(req, res) {
         INNER JOIN pets p
           ON p.id = h.pet_id
 
+        /*
+        * O tutor utilizado pelo Hotel vem da relação oficial
+        * pet_tutores e corresponde ao responsável principal.
+        *
+        * Isso evita depender do antigo pets.tutor_id.
+        */
+        INNER JOIN pet_tutores pt
+          ON pt.pet_id = p.id
+          AND pt.principal = TRUE
+
         INNER JOIN tutores t
-          ON t.id = p.tutor_id
+          ON t.id = pt.tutor_id
 
         INNER JOIN usuarios u
           ON u.id = h.usuario_criacao_id
@@ -1111,8 +1121,18 @@ async function listarHistorico(req, res) {
         INNER JOIN pets p
           ON p.id = h.pet_id
 
+        /*
+        * O tutor utilizado pelo Hotel vem da relação oficial
+        * pet_tutores e corresponde ao responsável principal.
+        *
+        * Isso evita depender do antigo pets.tutor_id.
+        */
+        INNER JOIN pet_tutores pt
+          ON pt.pet_id = p.id
+          AND pt.principal = TRUE
+
         INNER JOIN tutores t
-          ON t.id = p.tutor_id
+          ON t.id = pt.tutor_id
 
         INNER JOIN usuarios ucriacao
           ON ucriacao.id =
@@ -1229,8 +1249,18 @@ async function buscarHotelPorId(req, res) {
         INNER JOIN pets p
           ON p.id = h.pet_id
 
+        /*
+        * O tutor utilizado pelo Hotel vem da relação oficial
+        * pet_tutores e corresponde ao responsável principal.
+        *
+        * Isso evita depender do antigo pets.tutor_id.
+        */
+        INNER JOIN pet_tutores pt
+          ON pt.pet_id = p.id
+          AND pt.principal = TRUE
+
         INNER JOIN tutores t
-          ON t.id = p.tutor_id
+          ON t.id = pt.tutor_id
 
         INNER JOIN usuarios ucriacao
           ON ucriacao.id =

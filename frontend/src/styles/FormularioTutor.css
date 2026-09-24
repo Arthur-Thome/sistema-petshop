@@ -176,6 +176,7 @@
   color: #166534;
 }
 
+
 /*
  * =========================================================
  * PET DE ORIGEM
@@ -189,48 +190,283 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
+
   padding: 18px 20px;
   margin-bottom: 20px;
+
   border: 1px solid #dfe5ec;
   border-radius: 12px;
+
   background: #f8fafc;
 }
-
 
 .tutor-pet-origin div {
   display: flex;
   flex-direction: column;
+
   gap: 4px;
 }
-
 
 .tutor-pet-origin span {
   font-size: 12px;
   font-weight: 700;
+
   text-transform: uppercase;
   letter-spacing: 0.05em;
+
   opacity: 0.65;
 }
-
 
 .tutor-pet-origin strong {
   font-size: 18px;
 }
 
-
 .tutor-pet-origin p {
   margin: 0;
+
   max-width: 420px;
 }
 
 
-@media (max-width: 700px) {
-  .tutor-pet-origin {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+/*
+ * =========================================================
+ * AVISO DE POSSÍVEL TUTOR DUPLICADO
+ * =========================================================
+ *
+ * O aviso ocupa o centro da tela para interromper o fluxo
+ * antes que um segundo cadastro seja criado por engano.
+ */
+
+.tutor-duplicate-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1200;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(17, 24, 39, 0.58);
+
+  backdrop-filter: blur(2px);
 }
+
+.tutor-duplicate-modal {
+  display: flex;
+  align-items: flex-start;
+
+  width: 100%;
+  max-width: 560px;
+
+  padding: 28px;
+
+  border: 1px solid #fde68a;
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+.tutor-duplicate-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 46px;
+
+  width: 46px;
+  height: 46px;
+
+  margin-right: 18px;
+
+  border-radius: 50%;
+
+  background: #fef3c7;
+  color: #92400e;
+
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.tutor-duplicate-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tutor-duplicate-label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #b45309;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tutor-duplicate-content h2 {
+  margin: 0;
+
+  color: #1f2937;
+
+  font-size: 21px;
+  line-height: 1.3;
+}
+
+.tutor-duplicate-content > p {
+  margin: 10px 0 20px;
+
+  color: #6b7280;
+
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+
+/*
+ * O cadastro encontrado aparece separado do texto
+ * principal para facilitar a conferência.
+ */
+
+.tutor-duplicate-person {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
+  padding: 15px 16px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #f9fafb;
+}
+
+.tutor-duplicate-person span {
+  color: #6b7280;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tutor-duplicate-person strong {
+  color: #1f2937;
+
+  font-size: 17px;
+}
+
+.tutor-duplicate-person small {
+  margin-top: 2px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+/*
+ * "Ver Tutor" recebe maior destaque porque é a ação
+ * mais segura quando encontramos um possível duplicado.
+ */
+
+.tutor-duplicate-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 22px;
+}
+
+.tutor-duplicate-continue,
+.tutor-duplicate-open {
+  padding: 11px 16px;
+
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.tutor-duplicate-continue {
+  border: 1px solid #d1d5db;
+
+  background: #ffffff;
+  color: #374151;
+}
+
+.tutor-duplicate-continue:hover {
+  background: #f3f4f6;
+}
+
+.tutor-duplicate-open {
+  border: 1px solid #1f2937;
+
+  background: #1f2937;
+  color: #ffffff;
+}
+
+.tutor-duplicate-open:hover {
+  background: #374151;
+  border-color: #374151;
+}
+
+.tutor-duplicate-continue:focus-visible,
+.tutor-duplicate-open:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+
+/*
+ * =========================================================
+ * CEP
+ * =========================================================
+ */
+
+.cep-message,
+.cep-error {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 12px;
+}
+
+.cep-message {
+  color: #6b7280;
+}
+
+.cep-error {
+  color: #dc2626;
+}
+
+
+/*
+ * =========================================================
+ * RESPONSIVIDADE
+ * =========================================================
+ */
 
 @media (max-width: 800px) {
   .form-grid {
@@ -246,17 +482,34 @@
   }
 }
 
-.cep-message,
-.cep-error {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
+@media (max-width: 700px) {
+  .tutor-pet-origin {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
-.cep-message {
-  color: #6b7280;
-}
+@media (max-width: 600px) {
+  .tutor-duplicate-overlay {
+    padding: 16px;
+  }
 
-.cep-error {
-  color: #dc2626;
+  .tutor-duplicate-modal {
+    flex-direction: column;
+
+    padding: 22px;
+  }
+
+  .tutor-duplicate-icon {
+    margin: 0 0 16px;
+  }
+
+  .tutor-duplicate-actions {
+    flex-direction: column-reverse;
+  }
+
+  .tutor-duplicate-continue,
+  .tutor-duplicate-open {
+    width: 100%;
+  }
 }

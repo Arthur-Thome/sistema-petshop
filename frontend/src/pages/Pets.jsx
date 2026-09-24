@@ -58,6 +58,17 @@ function Pets() {
   }
 
 
+  /*
+   * Centraliza a navegação para a ficha do Pet.
+   *
+   * Foto, nome e botão Visualizar utilizam o mesmo destino,
+   * deixando a listagem mais rápida para uso operacional.
+   */
+  function abrirPet(petId) {
+    navigate(`/pets/${petId}`);
+  }
+
+
   return (
     <div className="pets-page">
       <div className="page-header">
@@ -148,11 +159,18 @@ function Pets() {
                 {pets.map((pet) => (
                   <tr key={pet.id}>
                     <td>
-                      <div className="pet-name-cell">
+                      <button
+                        type="button"
+                        className="pet-name-button"
+                        onClick={() =>
+                          abrirPet(pet.id)
+                        }
+                        title={`Abrir ficha de ${pet.nome}`}
+                      >
                         <FotoPet pet={pet} />
 
                         <strong>{pet.nome}</strong>
-                      </div>
+                      </button>
                     </td>
 
                     <td>
@@ -189,7 +207,7 @@ function Pets() {
                       <button
                         className="table-action-button"
                         onClick={() =>
-                          navigate(`/pets/${pet.id}`)
+                          abrirPet(pet.id)
                         }
                       >
                         Visualizar

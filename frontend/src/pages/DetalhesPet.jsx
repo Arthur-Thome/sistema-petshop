@@ -426,6 +426,20 @@ function DetalhesPet() {
             Voltar
           </button>
 
+          {pet.ativo && (
+            <button
+              type="button"
+              className="pet-new-attendance-button"
+              onClick={() =>
+                navigate(
+                  `/atendimentos/novo?pet=${pet.id}`
+                )
+              }
+            >
+              + Novo Atendimento
+            </button>
+          )}
+
           <button
             type="button"
             className="primary-button"

@@ -734,6 +734,52 @@
   flex-wrap: wrap;
 }
 
+/*
+ * =========================================================
+ * ATALHO PARA NOVO ATENDIMENTO
+ * =========================================================
+ *
+ * A ação operacional recebe aparência própria para ficar
+ * separada das ações cadastrais Voltar e Editar.
+ */
+
+.pet-new-attendance-button {
+  padding: 10px 16px;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+
+  background: #eff6ff;
+  color: #1d4ed8;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.pet-new-attendance-button:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+
+.pet-new-attendance-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+
+@media (max-width: 600px) {
+  .pet-new-attendance-button {
+    width: 100%;
+  }
+}
+
 
 @media (max-width: 700px) {
   .pet-tutors-header-actions {
