@@ -6,6 +6,11 @@ import {
 
 import api from "../services/api";
 
+import {
+  abrirWhatsApp,
+  mensagemAtendimentoConcluido,
+} from "../utils/whatsapp";
+
 import "../styles/BanhoTosa.css";
 
 
@@ -353,66 +358,36 @@ function ComprovanteBanhoTosa() {
 
 
   /*
-   * Abre a conversa do WhatsApp utilizando o telefone
-   * cadastrado no tutor e prepara uma mensagem referente
-   * ao atendimento.
+   * O comprovante utiliza a mesma infraestrutura de
+   * comunicação das demais telas do sistema.
    *
-   * Nesta versão o WhatsApp é aberto pelo navegador.
-   * O PDF deve ser anexado manualmente na conversa.
+   * O PDF continua sendo anexado manualmente, pois o
+   * compartilhamento comum do WhatsApp não permite que
+   * o navegador anexe automaticamente um arquivo local.
    */
   function enviarWhatsApp() {
-    const telefone =
-      atendimento?.tutor_telefone;
+    const mensagem =
+      mensagemAtendimentoConcluido({
+        tutorNome:
+          atendimento.tutor_nome,
 
-    if (!telefone) {
+        petNome:
+          atendimento.pet_nome,
+      });
+
+    const abriu =
+      abrirWhatsApp({
+        telefone:
+          atendimento.tutor_telefone,
+
+        mensagem,
+      });
+
+    if (!abriu) {
       alert(
         "O tutor não possui telefone cadastrado."
       );
-
-      return;
     }
-
-    /*
-     * O WhatsApp espera somente números.
-     *
-     * Como o sistema é utilizado no Brasil, adicionamos
-     * o código do país 55 caso ainda não esteja presente.
-     */
-    let numero =
-      String(telefone).replace(
-        /\D/g,
-        ""
-      );
-
-    if (!numero.startsWith("55")) {
-      numero = `55${numero}`;
-    }
-
-    const nomeTutor =
-      atendimento.tutor_nome ||
-      "cliente";
-
-    const nomePet =
-      atendimento.pet_nome ||
-      "pet";
-
-    const mensagem =
-      `Olá, ${nomeTutor}! 😊\n\n` +
-      `O atendimento de ${nomePet} foi concluído.\n\n` +
-      `Segue o comprovante referente aos serviços realizados.\n\n` +
-      `Agradecemos pela preferência!`;
-
-    const url =
-      `https://wa.me/${numero}` +
-      `?text=${encodeURIComponent(
-        mensagem
-      )}`;
-
-    window.open(
-      url,
-      "_blank",
-      "noopener,noreferrer"
-    );
   }
 
 

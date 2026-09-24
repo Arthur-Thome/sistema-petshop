@@ -10,6 +10,11 @@ import {
 
 import api from "../services/api";
 
+import {
+  abrirWhatsApp,
+  mensagemLembreteAtendimento,
+} from "../utils/whatsapp";
+
 import "../styles/BanhoTosa.css";
 
 
@@ -320,6 +325,40 @@ function BanhoTosa() {
     setSearchParams({});
   }
 
+    /*
+    * Envia um lembrete utilizando os dados do próprio
+    * atendimento exibido no card.
+    */
+    function enviarLembrete(
+      atendimento
+    ) {
+      const mensagem =
+        mensagemLembreteAtendimento({
+          tutorNome:
+            atendimento.tutor_nome,
+
+          petNome:
+            atendimento.pet_nome,
+
+          agendadoPara:
+            formatarDataHora(
+              atendimento.agendado_para
+            ),
+        });
+
+      const abriu =
+        abrirWhatsApp({
+          telefone:
+            atendimento.tutor_telefone,
+          mensagem,
+        });
+
+      if (!abriu) {
+        alert(
+          "O tutor não possui telefone cadastrado."
+        );
+      }
+    }
 
   return (
     <div className="banho-tosa-page">
@@ -611,6 +650,24 @@ function BanhoTosa() {
 
 
                 <div className="banho-tosa-card-acoes">
+
+                   {atendimento.status ===
+                    "AGENDADO" && (
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        enviarLembrete(
+                          atendimento
+                        )
+                      }
+                    >
+                      Lembrar pelo WhatsApp
+                    </button>
+
+                  )}
+
 
                   <button
                     type="button"

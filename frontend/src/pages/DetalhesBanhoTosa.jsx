@@ -6,6 +6,13 @@ import {
 
 import api from "../services/api";
 
+import {
+  abrirWhatsApp,
+  mensagemLembreteAtendimento,
+  mensagemAtendimentoConcluido,
+  mensagemContatoTutor,
+} from "../utils/whatsapp";
+
 import "../styles/BanhoTosa.css";
 
 
@@ -156,6 +163,64 @@ function DetalhesBanhoTosa() {
 
     } finally {
       setProcessando(false);
+    }
+  }
+
+    /*
+   * Abre o WhatsApp com uma mensagem adequada ao
+   * estado atual do atendimento.
+   */
+  function contatarTutorWhatsApp() {
+    let mensagem;
+
+    if (atendimento.status === "AGENDADO") {
+      mensagem =
+        mensagemLembreteAtendimento({
+          tutorNome:
+            atendimento.tutor_nome,
+
+          petNome:
+            atendimento.pet_nome,
+
+          agendadoPara:
+            formatarDataHora(
+              atendimento.agendado_para
+            ),
+        });
+    } else if (
+      atendimento.status ===
+      "FINALIZADO"
+    ) {
+      mensagem =
+        mensagemAtendimentoConcluido({
+          tutorNome:
+            atendimento.tutor_nome,
+
+          petNome:
+            atendimento.pet_nome,
+        });
+    } else {
+      mensagem =
+        mensagemContatoTutor({
+          tutorNome:
+            atendimento.tutor_nome,
+
+          petNome:
+            atendimento.pet_nome,
+        });
+    }
+
+    const abriu =
+      abrirWhatsApp({
+        telefone:
+          atendimento.tutor_telefone,
+        mensagem,
+      });
+
+    if (!abriu) {
+      alert(
+        "O tutor não possui telefone cadastrado."
+      );
     }
   }
 
@@ -478,6 +543,14 @@ function DetalhesBanhoTosa() {
           }
         >
           Ver Pet
+        </button>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={contatarTutorWhatsApp}
+        >
+          WhatsApp
         </button>
 
 

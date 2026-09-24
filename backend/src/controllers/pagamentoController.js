@@ -73,6 +73,11 @@ async function listarPagamentosPendentes(req, res) {
 
     /*
      * A pesquisa pode localizar pelo nome do Pet ou Tutor.
+     *
+     * O Tutor utilizado é sempre o principal definido em
+     * pet_tutores, que é a fonte oficial do relacionamento
+     * entre Pets e Tutores.
+     *
      * Os valores continuam sendo enviados por parâmetros,
      * evitando concatenar dados do usuário diretamente no SQL.
      */
@@ -96,6 +101,9 @@ async function listarPagamentosPendentes(req, res) {
     /*
      * O total é calculado com os mesmos filtros utilizados
      * na consulta principal para manter a paginação correta.
+     *
+     * pet_tutores também é utilizado aqui para que a contagem
+     * e a consulta principal sigam exatamente a mesma regra.
      */
     const resultadoTotal =
       await pool.query(
@@ -111,8 +119,12 @@ async function listarPagamentosPendentes(req, res) {
           INNER JOIN pets p
             ON p.id = bt.pet_id
 
+          INNER JOIN pet_tutores pt
+            ON pt.pet_id = p.id
+            AND pt.principal = TRUE
+
           INNER JOIN tutores t
-            ON t.id = p.tutor_id
+            ON t.id = pt.tutor_id
 
           ${where}
         `,
@@ -164,6 +176,7 @@ async function listarPagamentosPendentes(req, res) {
 
             t.id AS tutor_id,
             t.nome AS tutor_nome,
+            t.telefone AS tutor_telefone,
 
             COALESCE(
               (
@@ -194,8 +207,12 @@ async function listarPagamentosPendentes(req, res) {
           INNER JOIN pets p
             ON p.id = bt.pet_id
 
+          INNER JOIN pet_tutores pt
+            ON pt.pet_id = p.id
+            AND pt.principal = TRUE
+
           INNER JOIN tutores t
-            ON t.id = p.tutor_id
+            ON t.id = pt.tutor_id
 
           ${where}
 

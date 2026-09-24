@@ -10,6 +10,11 @@ import {
 
 import api from "../services/api";
 
+import {
+  abrirWhatsApp,
+  mensagemPagamentoPendente,
+} from "../utils/whatsapp";
+
 import "../styles/PagamentosPendentes.css";
 
 
@@ -214,6 +219,43 @@ function PagamentosPendentes() {
       0
     );
 
+      /*
+   * Prepara uma mensagem financeira sem alterar
+   * qualquer informação do pagamento no sistema.
+   *
+   * O registro como pago continua sendo uma operação
+   * separada e protegida pelo backend.
+   */
+  function cobrarWhatsApp(
+    pagamento
+  ) {
+    const mensagem =
+      mensagemPagamentoPendente({
+        tutorNome:
+          pagamento.tutor_nome,
+
+        petNome:
+          pagamento.pet_nome,
+
+        valor:
+          formatarValor(
+            pagamento.valor_total
+          ),
+      });
+
+    const abriu =
+      abrirWhatsApp({
+        telefone:
+          pagamento.tutor_telefone,
+        mensagem,
+      });
+
+    if (!abriu) {
+      alert(
+        "O tutor não possui telefone cadastrado."
+      );
+    }
+  }
 
   return (
     <div className="pagamentos-page">
@@ -536,6 +578,18 @@ function PagamentosPendentes() {
 
 
                 <div className="pagamento-card-acao">
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      cobrarWhatsApp(
+                        pagamento
+                      )
+                    }
+                  >
+                    Cobrar pelo WhatsApp
+                  </button>
 
                   <button
                     type="button"
