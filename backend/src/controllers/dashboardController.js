@@ -2,36 +2,16 @@ const pool = require("../database/connection");
 
 
 /*
- * Retorna os indicadores utilizados no Dashboard.
+ * Retorna os indicadores e alertas utilizados no Dashboard.
  *
- * O próprio backend controla quais informações cada
- * perfil recebe. Isso é importante porque esconder
- * cards somente no React não seria uma proteção real.
- *
- * Perfis:
- *
- * funcionario:
- * - informações necessárias para a operação diária.
- *
- * gerente:
- * - operação diária;
- * - indicadores necessários para gestão.
- *
- * administrador:
- * - todos os indicadores disponíveis.
+ * O backend controla quais informações cada perfil recebe.
+ * Assim informações financeiras e administrativas não ficam
+ * protegidas apenas pela interface do React.
  */
 async function buscarResumo(req, res) {
   try {
     const perfil = req.usuario.perfil;
 
-    /*
-    * O Dashboard trabalha somente com os três perfis
-    * reconhecidos pelo sistema.
-    *
-    * Caso um perfil inválido chegue até este ponto por
-    * inconsistência no banco, negamos o acesso em vez
-    * de conceder permissões por padrão.
-    */
     const perfisPermitidos = [
       "funcionario",
       "gerente",
@@ -44,22 +24,14 @@ async function buscarResumo(req, res) {
           "Perfil sem permissão para acessar o Dashboard.",
       });
     }
+
+
     /*
      * =====================================================
      * INDICADORES OPERACIONAIS
      * =====================================================
-     *
-     * Estes indicadores podem ser utilizados pelos três
-     * perfis porque fazem parte da rotina do pet shop.
      */
 
-
-    /*
-     * Conta somente pets ativos.
-     *
-     * Pets inativos continuam armazenados no banco,
-     * mas não devem ser considerados na operação atual.
-     */
     const resultadoPets =
       await pool.query(`
         SELECT COUNT(*)::INTEGER AS total
@@ -67,13 +39,7 @@ async function buscarResumo(req, res) {
         WHERE ativo = TRUE
       `);
 
-    const totalPets =
-      resultadoPets.rows[0].total;
 
-
-    /*
-     * Tutores ativos cadastrados.
-     */
     const resultadoTutores =
       await pool.query(`
         SELECT COUNT(*)::INTEGER AS total
@@ -81,16 +47,7 @@ async function buscarResumo(req, res) {
         WHERE ativo = TRUE
       `);
 
-    const totalTutores =
-      resultadoTutores.rows[0].total;
 
-
-    /*
-     * Conta somente permanências abertas na Creche.
-     *
-     * NA_CRECHE representa que o pet está fisicamente
-     * no estabelecimento neste momento.
-     */
     const resultadoCreche =
       await pool.query(`
         SELECT COUNT(*)::INTEGER AS total
@@ -98,15 +55,7 @@ async function buscarResumo(req, res) {
         WHERE status = 'NA_CRECHE'
       `);
 
-    const naCreche =
-      resultadoCreche.rows[0].total;
 
-
-    /*
-     * Reservas futuras do Hotel não contam como pets
-     * presentes. Somente HOSPEDADO representa um animal
-     * atualmente hospedado.
-     */
     const resultadoHotel =
       await pool.query(`
         SELECT COUNT(*)::INTEGER AS total
@@ -114,14 +63,11 @@ async function buscarResumo(req, res) {
         WHERE status = 'HOSPEDADO'
       `);
 
-    const noHotel =
-      resultadoHotel.rows[0].total;
-
 
     /*
-     * Atendimentos de Banho e Tosa agendados para hoje.
+     * Atendimentos previstos para hoje.
      *
-     * Cancelamentos não entram na contagem.
+     * Cancelamentos não fazem parte da operação do dia.
      */
     const resultadoAtendimentosHoje =
       await pool.query(`
@@ -131,15 +77,43 @@ async function buscarResumo(req, res) {
           AND status <> 'CANCELADO'
       `);
 
-    const atendimentosHoje =
-      resultadoAtendimentosHoje.rows[0].total;
+
+    /*
+     * Reservas do Hotel cuja entrada está prevista para hoje.
+     *
+     * Este dado é utilizado como alerta operacional para que
+     * a equipe consiga visualizar chegadas previstas.
+     */
+    const resultadoEntradasHotelHoje =
+      await pool.query(`
+        SELECT COUNT(*)::INTEGER AS total
+        FROM hotel
+        WHERE status = 'AGENDADO'
+          AND entrada_prevista::DATE = CURRENT_DATE
+      `);
+
+    /*
+     * Hospedagens cuja saída prevista já passou, mas que
+     * continuam abertas.
+     *
+     * Diferentemente da Creche, o Hotel possui uma data de
+     * saída prevista e permite identificar atraso sem
+     * inventar uma regra de tempo arbitrária.
+     */
+    const resultadoSaidasHotelAtrasadas =
+      await pool.query(`
+        SELECT COUNT(*)::INTEGER AS total
+        FROM hotel
+        WHERE status = 'HOSPEDADO'
+          AND saida_prevista < CURRENT_TIMESTAMP
+      `);
 
 
     /*
      * Próximos cinco atendimentos ainda agendados.
      *
-     * Além do pet e tutor, retornamos os serviços
-     * associados ao atendimento.
+     * pet_tutores é a fonte oficial do relacionamento.
+     * O tutor principal atual é utilizado no Dashboard.
      */
     const resultadoProximosAtendimentos =
       await pool.query(`
@@ -178,8 +152,12 @@ async function buscarResumo(req, res) {
         INNER JOIN pets p
           ON p.id = bt.pet_id
 
+        INNER JOIN pet_tutores pt
+          ON pt.pet_id = p.id
+          AND pt.principal = TRUE
+
         INNER JOIN tutores t
-          ON t.id = p.tutor_id
+          ON t.id = pt.tutor_id
 
         WHERE
           bt.status = 'AGENDADO'
@@ -192,13 +170,88 @@ async function buscarResumo(req, res) {
       `);
 
 
+    const totalPets =
+      resultadoPets.rows[0].total;
+
+    const totalTutores =
+      resultadoTutores.rows[0].total;
+
+    const naCreche =
+      resultadoCreche.rows[0].total;
+
+    const noHotel =
+      resultadoHotel.rows[0].total;
+
+    const atendimentosHoje =
+      resultadoAtendimentosHoje.rows[0].total;
+
+    const entradasHotelHoje =
+      resultadoEntradasHotelHoje.rows[0].total;
+
+    const saidasHotelAtrasadas =
+      resultadoSaidasHotelAtrasadas.rows[0].total;
+
+
     /*
-     * Mantemos também os campos antigos no nível
-     * principal da resposta.
+     * Alertas são enviados como objetos estruturados.
      *
-     * Isso evita quebrar o Dashboard atual enquanto
-     * fazemos a atualização do frontend.
+     * O frontend não precisa conhecer regras do banco para
+     * decidir quando determinada situação merece atenção.
      */
+    const alertas = [];
+
+
+    if (atendimentosHoje > 0) {
+      alertas.push({
+        id: "atendimentos-hoje",
+        tipo: "informacao",
+        titulo:
+          "Atendimentos programados para hoje",
+        mensagem:
+          atendimentosHoje === 1
+            ? "Existe 1 atendimento programado para hoje."
+            : `Existem ${atendimentosHoje} atendimentos programados para hoje.`,
+        quantidade: atendimentosHoje,
+        destino:
+          "/atendimentos?filtro=hoje",
+      });
+    }
+
+
+    if (entradasHotelHoje > 0) {
+      alertas.push({
+        id: "entradas-hotel-hoje",
+        tipo: "informacao",
+        titulo:
+          "Entradas no hotel previstas para hoje",
+        mensagem:
+          entradasHotelHoje === 1
+            ? "Existe 1 entrada no hotel prevista para hoje."
+            : `Existem ${entradasHotelHoje} entradas no hotel previstas para hoje.`,
+        quantidade: entradasHotelHoje,
+        destino:
+          "/hotel?secao=reservas",
+      });
+    }
+
+        if (saidasHotelAtrasadas > 0) {
+      alertas.push({
+        id: "saidas-hotel-atrasadas",
+        tipo: "urgente",
+        titulo:
+          "Check-outs do hotel atrasados",
+        mensagem:
+          saidasHotelAtrasadas === 1
+            ? "Existe 1 hospedagem com a saída prevista já vencida."
+            : `Existem ${saidasHotelAtrasadas} hospedagens com a saída prevista já vencida.`,
+        quantidade:
+          saidasHotelAtrasadas,
+        destino:
+          "/hotel?secao=hospedados",
+      });
+    }
+
+
     const resposta = {
       pets_cadastrados:
         totalPets,
@@ -217,6 +270,8 @@ async function buscarResumo(req, res) {
 
       proximos_atendimentos:
         resultadoProximosAtendimentos.rows,
+
+      alertas,
     };
 
 
@@ -225,11 +280,8 @@ async function buscarResumo(req, res) {
      * FUNCIONÁRIO
      * =====================================================
      *
-     * O funcionário recebe somente informações
-     * necessárias para as atividades do dia a dia.
-     *
-     * Ele não recebe informações financeiras,
-     * administrativas ou de segurança.
+     * Funcionários recebem somente alertas relacionados
+     * diretamente à operação.
      */
     if (perfil === "funcionario") {
       return res.status(200).json(
@@ -242,16 +294,8 @@ async function buscarResumo(req, res) {
      * =====================================================
      * GERENTE E ADMINISTRADOR
      * =====================================================
-     *
-     * A partir daqui entram indicadores necessários
-     * para gestão da operação.
      */
 
-
-    /*
-     * Produtos ativos que chegaram ou ficaram abaixo
-     * da quantidade mínima configurada.
-     */
     const resultadoEstoqueBaixo =
       await pool.query(`
         SELECT COUNT(*)::INTEGER AS total
@@ -260,14 +304,7 @@ async function buscarResumo(req, res) {
           AND quantidade_atual <= quantidade_minima
       `);
 
-    const estoqueBaixo =
-      resultadoEstoqueBaixo.rows[0].total;
 
-
-    /*
-     * Quantidade e valor total dos pagamentos de
-     * Banho e Tosa que ainda estão pendentes.
-     */
     const resultadoPagamentosPendentes =
       await pool.query(`
         SELECT
@@ -284,12 +321,6 @@ async function buscarResumo(req, res) {
       `);
 
 
-    /*
-     * Reservas futuras do Hotel.
-     *
-     * Hóspedes que já fizeram check-in não entram aqui,
-     * pois já são contabilizados em "no_hotel".
-     */
     const resultadoReservasHotel =
       await pool.query(`
         SELECT COUNT(*)::INTEGER AS total
@@ -299,31 +330,80 @@ async function buscarResumo(req, res) {
       `);
 
 
-    resposta.estoque_baixo =
+    const estoqueBaixo =
       resultadoEstoqueBaixo.rows[0].total;
 
-    resposta.pagamentos_pendentes =
+    const pagamentosPendentes =
       resultadoPagamentosPendentes
         .rows[0]
         .quantidade;
 
-    resposta.valor_pagamentos_pendentes =
+    const valorPagamentosPendentes =
       resultadoPagamentosPendentes
         .rows[0]
         .valor_total;
 
-    resposta.reservas_hotel =
+    const reservasHotel =
       resultadoReservasHotel.rows[0].total;
+
+
+    resposta.estoque_baixo =
+      estoqueBaixo;
+
+    resposta.pagamentos_pendentes =
+      pagamentosPendentes;
+
+    resposta.valor_pagamentos_pendentes =
+      valorPagamentosPendentes;
+
+    resposta.reservas_hotel =
+      reservasHotel;
+
+
+    /*
+     * Alertas gerenciais são acrescentados somente depois
+     * da verificação de perfil, impedindo que dados
+     * financeiros sejam enviados para Funcionários.
+     */
+    if (estoqueBaixo > 0) {
+      alertas.push({
+        id: "estoque-baixo",
+        tipo: "atencao",
+        titulo:
+          "Produtos precisam de reposição",
+        mensagem:
+          estoqueBaixo === 1
+            ? "Existe 1 produto com estoque baixo."
+            : `Existem ${estoqueBaixo} produtos com estoque baixo.`,
+        quantidade: estoqueBaixo,
+        destino:
+          "/produtos?estoque=baixo",
+      });
+    }
+
+
+    if (pagamentosPendentes > 0) {
+      alertas.push({
+        id: "pagamentos-pendentes",
+        tipo: "urgente",
+        titulo:
+          "Pagamentos aguardando confirmação",
+        mensagem:
+          pagamentosPendentes === 1
+            ? "Existe 1 pagamento pendente."
+            : `Existem ${pagamentosPendentes} pagamentos pendentes.`,
+        quantidade:
+          pagamentosPendentes,
+        destino:
+          "/administrativo/pagamentos-pendentes",
+      });
+    }
 
 
     /*
      * =====================================================
      * GERENTE
      * =====================================================
-     *
-     * O gerente possui os indicadores necessários para
-     * administrar a operação, mas não recebe informações
-     * exclusivas da Administração do sistema.
      */
     if (perfil === "gerente") {
       return res.status(200).json(
@@ -336,97 +416,76 @@ async function buscarResumo(req, res) {
      * =====================================================
      * ADMINISTRADOR
      * =====================================================
-     *
-     * Somente o administrador recebe informações
-     * relacionadas à administração do sistema.
      */
-    if (perfil === "administrador") {
 
-      /*
-       * Total de usuários ativos do sistema.
-       */
-      const resultadoUsuarios =
-        await pool.query(`
-          SELECT COUNT(*)::INTEGER AS total
-          FROM usuarios
-          WHERE ativo = TRUE
-        `);
+    const resultadoUsuarios =
+      await pool.query(`
+        SELECT COUNT(*)::INTEGER AS total
+        FROM usuarios
+        WHERE ativo = TRUE
+      `);
 
 
-      /*
-       * Quantidade de usuários ativos por perfil.
-       *
-       * Esses números serão úteis posteriormente
-       * também na área Sistema -> Administração.
-       */
-      const resultadoUsuariosPorPerfil =
-        await pool.query(`
-          SELECT
-            perfil,
-            COUNT(*)::INTEGER AS total
+    const resultadoUsuariosPorPerfil =
+      await pool.query(`
+        SELECT
+          perfil,
+          COUNT(*)::INTEGER AS total
 
-          FROM usuarios
+        FROM usuarios
 
-          WHERE ativo = TRUE
+        WHERE ativo = TRUE
 
-          GROUP BY perfil
-        `);
+        GROUP BY perfil
+      `);
 
 
-      resposta.usuarios_ativos =
-        resultadoUsuarios.rows[0].total;
+    resposta.usuarios_ativos =
+      resultadoUsuarios.rows[0].total;
 
 
-      /*
-       * Inicializamos todos com zero para que o frontend
-       * sempre receba a mesma estrutura mesmo quando
-       * ainda não existir usuário de determinado perfil.
-       */
-      resposta.usuarios_por_perfil = {
-        administradores: 0,
-        gerentes: 0,
-        funcionarios: 0,
-      };
+    resposta.usuarios_por_perfil = {
+      administradores: 0,
+      gerentes: 0,
+      funcionarios: 0,
+    };
 
 
-      resultadoUsuariosPorPerfil.rows.forEach(
-        (item) => {
-
-          if (
-            item.perfil ===
-            "administrador"
-          ) {
-            resposta
-              .usuarios_por_perfil
-              .administradores =
-                item.total;
-          }
-
-
-          if (
-            item.perfil ===
-            "gerente"
-          ) {
-            resposta
-              .usuarios_por_perfil
-              .gerentes =
-                item.total;
-          }
-
-
-          if (
-            item.perfil ===
-            "funcionario"
-          ) {
-            resposta
-              .usuarios_por_perfil
-              .funcionarios =
-                item.total;
-          }
-
+    resultadoUsuariosPorPerfil.rows.forEach(
+      (item) => {
+        if (
+          item.perfil ===
+          "administrador"
+        ) {
+          resposta
+            .usuarios_por_perfil
+            .administradores =
+              item.total;
         }
-      );
-    }
+
+
+        if (
+          item.perfil ===
+          "gerente"
+        ) {
+          resposta
+            .usuarios_por_perfil
+            .gerentes =
+              item.total;
+        }
+
+
+        if (
+          item.perfil ===
+          "funcionario"
+        ) {
+          resposta
+            .usuarios_por_perfil
+            .funcionarios =
+              item.total;
+        }
+      }
+    );
 
 
     return res.status(200).json(
@@ -434,7 +493,6 @@ async function buscarResumo(req, res) {
     );
 
   } catch (error) {
-
     console.error(
       "Erro ao buscar resumo do Dashboard:",
       error

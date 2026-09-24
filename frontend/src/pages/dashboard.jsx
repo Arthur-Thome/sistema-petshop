@@ -13,7 +13,6 @@ import "../styles/Dashboard.css";
 
 
 function Dashboard() {
-
   const navigate =
     useNavigate();
 
@@ -51,6 +50,8 @@ function Dashboard() {
         gerentes: 0,
         funcionarios: 0,
       },
+
+      alertas: [],
     });
 
 
@@ -65,17 +66,14 @@ function Dashboard() {
 
 
   /*
-   * O Dashboard utiliza um único endpoint de resumo.
+   * O Dashboard utiliza um único endpoint.
    *
-   * O próprio backend decide quais indicadores cada
-   * perfil pode receber.
+   * Indicadores e alertas chegam juntos, enquanto
+   * o backend continua responsável pelas permissões.
    */
   useEffect(() => {
-
     async function carregarDashboard() {
-
       try {
-
         setErroDashboard(false);
         setCarregando(true);
 
@@ -100,10 +98,16 @@ function Dashboard() {
               {}
             ),
           },
+
+          alertas:
+            Array.isArray(
+              resposta.data.alertas
+            )
+              ? resposta.data.alertas
+              : [],
         }));
 
       } catch (error) {
-
         setErroDashboard(true);
 
         console.error(
@@ -112,37 +116,25 @@ function Dashboard() {
         );
 
       } finally {
-
         setCarregando(false);
-
       }
     }
 
 
     carregarDashboard();
-
   }, []);
 
 
-  /*
-   * Somente gerente e administrador recebem
-   * indicadores de gestão.
-   */
   const podeVerGestao =
     perfil === "gerente" ||
     perfil === "administrador";
 
 
-  /*
-   * Indicadores administrativos são exclusivos
-   * do administrador.
-   */
   const ehAdministrador =
     perfil === "administrador";
 
 
   function formatarValor(valor) {
-
     return Number(
       valor || 0
     ).toLocaleString(
@@ -152,12 +144,10 @@ function Dashboard() {
         currency: "BRL",
       }
     );
-
   }
 
 
   function formatarDataHora(data) {
-
     if (!data) {
       return "-";
     }
@@ -172,14 +162,12 @@ function Dashboard() {
         timeStyle: "short",
       }
     );
-
   }
 
 
   function formatarServicos(
     servicos
   ) {
-
     if (
       !Array.isArray(servicos) ||
       servicos.length === 0
@@ -194,22 +182,18 @@ function Dashboard() {
           servico.nome
       )
       .join(", ");
-
   }
 
 
   return (
-
     <div className="dashboard-page">
 
       <div className="dashboard-header">
 
         <div>
-
           <h1>
             Dashboard
           </h1>
-
 
           <p>
             Bem-vindo,{" "}
@@ -218,12 +202,10 @@ function Dashboard() {
             </strong>
             .
           </p>
-
         </div>
 
 
         <div className="dashboard-perfil">
-
           {perfil === "administrador" &&
             "Administrador"}
 
@@ -232,22 +214,147 @@ function Dashboard() {
 
           {perfil === "funcionario" &&
             "Funcionário"}
-
         </div>
 
       </div>
 
 
       {erroDashboard && (
-
         <div className="dashboard-erro">
-
           Não foi possível atualizar
           os dados do Dashboard.
+        </div>
+      )}
+
+
+      {/* =========================================
+          CENTRAL DE ALERTAS
+          ========================================= */}
+
+      <section className="dashboard-alertas">
+
+        <div className="dashboard-alertas-cabecalho">
+
+          <div>
+            <span className="dashboard-alertas-label">
+              CENTRAL DE ALERTAS
+            </span>
+
+            <h2>
+              Situações que precisam
+              de atenção
+            </h2>
+
+            <p>
+              Acompanhe rapidamente
+              as pendências e atividades
+              importantes da operação.
+            </p>
+          </div>
+
+
+          {!carregando && (
+            <div className="dashboard-alertas-contador">
+              <strong>
+                {resumo.alertas.length}
+              </strong>
+
+              <span>
+                {resumo.alertas.length === 1
+                  ? "alerta ativo"
+                  : "alertas ativos"}
+              </span>
+            </div>
+          )}
 
         </div>
 
-      )}
+
+        {carregando ? (
+
+          <div className="dashboard-alertas-vazio">
+            Verificando alertas...
+          </div>
+
+        ) : resumo.alertas.length === 0 ? (
+
+          <div className="dashboard-alertas-ok">
+
+            <div className="dashboard-alertas-ok-icone">
+              ✓
+            </div>
+
+            <div>
+              <strong>
+                Nenhum alerta no momento
+              </strong>
+
+              <p>
+                Não existem situações que
+                precisam de atenção imediata.
+              </p>
+            </div>
+
+          </div>
+
+        ) : (
+
+          <div className="dashboard-alertas-lista">
+
+            {resumo.alertas.map(
+              (alerta) => (
+
+                <button
+                  type="button"
+                  key={alerta.id}
+                  className={
+                    `dashboard-alerta dashboard-alerta-${alerta.tipo}`
+                  }
+                  onClick={() =>
+                    navigate(
+                      alerta.destino
+                    )
+                  }
+                >
+
+                  <div className="dashboard-alerta-indicador">
+                    {alerta.tipo ===
+                      "urgente"
+                      ? "!"
+                      : alerta.tipo ===
+                          "atencao"
+                        ? "▲"
+                        : "i"}
+                  </div>
+
+
+                  <div className="dashboard-alerta-conteudo">
+
+                    <strong>
+                      {alerta.titulo}
+                    </strong>
+
+                    <span>
+                      {alerta.mensagem}
+                    </span>
+
+                  </div>
+
+
+                  <div className="dashboard-alerta-acao">
+                    Ver detalhes →
+                  </div>
+
+                </button>
+
+              )
+            )}
+
+          </div>
+
+        )}
+
+      </section>
 
 
       {/* =========================================
@@ -259,7 +366,6 @@ function Dashboard() {
         <div className="dashboard-section-header">
 
           <div>
-
             <h2>
               Visão geral
             </h2>
@@ -268,7 +374,6 @@ function Dashboard() {
               Informações principais da
               operação.
             </p>
-
           </div>
 
         </div>
@@ -333,7 +438,9 @@ function Dashboard() {
             icone="🏨"
             textoLink="Ver hotel →"
             onClick={() =>
-              navigate("/hotel?secao=hospedados")
+              navigate(
+                "/hotel?secao=hospedados"
+              )
             }
           />
 
@@ -349,7 +456,9 @@ function Dashboard() {
             icone="✂️"
             textoLink="Ver atendimentos →"
             onClick={() =>
-              navigate("/atendimentos?filtro=hoje")
+              navigate(
+                "/atendimentos?filtro=hoje"
+              )
             }
           />
 
@@ -367,15 +476,14 @@ function Dashboard() {
         <div className="dashboard-section-header">
 
           <div>
-
             <h2>
               Próximos atendimentos
             </h2>
 
             <p>
-              Próximos atendimentos agendados.
+              Próximos atendimentos
+              agendados.
             </p>
-
           </div>
 
 
@@ -407,10 +515,8 @@ function Dashboard() {
               .length === 0 ? (
 
             <div className="dashboard-vazio">
-
               Nenhum atendimento
               futuro agendado.
-
             </div>
 
           ) : (
@@ -420,91 +526,89 @@ function Dashboard() {
               .map(
                 (atendimento) => (
 
-                <div
-                  key={
-                    atendimento.id
-                  }
-                  className="dashboard-atendimento"
-                  onClick={() =>
-                    navigate(
-                      `/atendimentos/${atendimento.id}`
-                    )
-                  }
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-
-                    if (
-                      event.key ===
-                        "Enter" ||
-                      event.key === " "
-                    ) {
-
-                      event
-                        .preventDefault();
-
+                  <div
+                    key={
+                      atendimento.id
+                    }
+                    className="dashboard-atendimento"
+                    onClick={() =>
                       navigate(
                         `/atendimentos/${atendimento.id}`
-                      );
-
+                      )
                     }
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key ===
+                          "Enter" ||
+                        event.key === " "
+                      ) {
+                        event
+                          .preventDefault();
 
-                  }}
-                >
+                        navigate(
+                          `/atendimentos/${atendimento.id}`
+                        );
+                      }
+                    }}
+                  >
 
-                  <div className="dashboard-atendimento-data">
+                    <div className="dashboard-atendimento-data">
 
-                    <span>
-                      Agendamento
-                    </span>
+                      <span>
+                        Agendamento
+                      </span>
 
-                    <strong>
-                      {formatarDataHora(
+                      <strong>
+                        {formatarDataHora(
+                          atendimento
+                            .agendado_para
+                        )}
+                      </strong>
+
+                    </div>
+
+
+                    <div className="dashboard-atendimento-pet">
+
+                      <strong>
+                        {
+                          atendimento
+                            .pet_nome
+                        }
+                      </strong>
+
+                      <span>
+                        Tutor:{" "}
+                        {
+                          atendimento
+                            .tutor_nome
+                        }
+                      </span>
+
+                    </div>
+
+
+                    <div className="dashboard-atendimento-servicos">
+
+                      {formatarServicos(
                         atendimento
-                          .agendado_para
+                          .servicos
                       )}
-                    </strong>
+
+                    </div>
+
+
+                    <div className="dashboard-atendimento-acao">
+                      Ver →
+                    </div>
 
                   </div>
 
+                )
+              )
 
-                  <div className="dashboard-atendimento-pet">
-
-                    <strong>
-                      {
-                        atendimento
-                          .pet_nome
-                      }
-                    </strong>
-
-                    <span>
-                      Tutor:{" "}
-                      {
-                        atendimento
-                          .tutor_nome
-                      }
-                    </span>
-
-                  </div>
-
-
-                  <div className="dashboard-atendimento-servicos">
-
-                    {formatarServicos(
-                      atendimento
-                        .servicos
-                    )}
-
-                  </div>
-
-
-                  <div className="dashboard-atendimento-acao">
-                    Ver →
-                  </div>
-
-                </div>
-
-              ))
           )}
 
         </div>
@@ -514,7 +618,6 @@ function Dashboard() {
 
       {/* =========================================
           INDICADORES DE GESTÃO
-          GERENTE + ADMINISTRADOR
           ========================================= */}
 
       {podeVerGestao && (
@@ -524,7 +627,6 @@ function Dashboard() {
           <div className="dashboard-section-header">
 
             <div>
-
               <h2>
                 Gestão
               </h2>
@@ -533,7 +635,6 @@ function Dashboard() {
                 Indicadores para acompanhamento
                 da operação.
               </p>
-
             </div>
 
           </div>
@@ -602,7 +703,9 @@ function Dashboard() {
               icone="📅"
               textoLink="Ver hotel →"
               onClick={() =>
-                navigate("/hotel?secao=reservas")
+                navigate(
+                  "/hotel?secao=reservas"
+                )
               }
             />
 
@@ -615,7 +718,6 @@ function Dashboard() {
 
       {/* =========================================
           ADMINISTRAÇÃO
-          SOMENTE ADMINISTRADOR
           ========================================= */}
 
       {ehAdministrador && (
@@ -625,7 +727,6 @@ function Dashboard() {
           <div className="dashboard-section-header">
 
             <div>
-
               <h2>
                 Administração
               </h2>
@@ -634,7 +735,6 @@ function Dashboard() {
                 Informações administrativas
                 do sistema.
               </p>
-
             </div>
 
           </div>
@@ -703,7 +803,6 @@ function Dashboard() {
 }
 
 
-
 /*
  * Card reutilizável do Dashboard.
  *
@@ -717,13 +816,11 @@ function Card({
   textoLink,
   onClick,
 }) {
-
   const clicavel =
     typeof onClick === "function";
 
 
   function tratarTeclado(event) {
-
     if (!clicavel) {
       return;
     }
@@ -733,17 +830,14 @@ function Card({
       event.key === "Enter" ||
       event.key === " "
     ) {
-
       event.preventDefault();
 
       onClick();
-
     }
   }
 
 
   return (
-
     <div
       className={
         clicavel
