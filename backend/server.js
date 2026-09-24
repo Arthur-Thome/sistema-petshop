@@ -148,6 +148,7 @@ app.use("/api/produtos", produtoRoutes);
 app.use("/api/estoque", estoqueRoutes);
 app.use("/api/creche", crecheRoutes);
 app.use("/api/hotel", hotelRoutes);
+app.use("/api/atendimentos", banhoTosaRoutes);
 app.use("/api/banho-tosa", banhoTosaRoutes);
 app.use("/api/servicos", servicoRoutes);
 app.use("/api/auditoria", auditoriaRoutes);

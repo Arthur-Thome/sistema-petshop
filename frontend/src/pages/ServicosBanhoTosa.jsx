@@ -185,7 +185,7 @@ function ServicosBanhoTosa() {
 
           <p>
             Cadastre e gerencie os serviços
-            oferecidos no Banho e Tosa.
+            oferecidos nos atendimentos.
           </p>
         </div>
 
@@ -196,7 +196,7 @@ function ServicosBanhoTosa() {
             type="button"
             className="secondary-button"
             onClick={() =>
-              navigate("/banho-tosa")
+              navigate("/atendimentos")
             }
           >
             Voltar
@@ -208,7 +208,7 @@ function ServicosBanhoTosa() {
             className="primary-button"
             onClick={() =>
               navigate(
-                "/banho-tosa/servicos/novo"
+                "/atendimentos/servicos/novo"
               )
             }
           >
@@ -360,7 +360,7 @@ function ServicosBanhoTosa() {
                     className="secondary-button"
                     onClick={() =>
                       navigate(
-                        `/banho-tosa/servicos/${servico.id}/editar`
+                        `/atendimentos/servicos/${servico.id}/editar`
                       )
                     }
                   >
@@ -407,8 +407,8 @@ function ServicosBanhoTosa() {
 
           mensagem={
             servicoSelecionado.ativo
-              ? `Confirme sua senha para inativar o serviço "${servicoSelecionado.nome}". Ele deixará de aparecer nos novos agendamentos.`
-              : `Confirme sua senha para reativar o serviço "${servicoSelecionado.nome}". Ele voltará a aparecer nos novos agendamentos.`
+              ? `Confirme sua senha para inativar o serviço "${servicoSelecionado.nome}". Ele deixará de aparecer nos novos atendimentos.`
+              : `Confirme sua senha para reativar o serviço "${servicoSelecionado.nome}". Ele voltará a aparecer nos novos atendimentos.`
           }
 
           textoConfirmar={

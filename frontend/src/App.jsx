@@ -199,64 +199,71 @@ function App() {
           />
 
 
+          {/*
+           * "Atendimentos" é o novo endereço público do módulo.
+           *
+           * Os nomes internos dos componentes permanecem
+           * temporariamente como BanhoTosa para que a migração
+           * possa ser realizada e testada em etapas.
+           */}
           <Route
-            path="/banho-tosa"
+            path="/atendimentos"
             element={<BanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/novo"
+            path="/atendimentos/novo"
             element={
               <NovoAgendamentoBanhoTosa />
             }
           />
 
           <Route
-            path="/banho-tosa/:id"
+            path="/atendimentos/:id"
             element={<DetalhesBanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/servicos"
+            path="/atendimentos/servicos"
             element={<ServicosBanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/servicos/novo"
+            path="/atendimentos/servicos/novo"
             element={
               <FormularioServicoBanhoTosa />
             }
           />
 
           <Route
-            path="/banho-tosa/servicos/:id/editar"
+            path="/atendimentos/servicos/:id/editar"
             element={
               <FormularioServicoBanhoTosa />
             }
           />
 
           <Route
-            path="/banho-tosa/historico"
+            path="/atendimentos/historico"
             element={<HistoricoBanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/:id/cancelar"
+            path="/atendimentos/:id/cancelar"
             element={<CancelarBanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/:id/finalizar"
+            path="/atendimentos/:id/finalizar"
             element={<FinalizarBanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/:id/pagamento"
+            path="/atendimentos/:id/pagamento"
             element={<PagamentoBanhoTosa />}
           />
 
           <Route
-            path="/banho-tosa/:id/comprovante"
+            path="/atendimentos/:id/comprovante"
             element={<ComprovanteBanhoTosa />}
           />
 

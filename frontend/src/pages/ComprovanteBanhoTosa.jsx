@@ -51,7 +51,7 @@ function ComprovanteBanhoTosa() {
 
         const resposta =
           await api.get(
-            `/banho-tosa/${id}`
+            `/atendimentos/${id}`
           );
 
         setAtendimento(
@@ -166,7 +166,7 @@ function ComprovanteBanhoTosa() {
 
         const resposta =
         await api.get(
-            `/banho-tosa/${id}/pix`
+            `/atendimentos/${id}/pix`
         );
 
         setPix(
@@ -329,7 +329,7 @@ function ComprovanteBanhoTosa() {
           type="button"
           className="secondary-button"
           onClick={() =>
-            navigate("/banho-tosa")
+            navigate("/atendimentos")
           }
         >
           Voltar
@@ -362,7 +362,7 @@ function ComprovanteBanhoTosa() {
             className="secondary-button"
             onClick={() =>
               navigate(
-                `/banho-tosa/${id}`
+                `/atendimentos/${id}`
               )
             }
           >

@@ -42,7 +42,7 @@ function CancelarBanhoTosa() {
 
         const resposta =
           await api.get(
-            `/banho-tosa/${id}`
+            `/atendimentos/${id}`
           );
 
         const dados =
@@ -104,16 +104,24 @@ function CancelarBanhoTosa() {
       setProcessando(true);
       setErro("");
 
+      /*
+       * O frontend utiliza a nova rota oficial
+       * de Atendimentos para efetuar o cancelamento.
+       */
       await api.patch(
-        `/banho-tosa/${id}/cancelar`,
+        `/atendimentos/${id}/cancelar`,
         {
           motivo_cancelamento:
             motivo.trim(),
         }
       );
 
+      /*
+       * Após o cancelamento, o registro deixa
+       * a lista de ativos e passa ao histórico.
+       */
       navigate(
-        "/banho-tosa/historico"
+        "/atendimentos/historico"
       );
 
     } catch (error) {
@@ -165,7 +173,7 @@ function CancelarBanhoTosa() {
             className="secondary-button"
             onClick={() =>
               navigate(
-                `/banho-tosa/${id}`
+                `/atendimentos/${id}`
               )
             }
             disabled={processando}
@@ -264,7 +272,7 @@ function CancelarBanhoTosa() {
                     className="secondary-button"
                     onClick={() =>
                       navigate(
-                        `/banho-tosa/${id}`
+                        `/atendimentos/${id}`
                       )
                     }
                     disabled={processando}

@@ -203,8 +203,12 @@ function FormularioServicoBanhoTosa() {
       }
 
 
+      /*
+       * Após cadastrar ou editar, retornamos para
+       * a nova rota oficial do módulo Atendimentos.
+       */
       navigate(
-        "/banho-tosa/servicos"
+        "/atendimentos/servicos"
       );
 
     } catch (error) {
@@ -265,7 +269,7 @@ function FormularioServicoBanhoTosa() {
             className="secondary-button"
             onClick={() =>
               navigate(
-                "/banho-tosa/servicos"
+                "/atendimentos/servicos"
               )
             }
             disabled={salvando}
@@ -379,7 +383,7 @@ function FormularioServicoBanhoTosa() {
               className="secondary-button"
               onClick={() =>
                 navigate(
-                  "/banho-tosa/servicos"
+                  "/atendimentos/servicos"
                 )
               }
               disabled={salvando}

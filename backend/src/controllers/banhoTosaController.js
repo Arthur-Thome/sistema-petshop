@@ -243,9 +243,12 @@ async function criarAgendamento(req, res) {
     transacaoIniciada = true;
 
     /*
-     * Bloqueamos o cadastro do Pet durante a criação.
-     * Isso evita que seu estado seja alterado enquanto
-     * o agendamento está sendo validado.
+     * O tutor utilizado pelo atendimento é obtido através
+     * da relação pet_tutores.
+     *
+     * pets.tutor_id continua existindo temporariamente
+     * apenas para compatibilidade com partes antigas do
+     * sistema e não é mais a fonte oficial desta consulta.
      */
     const resultadoPet =
       await client.query(
@@ -261,8 +264,12 @@ async function criarAgendamento(req, res) {
 
           FROM pets p
 
+          INNER JOIN pet_tutores pt
+            ON pt.pet_id = p.id
+            AND pt.principal = TRUE
+
           INNER JOIN tutores t
-            ON t.id = p.tutor_id
+            ON t.id = pt.tutor_id
 
           WHERE p.id = $1
 
@@ -609,8 +616,12 @@ async function listarAtivos(req, res) {
           INNER JOIN pets p
             ON p.id = bt.pet_id
 
+          INNER JOIN pet_tutores pt
+            ON pt.pet_id = p.id
+            AND pt.principal = TRUE
+
           INNER JOIN tutores t
-            ON t.id = p.tutor_id
+            ON t.id = pt.tutor_id
 
           WHERE bt.status IN (
             'AGENDADO',
@@ -691,8 +702,12 @@ async function listarHistorico(req, res) {
           INNER JOIN pets p
             ON p.id = bt.pet_id
 
+          INNER JOIN pet_tutores pt
+            ON pt.pet_id = p.id
+            AND pt.principal = TRUE
+
           INNER JOIN tutores t
-            ON t.id = p.tutor_id
+            ON t.id = pt.tutor_id
 
           LEFT JOIN pagamentos_banho_tosa pg
             ON pg.banho_tosa_id = bt.id
@@ -794,8 +809,12 @@ async function buscarAtendimentoPorId(
           INNER JOIN pets p
             ON p.id = bt.pet_id
 
+          INNER JOIN pet_tutores pt
+            ON pt.pet_id = p.id
+            AND pt.principal = TRUE
+
           INNER JOIN tutores t
-            ON t.id = p.tutor_id
+            ON t.id = pt.tutor_id
 
           LEFT JOIN pagamentos_banho_tosa pg
             ON pg.banho_tosa_id = bt.id
@@ -830,6 +849,7 @@ async function buscarAtendimentoPorId(
     });
   }
 }
+
 
 /*
  * Inicia um atendimento atualmente AGENDADO.
@@ -1008,7 +1028,6 @@ async function iniciarAtendimento(req, res) {
     }
   }
 }
-
 
 /*
  * Finaliza somente atendimentos que estão EM_ATENDIMENTO.

@@ -339,7 +339,7 @@ function Dashboard() {
 
 
           <Card
-            titulo="Banho e Tosa hoje"
+            titulo="Atendimentos hoje"
             valor={
               carregando
                 ? "..."
@@ -349,7 +349,7 @@ function Dashboard() {
             icone="✂️"
             textoLink="Ver atendimentos →"
             onClick={() =>
-              navigate("/banho-tosa?filtro=hoje")
+              navigate("/atendimentos?filtro=hoje")
             }
           />
 
@@ -373,8 +373,7 @@ function Dashboard() {
             </h2>
 
             <p>
-              Próximos agendamentos de
-              Banho e Tosa.
+              Próximos atendimentos agendados.
             </p>
 
           </div>
@@ -385,7 +384,7 @@ function Dashboard() {
             className="secondary-button"
             onClick={() =>
               navigate(
-                "/banho-tosa/novo"
+                "/atendimentos/novo"
               )
             }
           >
@@ -428,7 +427,7 @@ function Dashboard() {
                   className="dashboard-atendimento"
                   onClick={() =>
                     navigate(
-                      `/banho-tosa/${atendimento.id}`
+                      `/atendimentos/${atendimento.id}`
                     )
                   }
                   role="button"
@@ -445,7 +444,7 @@ function Dashboard() {
                         .preventDefault();
 
                       navigate(
-                        `/banho-tosa/${atendimento.id}`
+                        `/atendimentos/${atendimento.id}`
                       );
 
                     }

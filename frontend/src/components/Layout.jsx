@@ -1,4 +1,9 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  Outlet,
+  useNavigate,
+} from "react-router-dom";
+
 import "../styles/Layout.css";
 
 function Layout() {
@@ -13,7 +18,7 @@ function Layout() {
    * administrativos relacionados à operação.
    *
    * Esta verificação controla somente a exibição do menu.
-   * A autorização real também será aplicada no backend.
+   * A autorização real também é aplicada no backend.
    */
   const podeAcessarAdministrativo =
     usuario.perfil === "administrador" ||
@@ -23,14 +28,18 @@ function Layout() {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
 
-    navigate("/login", { replace: true });
+    navigate("/login", {
+      replace: true,
+    });
   }
 
   return (
     <div className="app-layout">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div className="sidebar-logo">🐾</div>
+          <div className="sidebar-logo">
+            🐾
+          </div>
 
           <div>
             <h2>Pet Shop</h2>
@@ -68,9 +77,17 @@ function Layout() {
             Hotel
           </NavLink>
 
-          <NavLink to="/banho-tosa">
+          {/*
+           * O antigo módulo "Banho e Tosa" passa a ser
+           * apresentado como "Atendimentos".
+           *
+           * Dessa forma o módulo poderá receber diferentes
+           * tipos de serviços sem ficar limitado ao nome
+           * utilizado originalmente.
+           */}
+          <NavLink to="/atendimentos">
             <span>✂</span>
-            Banho e Tosa
+            Atendimentos
           </NavLink>
 
           <div className="menu-section">
@@ -82,7 +99,7 @@ function Layout() {
             Produtos
           </NavLink>
 
-          <NavLink to="/banho-tosa/servicos">
+          <NavLink to="/atendimentos/servicos">
             <span>🧰</span>
             Serviços
           </NavLink>
@@ -110,7 +127,6 @@ function Layout() {
                 <span>💳</span>
                 Pagamentos Pendentes
               </NavLink>
-
             </>
           )}
 
@@ -120,7 +136,8 @@ function Layout() {
            * Esta área contém usuários, segurança e auditoria
            * completa e continua exclusiva do Administrador.
            */}
-          {usuario.perfil === "administrador" && (
+          {usuario.perfil ===
+            "administrador" && (
             <>
               <div className="menu-section">
                 SISTEMA

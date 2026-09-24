@@ -44,6 +44,9 @@ function BanhoTosa() {
   /*
    * Carrega somente os atendimentos que ainda
    * estão ativos: AGENDADO ou EM_ATENDIMENTO.
+   *
+   * "/atendimentos" passa a ser o endereço oficial
+   * utilizado pelo frontend para este módulo.
    */
   async function carregarAtendimentos() {
     try {
@@ -52,7 +55,7 @@ function BanhoTosa() {
 
       const resposta =
         await api.get(
-          "/banho-tosa/ativos"
+          "/atendimentos/ativos"
         );
 
 
@@ -66,7 +69,7 @@ function BanhoTosa() {
 
     } catch (error) {
       console.error(
-        "Erro ao carregar Banho e Tosa:",
+        "Erro ao carregar atendimentos:",
         error
       );
 
@@ -131,6 +134,13 @@ function BanhoTosa() {
 
 
   function classeStatus(status) {
+    /*
+     * As classes continuam com o prefixo "banho-tosa"
+     * temporariamente para preservar todo o CSS existente.
+     *
+     * O nome da classe é apenas interno e não interfere
+     * na nova identidade pública do módulo.
+     */
     const classes = {
       AGENDADO:
         "banho-tosa-status-agendado",
@@ -215,8 +225,8 @@ function BanhoTosa() {
    * Primeiro aplicamos o filtro funcional vindo pela URL.
    * Depois aplicamos a pesquisa digitada pelo usuário.
    *
-   * Assim "/banho-tosa?filtro=hoje" continua permitindo
-   * pesquisar somente dentro dos atendimentos de hoje.
+   * Assim "/atendimentos?filtro=hoje" permite pesquisar
+   * somente dentro dos atendimentos de hoje.
    */
   const atendimentosFiltrados =
     atendimentos.filter(
@@ -319,8 +329,8 @@ function BanhoTosa() {
         <div>
           <h1>
             {filtro === "hoje"
-              ? "Banho e Tosa de Hoje"
-              : "Banho e Tosa"}
+              ? "Atendimentos de Hoje"
+              : "Atendimentos"}
           </h1>
 
           <p>
@@ -349,7 +359,7 @@ function BanhoTosa() {
             className="secondary-button"
             onClick={() =>
               navigate(
-                "/banho-tosa/historico"
+                "/atendimentos/historico"
               )
             }
           >
@@ -362,7 +372,7 @@ function BanhoTosa() {
             className="primary-button"
             onClick={() =>
               navigate(
-                "/banho-tosa/novo"
+                "/atendimentos/novo"
               )
             }
           >
@@ -607,7 +617,7 @@ function BanhoTosa() {
                     className="secondary-button"
                     onClick={() =>
                       navigate(
-                        `/banho-tosa/${atendimento.id}`
+                        `/atendimentos/${atendimento.id}`
                       )
                     }
                   >

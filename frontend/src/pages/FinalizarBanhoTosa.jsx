@@ -31,6 +31,10 @@ function FinalizarBanhoTosa() {
     useState("");
 
 
+  /*
+   * Carrega os dados atuais do atendimento antes
+   * de permitir sua finalização.
+   */
   useEffect(() => {
     async function carregarAtendimento() {
       try {
@@ -39,7 +43,7 @@ function FinalizarBanhoTosa() {
 
         const resposta =
           await api.get(
-            `/banho-tosa/${id}`
+            `/atendimentos/${id}`
           );
 
         const dados =
@@ -100,7 +104,7 @@ function FinalizarBanhoTosa() {
       setErro("");
 
       await api.patch(
-        `/banho-tosa/${id}/finalizar`,
+        `/atendimentos/${id}/finalizar`,
         {
           observacoes_atendimento:
             observacoesAtendimento.trim() ||
@@ -108,14 +112,15 @@ function FinalizarBanhoTosa() {
         }
       );
 
-    /*
-    * Após finalizar, levamos o funcionário diretamente
-    * ao comprovante para conferir o atendimento e,
-    * se necessário, gerar o PDF ou enviá-lo ao tutor.
-    */
-    navigate(
-    `/banho-tosa/${id}/comprovante`
-    );
+
+      /*
+       * Após finalizar, levamos o funcionário
+       * diretamente ao comprovante para conferir
+       * os dados do atendimento.
+       */
+      navigate(
+        `/atendimentos/${id}/comprovante`
+      );
 
     } catch (error) {
       console.error(
@@ -169,7 +174,7 @@ function FinalizarBanhoTosa() {
             className="secondary-button"
             onClick={() =>
               navigate(
-                `/banho-tosa/${id}`
+                `/atendimentos/${id}`
               )
             }
             disabled={processando}
@@ -260,7 +265,7 @@ function FinalizarBanhoTosa() {
                   className="secondary-button"
                   onClick={() =>
                     navigate(
-                      `/banho-tosa/${id}`
+                      `/atendimentos/${id}`
                     )
                   }
                   disabled={processando}

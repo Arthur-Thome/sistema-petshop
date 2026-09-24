@@ -61,11 +61,6 @@ router.get(
 );
 
 router.get(
-  "/ativos",
-  listarAtivos
-);
-
-router.get(
   "/historico",
   listarHistorico
 );

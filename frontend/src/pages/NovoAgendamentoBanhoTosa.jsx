@@ -251,9 +251,17 @@ function NovoAgendamentoBanhoTosa() {
       setErro("");
 
 
+      /*
+       * O frontend utiliza somente a nova rota oficial
+       * de Atendimentos.
+       *
+       * A rota antiga continua temporariamente disponível
+       * no backend apenas para compatibilidade durante
+       * a migração do restante do sistema.
+       */
       const resposta =
         await api.post(
-          "/banho-tosa/agendamentos",
+          "/atendimentos/agendamentos",
           {
             pet_id:
               Number(formData.pet_id),
@@ -272,18 +280,15 @@ function NovoAgendamentoBanhoTosa() {
 
 
       /*
-       * Depois criaremos a tela de confirmação
-       * e comprovante neste endereço.
-       *
-       * Por enquanto abrimos os detalhes do
-       * agendamento recém-criado.
+       * Após criar o agendamento, abrimos diretamente
+       * os detalhes do novo atendimento.
        */
       const atendimento =
         resposta.data.atendimento;
 
 
       navigate(
-        `/banho-tosa/${atendimento.id}`
+        `/atendimentos/${atendimento.id}`
       );
 
     } catch (error) {
@@ -337,7 +342,7 @@ function NovoAgendamentoBanhoTosa() {
             type="button"
             className="secondary-button"
             onClick={() =>
-              navigate("/banho-tosa")
+              navigate("/atendimentos")
             }
             disabled={salvando}
           >
@@ -416,7 +421,7 @@ function NovoAgendamentoBanhoTosa() {
                   className="secondary-button"
                   onClick={() =>
                     navigate(
-                      "/banho-tosa/servicos"
+                      "/atendimentos/servicos"
                     )
                   }
                 >
@@ -625,7 +630,7 @@ function NovoAgendamentoBanhoTosa() {
               type="button"
               className="secondary-button"
               onClick={() =>
-                navigate("/banho-tosa")
+                navigate("/atendimentos")
               }
               disabled={salvando}
             >

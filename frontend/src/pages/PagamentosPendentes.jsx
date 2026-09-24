@@ -59,7 +59,7 @@ function PagamentosPendentes() {
 
         const resposta =
           await api.get(
-            "/banho-tosa/pagamentos-pendentes",
+            "/atendimentos/pagamentos-pendentes",
             {
               params: {
                 pagina,
@@ -542,7 +542,7 @@ function PagamentosPendentes() {
                     className="primary-button"
                     onClick={() =>
                       navigate(
-                        `/banho-tosa/${pagamento.atendimento_id}`
+                        `/atendimentos/${pagamento.atendimento_id}`
                       )
                     }
                   >

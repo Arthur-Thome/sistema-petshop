@@ -39,7 +39,7 @@ function DetalhesBanhoTosa() {
 
       const resposta =
         await api.get(
-          `/banho-tosa/${id}`
+          `/atendimentos/${id}`
         );
 
       setAtendimento(
@@ -106,6 +106,10 @@ function DetalhesBanhoTosa() {
 
 
   function classeStatus(status) {
+    /*
+     * As classes CSS mantêm o nome antigo
+     * temporariamente para preservar o layout atual.
+     */
     const classes = {
       AGENDADO:
         "banho-tosa-status-agendado",
@@ -134,7 +138,7 @@ function DetalhesBanhoTosa() {
       setErro("");
 
       await api.patch(
-        `/banho-tosa/${id}/iniciar`
+        `/atendimentos/${id}/iniciar`
       );
 
       await carregarAtendimento();
@@ -183,7 +187,7 @@ function DetalhesBanhoTosa() {
           type="button"
           className="secondary-button"
           onClick={() =>
-            navigate("/banho-tosa")
+            navigate("/atendimentos")
           }
         >
           Voltar
@@ -215,7 +219,7 @@ function DetalhesBanhoTosa() {
             type="button"
             className="secondary-button"
             onClick={() =>
-              navigate("/banho-tosa")
+              navigate("/atendimentos")
             }
           >
             Voltar
@@ -325,35 +329,39 @@ function DetalhesBanhoTosa() {
             <span>Pagamento</span>
 
             <strong>
-                {atendimento.pagamento_status === "PAGO"
+              {atendimento.pagamento_status === "PAGO"
                 ? "Pago"
                 : atendimento.pagamento_status === "CANCELADO"
-                    ? "Cancelado"
-                    : "Pendente"}
+                  ? "Cancelado"
+                  : "Pendente"}
             </strong>
-            </div>
+          </div>
 
-            {atendimento.pagamento_status === "PAGO" && (
-                <>
-                    <div>
-                    <span>Forma de pagamento</span>
 
-                    <strong>
-                        {atendimento.pagamento_metodo || "-"}
-                    </strong>
-                    </div>
+          {atendimento.pagamento_status === "PAGO" && (
+            <>
+              <div>
+                <span>
+                  Forma de pagamento
+                </span>
 
-                    <div>
-                    <span>Pago em</span>
+                <strong>
+                  {atendimento.pagamento_metodo ||
+                    "-"}
+                </strong>
+              </div>
 
-                    <strong>
-                        {formatarDataHora(
-                        atendimento.pagamento_pago_em
-                        )}
-                    </strong>
-                    </div>
-                </>
-                )}
+              <div>
+                <span>Pago em</span>
+
+                <strong>
+                  {formatarDataHora(
+                    atendimento.pagamento_pago_em
+                  )}
+                </strong>
+              </div>
+            </>
+          )}
 
         </div>
 
@@ -474,73 +482,75 @@ function DetalhesBanhoTosa() {
 
 
         {atendimento.status === "AGENDADO" && (
-            <>
-                <button
-                type="button"
-                className="secondary-button"
-                onClick={() =>
-                    navigate(
-                    `/banho-tosa/${id}/cancelar`
-                    )
-                }
-                disabled={processando}
-                >
-                Cancelar Agendamento
-                </button>
+          <>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() =>
+                navigate(
+                  `/atendimentos/${id}/cancelar`
+                )
+              }
+              disabled={processando}
+            >
+              Cancelar Agendamento
+            </button>
 
-                <button
-                type="button"
-                className="primary-button"
-                onClick={iniciarAtendimento}
-                disabled={processando}
-                >
-                {processando
-                    ? "Processando..."
-                    : "Iniciar Atendimento"}
-                </button>
-            </>
-            )}
+            <button
+              type="button"
+              className="primary-button"
+              onClick={iniciarAtendimento}
+              disabled={processando}
+            >
+              {processando
+                ? "Processando..."
+                : "Iniciar Atendimento"}
+            </button>
+          </>
+        )}
 
-            {atendimento.pagamento_status === "PENDENTE" && (
-                <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() =>
-                    navigate(
-                        `/banho-tosa/${id}/pagamento`
-                    )
-                    }
-                >
-                    Marcar como Pago
-                </button>
-                )}
 
-                <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() =>
-                        navigate(
-                        `/banho-tosa/${id}/comprovante`
-                        )
-                    }
-                    >
-                    Ver Comprovante
-                </button>
+        {atendimento.pagamento_status === "PENDENTE" && (
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() =>
+              navigate(
+                `/atendimentos/${id}/pagamento`
+              )
+            }
+          >
+            Marcar como Pago
+          </button>
+        )}
+
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() =>
+            navigate(
+              `/atendimentos/${id}/comprovante`
+            )
+          }
+        >
+          Ver Comprovante
+        </button>
 
 
         {atendimento.status === "EM_ATENDIMENTO" && (
-            <button
-                type="button"
-                className="primary-button"
-                onClick={() =>
-                navigate(
-                    `/banho-tosa/${id}/finalizar`
-                )
-                }
-            >
-                Finalizar Atendimento
-            </button>
-            )}
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() =>
+              navigate(
+                `/atendimentos/${id}/finalizar`
+              )
+            }
+          >
+            Finalizar Atendimento
+          </button>
+        )}
 
       </div>
 

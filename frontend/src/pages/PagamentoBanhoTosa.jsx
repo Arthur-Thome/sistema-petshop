@@ -29,6 +29,10 @@ function PagamentoBanhoTosa() {
     useState("");
 
 
+  /*
+   * Carrega os dados do atendimento antes de
+   * permitir o registro do pagamento.
+   */
   useEffect(() => {
     async function carregarAtendimento() {
       try {
@@ -37,7 +41,7 @@ function PagamentoBanhoTosa() {
 
         const resposta =
           await api.get(
-            `/banho-tosa/${id}`
+            `/atendimentos/${id}`
           );
 
         setAtendimento(
@@ -89,6 +93,13 @@ function PagamentoBanhoTosa() {
   }
 
 
+  /*
+   * O pagamento é registrado no backend.
+   *
+   * O valor não é enviado pelo frontend porque
+   * o valor oficial do atendimento já está salvo
+   * e controlado pelo backend.
+   */
   async function confirmar(event) {
     event.preventDefault();
 
@@ -105,14 +116,14 @@ function PagamentoBanhoTosa() {
       setErro("");
 
       await api.patch(
-        `/banho-tosa/${id}/pagamento`,
+        `/atendimentos/${id}/pagamento`,
         {
           metodo,
         }
       );
 
       navigate(
-        `/banho-tosa/${id}`
+        `/atendimentos/${id}`
       );
 
     } catch (error) {
@@ -164,7 +175,7 @@ function PagamentoBanhoTosa() {
           className="secondary-button"
           onClick={() =>
             navigate(
-              `/banho-tosa/${id}`
+              `/atendimentos/${id}`
             )
           }
           disabled={processando}
@@ -281,7 +292,7 @@ function PagamentoBanhoTosa() {
                   className="secondary-button"
                   onClick={() =>
                     navigate(
-                      `/banho-tosa/${id}`
+                      `/atendimentos/${id}`
                     )
                   }
                   disabled={processando}

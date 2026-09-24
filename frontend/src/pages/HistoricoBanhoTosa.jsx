@@ -26,7 +26,7 @@ function HistoricoBanhoTosa() {
 
       const resposta =
         await api.get(
-          "/banho-tosa/historico"
+          "/atendimentos/historico"
         );
 
 
@@ -189,7 +189,7 @@ function HistoricoBanhoTosa() {
       <div className="banho-tosa-header">
 
         <div>
-          <h1>Histórico de Banho e Tosa</h1>
+          <h1>Histórico de Atendimentos</h1>
 
           <p>
             Consulte os atendimentos finalizados
@@ -204,7 +204,7 @@ function HistoricoBanhoTosa() {
             type="button"
             className="secondary-button"
             onClick={() =>
-              navigate("/banho-tosa")
+              navigate("/atendimentos")
             }
           >
             Voltar
@@ -433,7 +433,7 @@ function HistoricoBanhoTosa() {
                     className="secondary-button"
                     onClick={() =>
                       navigate(
-                        `/banho-tosa/${atendimento.id}`
+                        `/atendimentos/${atendimento.id}`
                       )
                     }
                   >
