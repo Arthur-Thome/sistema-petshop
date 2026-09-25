@@ -22,6 +22,8 @@ const {
 
 const {
   listarPagamentosPendentes,
+  listarAutorizadoresEstorno,
+  estornarPagamento,
 } = require(
   "../controllers/pagamentoController"
 );
@@ -58,6 +60,21 @@ router.get(
     "gerente"
   ),
   listarPagamentosPendentes
+);
+
+/*
+ * Lista exclusivamente os usuários ativos que podem
+ * autorizar um estorno realizado por Funcionário.
+ *
+ * A resposta contém somente ID, nome e perfil.
+ *
+ * Não utilizamos a listagem administrativa de usuários,
+ * pois o Funcionário não precisa ter acesso aos demais
+ * dados da Administração.
+ */
+router.get(
+  "/autorizadores-estorno",
+  listarAutorizadoresEstorno
 );
 
 router.get(
@@ -109,12 +126,11 @@ router.patch(
 );
 
 /*
- * A confirmação manual de pagamento altera uma
- * informação financeira do atendimento.
+ * A confirmação manual de pagamento mantém exatamente
+ * a regra existente: somente Administrador e Gerente
+ * podem registrar o pagamento como recebido.
  *
- * Funcionários podem consultar o atendimento e gerar
- * o Pix, mas somente gerente e administrador podem
- * registrar manualmente o pagamento como recebido.
+ * Esta permissão é independente da nova regra de estorno.
  */
 router.patch(
   "/:id/pagamento",
@@ -123,6 +139,26 @@ router.patch(
     "gerente"
   ),
   confirmarPagamento
+);
+
+/*
+ * O estorno possui uma regra própria de autorização.
+ *
+ * Administrador e Gerente:
+ * - executam diretamente.
+ *
+ * Funcionário:
+ * - chega ao controller normalmente;
+ * - precisa apresentar a autorização de um Administrador
+ *   ou Gerente ativo;
+ * - a senha do autorizador é validada no backend.
+ *
+ * Por isso não aplicamos permitirPerfis() nesta rota.
+ * A decisão é realizada dentro de estornarPagamento().
+ */
+router.patch(
+  "/:id/estornar-pagamento",
+  estornarPagamento
 );
 
 /*

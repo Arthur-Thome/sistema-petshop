@@ -126,6 +126,44 @@ function HistoricoBanhoTosa() {
 
 
   /*
+   * O status do atendimento e o status do pagamento
+   * representam situações diferentes.
+   *
+   * Um atendimento pode estar FINALIZADO e seu pagamento
+   * estar PAGO, PENDENTE ou ESTORNADO.
+   */
+  function formatarStatusPagamento(status) {
+    const nomes = {
+      PENDENTE: "Pendente",
+      PAGO: "Pago",
+      CANCELADO: "Cancelado",
+      ESTORNADO: "Estornado",
+    };
+
+    return nomes[status] || status || "-";
+  }
+
+
+  function classeStatusPagamento(status) {
+    const classes = {
+      PENDENTE:
+        "banho-tosa-pagamento-pendente",
+
+      PAGO:
+        "banho-tosa-pagamento-pago",
+
+      CANCELADO:
+        "banho-tosa-pagamento-cancelado",
+
+      ESTORNADO:
+        "banho-tosa-pagamento-estornado",
+    };
+
+    return classes[status] || "";
+  }
+
+
+  /*
    * A busca considera pet, tutor e qualquer
    * serviço presente no atendimento.
    */
@@ -396,6 +434,27 @@ function HistoricoBanhoTosa() {
                     <strong>
                       {formatarValor(
                         atendimento.valor_total
+                      )}
+                    </strong>
+
+                  </div>
+
+
+                  <div>
+
+                    <span>
+                      Pagamento
+                    </span>
+
+                    <strong
+                      className={
+                        `banho-tosa-pagamento-card ${classeStatusPagamento(
+                          atendimento.pagamento_status
+                        )}`
+                      }
+                    >
+                      {formatarStatusPagamento(
+                        atendimento.pagamento_status
                       )}
                     </strong>
 

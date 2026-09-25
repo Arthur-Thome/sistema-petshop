@@ -1922,3 +1922,365 @@
   font-size: 22px;
   color: #667085;
 }
+
+/* =========================================================
+   ESTORNO DE PAGAMENTO
+   ========================================================= */
+
+/*
+ * O estorno possui identidade visual própria para deixar
+ * claro que se trata de uma ação financeira diferente das
+ * operações comuns do atendimento.
+ */
+.banho-tosa-estorno-button {
+  border: 1px solid #b42318;
+  background: transparent;
+  color: #b42318;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.banho-tosa-estorno-button:hover:not(:disabled) {
+  background: #b42318;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.banho-tosa-estorno-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* Aviso exibido depois que o pagamento foi estornado. */
+.banho-tosa-estorno-aviso {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border: 1px solid #f0b8b3;
+  border-radius: 12px;
+  background: #fff8f7;
+}
+
+.banho-tosa-estorno-aviso strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #9f1c13;
+}
+
+.banho-tosa-estorno-aviso p {
+  margin: 0;
+  line-height: 1.5;
+  color: #69413d;
+}
+
+.banho-tosa-estorno-motivo-resumo {
+  grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.banho-tosa-estorno-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.banho-tosa-estorno-modal {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 24px 70px rgba(15, 23, 42, 0.3);
+}
+
+.banho-tosa-estorno-modal-header {
+  padding: 26px 28px 20px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.banho-tosa-estorno-modal-header h2 {
+  margin: 6px 0 8px;
+}
+
+.banho-tosa-estorno-modal-header p {
+  margin: 0;
+  line-height: 1.5;
+  color: #667085;
+}
+
+.banho-tosa-estorno-etiqueta {
+  display: inline-block;
+  color: #b42318;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+
+/* =========================================================
+   FORMULÁRIO DO ESTORNO
+   ========================================================= */
+
+.banho-tosa-estorno-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px 28px;
+}
+
+.banho-tosa-estorno-resumo {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.banho-tosa-estorno-resumo > div {
+  padding: 14px;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.banho-tosa-estorno-resumo span,
+.banho-tosa-estorno-resumo strong {
+  display: block;
+}
+
+.banho-tosa-estorno-resumo span {
+  margin-bottom: 5px;
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.banho-tosa-estorno-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.banho-tosa-estorno-campo > span {
+  font-weight: 600;
+}
+
+.banho-tosa-estorno-campo textarea,
+.banho-tosa-estorno-campo select,
+.banho-tosa-estorno-campo input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+}
+
+.banho-tosa-estorno-campo textarea {
+  resize: vertical;
+  min-height: 105px;
+}
+
+.banho-tosa-estorno-campo textarea:focus,
+.banho-tosa-estorno-campo select:focus,
+.banho-tosa-estorno-campo input:focus {
+  outline: none;
+  border-color: #667085;
+  box-shadow:
+    0 0 0 3px rgba(102, 112, 133, 0.12);
+}
+
+.banho-tosa-estorno-campo small {
+  align-self: flex-end;
+  color: #667085;
+}
+
+
+/* Área mostrada somente ao Funcionário. */
+.banho-tosa-estorno-autorizacao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #d8dee8;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.banho-tosa-estorno-autorizacao-titulo p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  color: #667085;
+}
+
+
+/* Informação mostrada para Admin/Gerente. */
+.banho-tosa-estorno-permissao-direta {
+  padding: 13px 15px;
+  border: 1px solid #d7e6dc;
+  border-radius: 9px;
+  background: #f6fbf7;
+  color: #365b40;
+  line-height: 1.5;
+}
+
+
+/* Erros ficam dentro do modal para não misturar com
+ * mensagens gerais da página do atendimento.
+ */
+.banho-tosa-estorno-erro {
+  padding: 12px 14px;
+  border: 1px solid #f1b7b2;
+  border-radius: 9px;
+  background: #fff5f4;
+  color: #9f1c13;
+}
+
+
+/* =========================================================
+   AÇÕES DO MODAL
+   ========================================================= */
+
+.banho-tosa-estorno-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.banho-tosa-estorno-confirmar {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #b42318;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.banho-tosa-estorno-confirmar:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.banho-tosa-estorno-confirmar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/*
+ * Situação financeira exibida nos cards de resumo.
+ * A cor complementa o texto, mas o status continua
+ * escrito explicitamente para não depender apenas dela.
+ */
+.banho-tosa-pagamento-situacao {
+  font-weight: 700;
+}
+
+.banho-tosa-pagamento-pago {
+  color: #237a3b;
+}
+
+.banho-tosa-pagamento-pendente {
+  color: #9a6700;
+}
+
+.banho-tosa-pagamento-cancelado,
+.banho-tosa-pagamento-estornado {
+  color: #b42318;
+}
+
+/* =========================================================
+   SITUAÇÃO DO PAGAMENTO NOS CARDS
+   ========================================================= */
+
+.banho-tosa-pagamento-card {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.banho-tosa-pagamento-card.banho-tosa-pagamento-pago {
+  background: #ecfdf3;
+  color: #16733b;
+}
+
+.banho-tosa-pagamento-card.banho-tosa-pagamento-pendente {
+  background: #fff8e6;
+  color: #946200;
+}
+
+.banho-tosa-pagamento-card.banho-tosa-pagamento-estornado {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.banho-tosa-pagamento-card.banho-tosa-pagamento-cancelado {
+  background: #f2f4f7;
+  color: #667085;
+}
+
+
+/*
+ * Com quatro informações financeiras, utilizamos duas
+ * colunas para evitar cards excessivamente estreitos.
+ */
+.banho-tosa-estorno-resumo {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 650px) {
+  .banho-tosa-estorno-resumo {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 650px) {
+  .banho-tosa-estorno-overlay {
+    padding: 12px;
+  }
+
+  .banho-tosa-estorno-modal-header,
+  .banho-tosa-estorno-form {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .banho-tosa-estorno-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .banho-tosa-estorno-acoes {
+    flex-direction: column-reverse;
+  }
+
+  .banho-tosa-estorno-acoes button {
+    width: 100%;
+  }
+}

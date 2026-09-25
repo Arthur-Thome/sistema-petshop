@@ -138,6 +138,46 @@ function BanhoTosa() {
   }
 
 
+  /*
+ * Traduz o status financeiro para uma descrição
+ * amigável exibida diretamente no card.
+ */
+function formatarStatusPagamento(status) {
+  const nomes = {
+    PENDENTE: "Pendente",
+    PAGO: "Pago",
+    CANCELADO: "Cancelado",
+    ESTORNADO: "Estornado",
+  };
+
+  return nomes[status] || status || "-";
+}
+
+
+/*
+ * Cada situação financeira recebe uma classe própria.
+ * O texto continua sendo exibido para que a informação
+ * não dependa somente da cor.
+ */
+function classeStatusPagamento(status) {
+  const classes = {
+    PENDENTE:
+      "banho-tosa-pagamento-pendente",
+
+    PAGO:
+      "banho-tosa-pagamento-pago",
+
+    CANCELADO:
+      "banho-tosa-pagamento-cancelado",
+
+    ESTORNADO:
+      "banho-tosa-pagamento-estornado",
+  };
+
+  return classes[status] || "";
+}
+
+
   function classeStatus(status) {
     /*
      * As classes continuam com o prefixo "banho-tosa"
@@ -621,6 +661,24 @@ function BanhoTosa() {
                     <strong>
                       {formatarValor(
                         atendimento.valor_total
+                      )}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      Pagamento
+                    </span>
+
+                    <strong
+                      className={
+                        `banho-tosa-pagamento-card ${classeStatusPagamento(
+                          atendimento.pagamento_status
+                        )}`
+                      }
+                    >
+                      {formatarStatusPagamento(
+                        atendimento.pagamento_status
                       )}
                     </strong>
                   </div>

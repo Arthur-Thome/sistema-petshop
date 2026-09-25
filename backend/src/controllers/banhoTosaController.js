@@ -802,7 +802,9 @@ async function buscarAtendimentoPorId(
             pg.status AS pagamento_status,
             pg.metodo AS pagamento_metodo,
             pg.codigo_pagamento AS pagamento_codigo,
-            pg.pago_em AS pagamento_pago_em
+            pg.pago_em AS pagamento_pago_em,
+            pg.estornado_em AS pagamento_estornado_em,
+            pg.motivo_estorno AS pagamento_motivo_estorno
 
           FROM banho_tosa bt
 
