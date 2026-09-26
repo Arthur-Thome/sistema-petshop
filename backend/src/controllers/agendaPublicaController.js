@@ -2438,6 +2438,161 @@ async function fecharAgendaEmMassa(
   }
 }
 
+/*
+ * ============================================================
+ * CONSULTAR DISPONIBILIDADE PÚBLICA
+ * ============================================================
+ *
+ * Endpoint utilizado pelo site público da Amores Pet.
+ *
+ * REGRAS DE SEGURANÇA:
+ *
+ * - não exige login;
+ * - retorna somente dias abertos e publicados;
+ * - retorna somente horários DISPONÍVEIS;
+ * - não expõe observações administrativas;
+ * - não expõe usuários internos;
+ * - não expõe horários bloqueados;
+ * - não expõe horários ocupados.
+ *
+ * A área pública recebe somente os dados necessários para
+ * permitir que o cliente escolha uma data e um horário.
+ * ============================================================
+ */
+async function consultarDisponibilidadePublica(
+  req,
+  res
+) {
+  try {
+    const dataInicio =
+      req.query.data_inicio;
+
+    const dataFim =
+      req.query.data_fim;
+
+
+    if (
+      !dataValida(dataInicio) ||
+      !dataValida(dataFim)
+    ) {
+      return res.status(400).json({
+        mensagem:
+          "Informe um período válido.",
+      });
+    }
+
+
+    if (dataFim < dataInicio) {
+      return res.status(400).json({
+        mensagem:
+          "A data final não pode ser anterior à data inicial.",
+      });
+    }
+
+
+    /*
+     * Limitamos a consulta pública a 62 dias.
+     *
+     * Isso evita que uma chamada anônima solicite períodos
+     * exageradamente grandes sem necessidade.
+     */
+    const inicio =
+      criarDataUTC(dataInicio);
+
+    const fim =
+      criarDataUTC(dataFim);
+
+    const diferencaDias =
+      Math.floor(
+        (
+          fim.getTime() -
+          inicio.getTime()
+        ) /
+        (1000 * 60 * 60 * 24)
+      );
+
+
+    if (diferencaDias > 62) {
+      return res.status(400).json({
+        mensagem:
+          "A consulta pública pode abranger no máximo 63 dias.",
+      });
+    }
+
+
+    const resultado =
+      await pool.query(
+        `
+          SELECT
+            d.data,
+
+            COALESCE(
+              json_agg(
+                json_build_object(
+                  'id', h.id,
+                  'horario', h.horario
+                )
+                ORDER BY h.horario
+              )
+              FILTER (
+                WHERE h.id IS NOT NULL
+              ),
+              '[]'::json
+            ) AS horarios
+
+          FROM agenda_publica_dias d
+
+          INNER JOIN
+            agenda_publica_horarios h
+              ON h.agenda_dia_id = d.id
+              AND h.status = 'DISPONIVEL'
+
+          WHERE
+            d.data BETWEEN $1 AND $2
+            AND d.aberto = TRUE
+            AND d.publicado = TRUE
+
+          GROUP BY
+            d.id,
+            d.data
+
+          HAVING
+            COUNT(h.id) > 0
+
+          ORDER BY
+            d.data ASC
+        `,
+        [
+          dataInicio,
+          dataFim,
+        ]
+      );
+
+
+    return res.status(200).json({
+      data_inicio:
+        dataInicio,
+
+      data_fim:
+        dataFim,
+
+      dias:
+        resultado.rows,
+    });
+
+  } catch (erro) {
+    console.error(
+      "Erro ao consultar disponibilidade pública:",
+      erro
+    );
+
+
+    return res.status(500).json({
+      mensagem:
+        "Erro interno ao carregar os horários disponíveis.",
+    });
+  }
+}
 
 module.exports = {
   consultarAgendaPeriodo,
@@ -2445,4 +2600,5 @@ module.exports = {
   salvarDiaAgenda,
   aplicarAgendaEmMassa,
   fecharAgendaEmMassa,
+  consultarDisponibilidadePublica,
 };

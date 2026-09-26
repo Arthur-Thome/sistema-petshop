@@ -8,25 +8,64 @@ const {
   salvarDiaAgenda,
   aplicarAgendaEmMassa,
   fecharAgendaEmMassa,
-} = require("../controllers/agendaPublicaController");
+  consultarDisponibilidadePublica,
+} = require(
+  "../controllers/agendaPublicaController"
+);
 
-const autenticar  = require("../middleware/authMiddleware");
+const autenticar =
+  require("../middleware/authMiddleware");
 
 
 /*
  * ============================================================
- * AGENDA PÚBLICA — ROTAS ADMINISTRATIVAS
+ * AGENDA PÚBLICA — ROTAS
  * ============================================================
  *
- * Estas rotas são utilizadas pela área interna do sistema.
+ * Este arquivo possui dois grupos de endpoints:
  *
- * Apesar do nome "Agenda Pública", a configuração da agenda
- * não é pública. Somente usuários autenticados podem consultar
- * ou modificar essas configurações.
+ * 1. Público
+ *    Utilizado pelo site da Amores Pet.
  *
- * A disponibilidade realmente pública para o cliente será
- * exposta posteriormente por rotas específicas, sem permitir
- * acesso às funções administrativas.
+ * 2. Administrativo
+ *    Utilizado pela equipe interna.
+ *
+ * A ordem das rotas é importante porque a rota pública precisa
+ * ser registrada ANTES do middleware de autenticação.
+ * ============================================================
+ */
+
+
+/*
+ * ============================================================
+ * CONSULTA PÚBLICA
+ * ============================================================
+ *
+ * NÃO exige token.
+ *
+ * Retorna somente:
+ *
+ * - datas abertas;
+ * - datas publicadas;
+ * - horários DISPONÍVEIS.
+ *
+ * Nenhuma informação administrativa é exposta.
+ *
+ * Exemplo:
+ *
+ * GET /api/agenda-publica/disponibilidade
+ *     ?data_inicio=2026-10-01
+ *     &data_fim=2026-10-31
+ */
+router.get(
+  "/disponibilidade",
+  consultarDisponibilidadePublica
+);
+
+
+/*
+ * ============================================================
+ * A PARTIR DAQUI É OBRIGATÓRIO ESTAR AUTENTICADO
  * ============================================================
  */
 
@@ -34,15 +73,7 @@ router.use(autenticar);
 
 
 /*
- * ============================================================
- * CONSULTAR PERÍODO
- * ============================================================
- *
- * Exemplo:
- *
- * GET /api/agenda-publica/admin
- *     ?data_inicio=2026-09-01
- *     &data_fim=2026-09-30
+ * CONSULTAR PERÍODO ADMINISTRATIVO
  */
 router.get(
   "/admin",
@@ -51,27 +82,7 @@ router.get(
 
 
 /*
- * ============================================================
- * OPERAÇÕES EM MASSA
- * ============================================================
- *
- * IMPORTANTE:
- *
- * Essas rotas precisam aparecer ANTES de "/admin/:data".
- *
- * Caso contrário, o Express poderia interpretar palavras como
- * "operacoes" como se fossem uma data.
- */
-
-
-/*
  * ABERTURA / ALTERAÇÃO EM MASSA
- *
- * Permite:
- * - criar vários dias;
- * - adicionar horários;
- * - manter configurações existentes;
- * - substituir configurações existentes.
  */
 router.post(
   "/admin/operacoes/massa",
@@ -82,17 +93,8 @@ router.post(
 /*
  * FECHAMENTO EM MASSA
  *
- * Fecha as datas selecionadas sem excluir os horários.
- *
- * Portanto:
- *
- * aberto = false
- * publicado = false
- *
- * Horários DISPONÍVEIS, BLOQUEADOS e principalmente OCUPADOS
- * continuam armazenados.
- *
- * Fechar agenda não significa cancelar atendimento.
+ * Fecha as datas selecionadas sem excluir horários ou
+ * agendamentos existentes.
  */
 router.post(
   "/admin/operacoes/fechamento",
@@ -101,9 +103,10 @@ router.post(
 
 
 /*
- * ============================================================
  * CONSULTAR UMA DATA
- * ============================================================
+ *
+ * Estas rotas ficam depois das operações para impedir que
+ * palavras como "operacoes" sejam interpretadas como :data.
  */
 router.get(
   "/admin/:data",
@@ -112,15 +115,7 @@ router.get(
 
 
 /*
- * ============================================================
  * SALVAR UMA DATA
- * ============================================================
- *
- * A autorização especial de Funcionário não é controlada
- * nesta rota.
- *
- * Ela é validada no backend pelo controller/service para que
- * não possa ser contornada através de uma requisição manual.
  */
 router.put(
   "/admin/:data",

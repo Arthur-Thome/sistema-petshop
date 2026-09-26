@@ -1001,3 +1001,672 @@
   }
 
 }
+
+/* ============================================================
+   BLOCO C — DISPONIBILIDADE PÚBLICA
+   ============================================================ */
+
+.agendamento-passos div.ativo {
+  background: var(--amores-rosa-claro);
+}
+
+.agendamento-passos div.concluido span {
+  color: #15803d;
+}
+
+
+/* ============================================================
+   PAINEL DA AGENDA
+   ============================================================ */
+
+.agendamento-agenda {
+  align-self: start;
+
+  padding: clamp(25px, 3.5vw, 45px);
+
+  border: 1px solid var(--amores-borda);
+  border-radius: clamp(28px, 4vw, 45px);
+
+  background: var(--amores-branco);
+
+  box-shadow:
+    0 30px 80px
+    rgba(15, 15, 20, 0.08);
+}
+
+
+.agendamento-agenda-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  margin-bottom: 30px;
+}
+
+
+.agendamento-agenda-topo > div > span,
+.agendamento-horarios-topo > span,
+.agendamento-selecao-resumo span {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: var(--amores-rosa);
+
+  font-size: 0.7rem;
+  font-weight: 850;
+
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+
+.agendamento-agenda-topo h2 {
+  margin: 0;
+
+  font-size:
+    clamp(1.7rem, 2.5vw, 2.6rem);
+
+  line-height: 1.05;
+
+  letter-spacing: -0.04em;
+}
+
+
+.agendamento-agenda-topo p {
+  max-width: 480px;
+
+  margin: 10px 0 0;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+
+.agendamento-agenda-topo > button {
+  min-height: 42px;
+
+  padding: 0 15px;
+
+  flex-shrink: 0;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 999px;
+
+  background: #ffffff;
+
+  color: var(--amores-texto);
+
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   CALENDÁRIO
+   ============================================================ */
+
+.agendamento-calendario {
+  padding: 20px;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 22px;
+
+  background: #fafafa;
+}
+
+
+.agendamento-calendario-topo {
+  display: grid;
+
+  grid-template-columns:
+    44px 1fr 44px;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+
+.agendamento-calendario-topo > div {
+  text-align: center;
+}
+
+
+.agendamento-calendario-topo strong,
+.agendamento-calendario-topo span {
+  display: block;
+}
+
+
+.agendamento-calendario-topo strong {
+  font-size: 1.05rem;
+}
+
+
+.agendamento-calendario-topo span {
+  margin-top: 2px;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.72rem;
+}
+
+
+.agendamento-calendario-topo button {
+  width: 44px;
+  height: 44px;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  color: var(--amores-texto);
+
+  font-size: 1.6rem;
+
+  cursor: pointer;
+}
+
+
+.agendamento-calendario-topo button:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.3;
+}
+
+
+.agendamento-calendario-semana,
+.agendamento-calendario-grade {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr));
+
+  gap: 6px;
+}
+
+
+.agendamento-calendario-semana {
+  margin-bottom: 6px;
+}
+
+
+.agendamento-calendario-semana span {
+  padding: 6px 2px;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.64rem;
+  font-weight: 800;
+
+  text-align: center;
+  text-transform: uppercase;
+}
+
+
+.agendamento-dia,
+.agendamento-dia-vazio {
+  min-width: 0;
+  min-height: 65px;
+}
+
+
+.agendamento-dia {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  border: 1px solid transparent;
+  border-radius: 12px;
+
+  font: inherit;
+}
+
+
+.agendamento-dia.disponivel {
+  border-color: #d9d9df;
+
+  background: #ffffff;
+
+  color: var(--amores-texto);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.agendamento-dia.disponivel:hover {
+  transform: translateY(-2px);
+
+  border-color: var(--amores-rosa);
+
+  background: var(--amores-rosa-claro);
+}
+
+
+.agendamento-dia.disponivel::after {
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: var(--amores-lima);
+
+  content: "";
+}
+
+
+.agendamento-dia.indisponivel {
+  background: transparent;
+
+  color: #b8b8bf;
+
+  cursor: not-allowed;
+}
+
+
+.agendamento-dia.selecionado {
+  border-color: var(--amores-preto);
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+}
+
+
+.agendamento-dia.selecionado::after {
+  background: var(--amores-lima);
+}
+
+
+.agendamento-dia > span {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+
+.agendamento-dia small {
+  font-size: 0.5rem;
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   CARREGAMENTO / ERRO
+   ============================================================ */
+
+.agendamento-agenda-carregando {
+  min-height: 290px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+
+.agendamento-agenda-carregando div {
+  width: 34px;
+  height: 34px;
+
+  margin-bottom: 14px;
+
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--amores-rosa);
+  border-radius: 50%;
+
+  animation:
+    agendamento-carregando
+    0.7s linear infinite;
+}
+
+
+@keyframes agendamento-carregando {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.agendamento-agenda-carregando span {
+  margin-top: 5px;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.75rem;
+}
+
+
+.agendamento-agenda-erro {
+  margin-bottom: 15px;
+
+  padding: 12px 14px;
+
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+
+  background: #fef2f2;
+
+  color: #b91c1c;
+
+  font-size: 0.8rem;
+}
+
+
+/* ============================================================
+   HORÁRIOS
+   ============================================================ */
+
+.agendamento-horarios {
+  margin-top: 18px;
+
+  padding: 20px;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 22px;
+}
+
+
+.agendamento-horarios-vazio {
+  min-height: 105px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+
+.agendamento-horarios-vazio > span {
+  color: var(--amores-rosa);
+
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+
+.agendamento-horarios-vazio strong {
+  margin-top: 4px;
+}
+
+
+.agendamento-horarios-vazio p {
+  margin: 4px 0 0;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.78rem;
+}
+
+
+.agendamento-horarios-topo h3 {
+  margin: 0;
+
+  font-size: 1rem;
+
+  text-transform: capitalize;
+}
+
+
+.agendamento-horarios-grade {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 9px;
+
+  margin-top: 17px;
+}
+
+
+.agendamento-horarios-grade button {
+  min-height: 46px;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  color: var(--amores-texto);
+
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+
+.agendamento-horarios-grade button:hover {
+  border-color: var(--amores-rosa);
+}
+
+
+.agendamento-horarios-grade button.selecionado {
+  border-color: var(--amores-rosa);
+
+  background: var(--amores-rosa);
+
+  color: #ffffff;
+}
+
+
+/* ============================================================
+   RESUMO
+   ============================================================ */
+
+.agendamento-selecao-resumo {
+  margin-top: 18px;
+
+  padding: 18px 20px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-radius: 18px;
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+}
+
+
+.agendamento-selecao-resumo strong,
+.agendamento-selecao-resumo small {
+  display: block;
+}
+
+
+.agendamento-selecao-resumo strong {
+  text-transform: capitalize;
+}
+
+
+.agendamento-selecao-resumo small {
+  margin-top: 3px;
+
+  color: var(--amores-lima);
+
+  font-weight: 800;
+}
+
+
+.agendamento-selecao-resumo button {
+  min-height: 48px;
+
+  padding: 6px 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #2c2c31;
+
+  color: #99999f;
+
+  font-weight: 800;
+
+  cursor: not-allowed;
+}
+
+
+.agendamento-selecao-resumo button small {
+  margin-top: 1px;
+
+  color: #77777d;
+
+  font-size: 0.56rem;
+}
+
+
+.agendamento-agenda-contexto {
+  margin-top: 16px;
+
+  text-align: center;
+}
+
+
+.agendamento-agenda-contexto span,
+.agendamento-agenda-contexto small {
+  display: block;
+}
+
+
+.agendamento-agenda-contexto span {
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+
+.agendamento-agenda-contexto small {
+  margin-top: 3px;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.67rem;
+}
+
+
+/* ============================================================
+   RESPONSIVIDADE — BLOCO C
+   ============================================================ */
+
+@media (max-width: 680px) {
+  .agendamento-agenda {
+    padding: 24px 17px;
+
+    border-radius: 26px;
+  }
+
+
+  .agendamento-agenda-topo {
+    flex-direction: column;
+  }
+
+
+  .agendamento-calendario {
+    padding: 13px;
+  }
+
+
+  .agendamento-dia,
+  .agendamento-dia-vazio {
+    min-height: 54px;
+  }
+
+
+  .agendamento-dia small {
+    display: none;
+  }
+
+
+  .agendamento-horarios-grade {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+
+  .agendamento-selecao-resumo {
+    align-items: stretch;
+
+    flex-direction: column;
+  }
+
+
+  .agendamento-selecao-resumo button {
+    width: 100%;
+  }
+}
+
+
+@media (max-width: 430px) {
+  .agendamento-calendario {
+    padding: 10px;
+  }
+
+
+  .agendamento-calendario-semana,
+  .agendamento-calendario-grade {
+    gap: 3px;
+  }
+
+
+  .agendamento-dia,
+  .agendamento-dia-vazio {
+    min-height: 46px;
+  }
+
+
+  .agendamento-dia {
+    border-radius: 9px;
+  }
+
+
+  .agendamento-dia > span {
+    font-size: 0.78rem;
+  }
+
+
+  .agendamento-horarios-grade {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
