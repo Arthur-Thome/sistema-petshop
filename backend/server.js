@@ -33,6 +33,7 @@ const banhoTosaRoutes = require("./src/routes/banhoTosaRoutes");
 const servicoRoutes = require("./src/routes/servicoRoutes");
 const auditoriaRoutes = require("./src/routes/auditoriaRoutes");
 const agendaPublicaRoutes = require("./src/routes/agendaPublicaRoutes");
+const agendamentoPublicoRoutes = require("./src/routes/agendamentoPublicoRoutes");
 const path = require("path");
 
 const app = express();
@@ -164,6 +165,7 @@ app.use("/api/auditoria", auditoriaRoutes);
  * administrativas.
  */
 app.use("/api/agenda-publica", agendaPublicaRoutes);
+app.use("/api/agendamento-publico", agendamentoPublicoRoutes);
 
 
 

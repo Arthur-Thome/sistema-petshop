@@ -1670,3 +1670,1562 @@
       repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ============================================================
+   BLOCO D — IDENTIFICAÇÃO, PET, SERVIÇOS E CONFIRMAÇÃO
+   ============================================================ */
+
+
+/* ============================================================
+   MENSAGENS
+   ============================================================ */
+
+.agendamento-mensagem-erro {
+  grid-column: 2;
+
+  margin-bottom: 18px;
+  padding: 15px 18px;
+
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+
+  background: #fef2f2;
+
+  color: #b91c1c;
+
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   PAINÉIS GERAIS
+   ============================================================ */
+
+.agendamento-painel-formulario,
+.agendamento-confirmacao {
+  align-self: start;
+
+  padding:
+    clamp(26px, 3.5vw, 48px);
+
+  border: 1px solid var(--amores-borda);
+  border-radius:
+    clamp(28px, 4vw, 45px);
+
+  background: var(--amores-branco);
+
+  box-shadow:
+    0 30px 80px
+    rgba(15, 15, 20, 0.08);
+}
+
+
+.agendamento-painel-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  margin-bottom: 32px;
+}
+
+
+.agendamento-painel-topo > div {
+  max-width: 620px;
+}
+
+
+.agendamento-painel-topo > div > span {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: var(--amores-rosa);
+
+  font-size: 0.7rem;
+  font-weight: 850;
+
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+
+.agendamento-painel-topo h2 {
+  margin: 0;
+
+  font-size:
+    clamp(1.7rem, 2.5vw, 2.7rem);
+
+  line-height: 1.05;
+
+  letter-spacing: -0.04em;
+}
+
+
+.agendamento-painel-topo p {
+  margin: 11px 0 0;
+
+  color: var(--amores-texto-suave);
+
+  line-height: 1.6;
+}
+
+
+.agendamento-painel-topo > button {
+  min-height: 42px;
+
+  padding: 0 16px;
+
+  flex-shrink: 0;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 999px;
+
+  background: #ffffff;
+
+  color: var(--amores-texto);
+
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+
+.agendamento-painel-topo > button:hover {
+  border-color: var(--amores-rosa);
+}
+
+
+/* ============================================================
+   IDENTIFICAÇÃO
+   ============================================================ */
+
+.agendamento-formulario-identificacao {
+  max-width: 520px;
+
+  display: grid;
+
+  gap: 22px;
+}
+
+
+.agendamento-formulario-identificacao label {
+  display: grid;
+
+  gap: 8px;
+
+  color: var(--amores-texto);
+
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+
+.agendamento-formulario-identificacao input {
+  width: 100%;
+  min-height: 54px;
+
+  padding: 0 16px;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 14px;
+
+  background: #fafafa;
+
+  color: var(--amores-texto);
+
+  font: inherit;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.agendamento-formulario-identificacao input:focus {
+  border-color: var(--amores-rosa);
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(240, 0, 139, 0.08);
+}
+
+
+.agendamento-destino-codigo {
+  max-width: 520px;
+
+  margin-bottom: 18px;
+  padding: 14px 17px;
+
+  border-radius: 14px;
+
+  background: #f4f4f5;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.82rem;
+}
+
+
+.agendamento-destino-codigo strong {
+  color: var(--amores-texto);
+}
+
+
+.agendamento-codigo-dev {
+  max-width: 520px;
+
+  margin-bottom: 20px;
+  padding: 18px;
+
+  display: grid;
+
+  gap: 5px;
+
+  border: 1px dashed var(--amores-rosa);
+  border-radius: 17px;
+
+  background: var(--amores-rosa-claro);
+}
+
+
+.agendamento-codigo-dev span {
+  color: var(--amores-rosa-escuro);
+
+  font-size: 0.67rem;
+  font-weight: 850;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+
+.agendamento-codigo-dev strong {
+  font-size: 1.65rem;
+
+  letter-spacing: 0.2em;
+}
+
+
+.agendamento-codigo-dev small {
+  color: var(--amores-texto-suave);
+
+  font-size: 0.7rem;
+}
+
+
+/* ============================================================
+   BOTÕES DO FLUXO
+   ============================================================ */
+
+.agendamento-acao-principal,
+.agendamento-acao-secundaria {
+  min-height: 52px;
+
+  padding: 0 22px;
+
+  border-radius: 999px;
+
+  font: inherit;
+  font-weight: 850;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.agendamento-acao-principal {
+  border: 0;
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+}
+
+
+.agendamento-acao-principal:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+
+.agendamento-acao-secundaria {
+  border: 1px solid var(--amores-borda);
+
+  background: #ffffff;
+
+  color: var(--amores-texto);
+}
+
+
+.agendamento-acao-secundaria:hover:not(:disabled) {
+  border-color: var(--amores-rosa);
+}
+
+
+.agendamento-acao-principal:disabled,
+.agendamento-acao-secundaria:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   CADASTRO
+   ============================================================ */
+
+.agendamento-cadastro form {
+  display: grid;
+
+  gap: 35px;
+}
+
+
+.agendamento-formulario-secao {
+  padding-top: 30px;
+
+  border-top: 1px solid var(--amores-borda);
+}
+
+
+.agendamento-formulario-secao:first-of-type {
+  padding-top: 0;
+
+  border-top: 0;
+}
+
+
+.agendamento-formulario-titulo {
+  margin-bottom: 24px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+}
+
+
+.agendamento-formulario-titulo > span {
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: var(--amores-lima);
+
+  color: var(--amores-preto);
+
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+
+.agendamento-formulario-titulo strong,
+.agendamento-formulario-titulo small {
+  display: block;
+}
+
+
+.agendamento-formulario-titulo strong {
+  font-size: 1rem;
+}
+
+
+.agendamento-formulario-titulo small {
+  margin-top: 3px;
+
+  color: var(--amores-texto-suave);
+}
+
+
+.agendamento-grade-formulario {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+
+.agendamento-grade-formulario label {
+  min-width: 0;
+
+  display: grid;
+
+  align-content: start;
+
+  gap: 8px;
+
+  color: var(--amores-texto);
+
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+
+.agendamento-grade-formulario .campo-largo {
+  grid-column: 1 / -1;
+}
+
+
+.agendamento-grade-formulario input,
+.agendamento-grade-formulario select,
+.agendamento-grade-formulario textarea,
+.agendamento-observacoes textarea {
+  width: 100%;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 13px;
+
+  background: #fafafa;
+
+  color: var(--amores-texto);
+
+  font: inherit;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.agendamento-grade-formulario input,
+.agendamento-grade-formulario select {
+  min-height: 51px;
+
+  padding: 0 14px;
+}
+
+
+.agendamento-grade-formulario textarea {
+  min-height: 105px;
+
+  padding: 14px;
+
+  resize: vertical;
+}
+
+
+.agendamento-grade-formulario input:focus,
+.agendamento-grade-formulario select:focus,
+.agendamento-grade-formulario textarea:focus,
+.agendamento-observacoes textarea:focus {
+  border-color: var(--amores-rosa);
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(240, 0, 139, 0.08);
+}
+
+
+.agendamento-formulario-acoes {
+  margin-top: 30px;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 12px;
+}
+
+
+/* ============================================================
+   PETS
+   ============================================================ */
+
+.agendamento-pets-grade {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(180px, 1fr)
+    );
+
+  gap: 15px;
+}
+
+
+.agendamento-pets-grade > button {
+  min-height: 230px;
+
+  padding: 22px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 24px;
+
+  background: #fafafa;
+
+  color: var(--amores-texto);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+
+.agendamento-pets-grade > button:hover {
+  transform: translateY(-3px);
+
+  border-color: var(--amores-rosa);
+}
+
+
+.agendamento-pets-grade > button.selecionado {
+  border-color: var(--amores-preto);
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+}
+
+
+.agendamento-pet-avatar {
+  width: 72px;
+  height: 72px;
+
+  margin-bottom: 22px;
+
+  overflow: hidden;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 22px;
+
+  background: var(--amores-lima);
+
+  color: var(--amores-preto);
+
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+
+.agendamento-pet-avatar img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+
+.agendamento-pets-grade > button > strong {
+  font-size: 1.15rem;
+}
+
+
+.agendamento-pets-grade > button > small {
+  min-height: 35px;
+
+  margin-top: 5px;
+
+  color: var(--amores-texto-suave);
+
+  line-height: 1.45;
+}
+
+
+.agendamento-pets-grade > button.selecionado > small {
+  color: #c9c9ce;
+}
+
+
+.agendamento-pet-selecao {
+  margin-top: auto;
+  padding-top: 18px;
+
+  color: var(--amores-rosa);
+
+  font-size: 0.7rem;
+  font-weight: 850;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-pets-grade > button.selecionado
+.agendamento-pet-selecao {
+  color: var(--amores-lima);
+}
+
+
+/* ============================================================
+   SERVIÇOS
+   ============================================================ */
+
+.agendamento-servicos-grade {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px, 1fr)
+    );
+
+  gap: 15px;
+}
+
+
+.agendamento-servicos-grade > button {
+  min-height: 230px;
+
+  padding: 23px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 23px;
+
+  background: #fafafa;
+
+  color: var(--amores-texto);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+
+.agendamento-servicos-grade > button:hover {
+  transform: translateY(-3px);
+
+  border-color: var(--amores-rosa);
+}
+
+
+.agendamento-servicos-grade > button.selecionado {
+  border-color: var(--amores-rosa);
+
+  background: var(--amores-rosa-claro);
+}
+
+
+.agendamento-servico-topo {
+  margin-bottom: 24px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+
+.agendamento-servico-topo > span {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+
+  font-weight: 900;
+}
+
+
+.agendamento-servicos-grade > button.selecionado
+.agendamento-servico-topo > span {
+  background: var(--amores-rosa);
+}
+
+
+.agendamento-servico-topo > strong {
+  font-size: 0.85rem;
+}
+
+
+.agendamento-servicos-grade h3 {
+  margin: 0;
+
+  font-size: 1.1rem;
+}
+
+
+.agendamento-servicos-grade p {
+  margin: 9px 0 18px;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.78rem;
+
+  line-height: 1.55;
+}
+
+
+.agendamento-servicos-grade > button > small {
+  margin-top: auto;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.68rem;
+}
+
+
+.agendamento-servicos-resumo {
+  margin-top: 24px;
+  padding: 20px 23px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  border-radius: 21px;
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+}
+
+
+.agendamento-servicos-resumo div > span,
+.agendamento-servicos-resumo div > strong,
+.agendamento-servicos-resumo div > small {
+  display: block;
+}
+
+
+.agendamento-servicos-resumo div > span {
+  color: #b7b7bd;
+
+  font-size: 0.7rem;
+}
+
+
+.agendamento-servicos-resumo div > strong {
+  margin-top: 3px;
+
+  font-size: 1.25rem;
+}
+
+
+.agendamento-servicos-resumo div > small {
+  margin-top: 3px;
+
+  color: var(--amores-lima);
+
+  font-size: 0.65rem;
+}
+
+
+.agendamento-servicos-resumo > button,
+.agendamento-continuar-agenda {
+  min-height: 48px;
+
+  padding: 0 20px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: var(--amores-lima);
+
+  color: var(--amores-preto);
+
+  font-weight: 850;
+
+  cursor: pointer;
+}
+
+
+.agendamento-servicos-resumo > button:disabled {
+  opacity: 0.35;
+
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   CARREGAMENTO / ESTADO VAZIO
+   ============================================================ */
+
+.agendamento-carregando,
+.agendamento-vazio {
+  min-height: 190px;
+
+  padding: 25px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border: 1px dashed var(--amores-borda);
+  border-radius: 22px;
+
+  text-align: center;
+}
+
+
+.agendamento-carregando div {
+  width: 34px;
+  height: 34px;
+
+  margin-bottom: 15px;
+
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--amores-rosa);
+  border-radius: 50%;
+
+  animation:
+    agendamento-carregando
+    0.7s linear infinite;
+}
+
+
+.agendamento-vazio p {
+  max-width: 400px;
+
+  margin: 7px 0 0;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.8rem;
+
+  line-height: 1.5;
+}
+
+
+.agendamento-vazio-menor {
+  min-height: 100px;
+
+  margin-top: 15px;
+}
+
+
+/* ============================================================
+   REVISÃO / CONFIRMAÇÃO
+   ============================================================ */
+
+.agendamento-revisao {
+  display: grid;
+
+  grid-template-columns:
+    1.4fr 1fr 1fr;
+
+  gap: 14px;
+}
+
+
+.agendamento-revisao article {
+  min-height: 145px;
+
+  padding: 21px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: flex-end;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 21px;
+
+  background: #fafafa;
+}
+
+
+.agendamento-revisao article > span {
+  margin-bottom: auto;
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.67rem;
+  font-weight: 800;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-revisao article > strong {
+  font-size: 1rem;
+
+  text-transform: capitalize;
+}
+
+
+.agendamento-revisao article > small {
+  margin-top: 4px;
+
+  color: var(--amores-texto-suave);
+}
+
+
+.agendamento-revisao-destaque {
+  background:
+    var(--amores-preto) !important;
+
+  color: #ffffff;
+}
+
+
+.agendamento-revisao-destaque > span {
+  color:
+    var(--amores-lima) !important;
+}
+
+
+.agendamento-revisao-destaque > strong {
+  max-width: 300px;
+}
+
+
+.agendamento-revisao-destaque > b {
+  margin-top: 8px;
+
+  color: var(--amores-lima);
+
+  font-size: 1.55rem;
+}
+
+
+.agendamento-revisao-servicos {
+  margin-top: 18px;
+  padding: 23px;
+
+  border: 1px solid var(--amores-borda);
+  border-radius: 21px;
+}
+
+
+.agendamento-revisao-servicos-topo {
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 18px;
+
+  border-bottom: 1px solid var(--amores-borda);
+}
+
+
+.agendamento-revisao-servicos-topo
+div > span,
+.agendamento-revisao-servicos-topo
+div > strong {
+  display: block;
+}
+
+
+.agendamento-revisao-servicos-topo
+div > span {
+  color: var(--amores-rosa);
+
+  font-size: 0.67rem;
+  font-weight: 850;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-revisao-servicos-topo
+div > strong {
+  margin-top: 4px;
+}
+
+
+.agendamento-revisao-lista {
+  padding: 10px 0;
+}
+
+
+.agendamento-revisao-lista > div {
+  padding: 10px 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+
+.agendamento-revisao-lista span {
+  color: var(--amores-texto-suave);
+
+  font-size: 0.8rem;
+}
+
+
+.agendamento-revisao-lista strong {
+  font-size: 0.8rem;
+}
+
+
+.agendamento-duracao-aviso {
+  display: block;
+
+  padding-top: 13px;
+
+  border-top: 1px solid var(--amores-borda);
+
+  color: var(--amores-texto-suave);
+
+  font-size: 0.68rem;
+
+  line-height: 1.5;
+}
+
+
+.agendamento-observacoes {
+  margin-top: 18px;
+
+  display: grid;
+
+  gap: 8px;
+
+  color: var(--amores-texto);
+
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+
+.agendamento-observacoes textarea {
+  min-height: 120px;
+
+  padding: 15px;
+
+  resize: vertical;
+}
+
+
+.agendamento-observacoes > small {
+  justify-self: end;
+
+  color: var(--amores-texto-suave);
+
+  font-weight: 500;
+}
+
+
+.agendamento-confirmacao-aviso {
+  margin-top: 18px;
+  padding: 16px 18px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  border-radius: 17px;
+
+  background: var(--amores-lima-claro);
+}
+
+
+.agendamento-confirmacao-aviso > span {
+  width: 31px;
+  height: 31px;
+
+  display: grid;
+
+  place-items: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: var(--amores-preto);
+
+  color: var(--amores-lima);
+
+  font-weight: 900;
+}
+
+
+.agendamento-confirmacao-aviso p {
+  margin: 0;
+
+  font-size: 0.76rem;
+
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   SUCESSO
+   ============================================================ */
+
+.agendamento-sucesso {
+  position: relative;
+
+  align-self: start;
+
+  overflow: hidden;
+
+  padding:
+    clamp(35px, 5vw, 65px);
+
+  border-radius:
+    clamp(28px, 4vw, 45px);
+
+  background: var(--amores-preto);
+
+  color: #ffffff;
+
+  box-shadow:
+    0 35px 90px
+    rgba(10, 10, 15, 0.18);
+}
+
+
+.agendamento-sucesso::after {
+  content: "";
+
+  position: absolute;
+
+  width: 250px;
+  height: 250px;
+
+  top: -120px;
+  right: -100px;
+
+  border-radius: 50%;
+
+  background: var(--amores-rosa);
+
+  opacity: 0.9;
+}
+
+
+.agendamento-sucesso-selo {
+  position: relative;
+
+  z-index: 2;
+
+  width: 64px;
+  height: 64px;
+
+  margin-bottom: 28px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: var(--amores-lima);
+
+  color: var(--amores-preto);
+
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+
+.agendamento-sucesso-etiqueta {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color: var(--amores-lima);
+
+  font-size: 0.7rem;
+  font-weight: 850;
+
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+
+.agendamento-sucesso h2 {
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 650px;
+
+  margin: 0;
+
+  font-size:
+    clamp(2rem, 4vw, 4rem);
+
+  line-height: 0.98;
+
+  letter-spacing: -0.05em;
+}
+
+
+.agendamento-sucesso > p {
+  max-width: 560px;
+
+  margin: 18px 0 0;
+
+  color: #c7c7cc;
+
+  line-height: 1.6;
+}
+
+
+.agendamento-sucesso-resumo {
+  position: relative;
+
+  z-index: 2;
+
+  margin-top: 35px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  border-top: 1px solid #33343a;
+  border-bottom: 1px solid #33343a;
+}
+
+
+.agendamento-sucesso-resumo > div {
+  min-width: 0;
+
+  padding: 20px 15px;
+
+  border-right: 1px solid #33343a;
+}
+
+
+.agendamento-sucesso-resumo > div:first-child {
+  padding-left: 0;
+}
+
+
+.agendamento-sucesso-resumo > div:last-child {
+  border-right: 0;
+}
+
+
+.agendamento-sucesso-resumo span,
+.agendamento-sucesso-resumo strong {
+  display: block;
+}
+
+
+.agendamento-sucesso-resumo span {
+  margin-bottom: 6px;
+
+  color: #8f9097;
+
+  font-size: 0.62rem;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-sucesso-resumo strong {
+  font-size: 0.82rem;
+
+  text-transform: capitalize;
+}
+
+
+.agendamento-protocolo {
+  margin-top: 22px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.agendamento-protocolo span {
+  color: #8f9097;
+
+  font-size: 0.7rem;
+}
+
+
+.agendamento-protocolo strong {
+  color: var(--amores-lima);
+}
+
+
+.agendamento-sucesso-acoes {
+  position: relative;
+
+  z-index: 2;
+
+  margin-top: 35px;
+
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+
+.agendamento-sucesso-acoes button,
+.agendamento-sucesso-acoes a {
+  min-height: 50px;
+
+  padding: 0 21px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  font-weight: 850;
+
+  text-decoration: none;
+}
+
+
+.agendamento-sucesso-acoes button {
+  border: 0;
+
+  background: var(--amores-lima);
+
+  color: var(--amores-preto);
+
+  cursor: pointer;
+}
+
+
+.agendamento-sucesso-acoes a {
+  border: 1px solid #3d3e44;
+
+  color: #ffffff;
+}
+
+
+/* ============================================================
+   RESPONSIVIDADE — BLOCO D
+   ============================================================ */
+
+@media (max-width: 1050px) {
+  .agendamento-revisao {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+
+  .agendamento-revisao-destaque {
+    grid-column: 1 / -1;
+  }
+
+
+  .agendamento-sucesso-resumo {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+
+  .agendamento-sucesso-resumo > div:nth-child(2) {
+    border-right: 0;
+  }
+
+
+  .agendamento-sucesso-resumo > div:nth-child(-n + 2) {
+    border-bottom: 1px solid #33343a;
+  }
+}
+
+
+@media (max-width: 680px) {
+  .agendamento-mensagem-erro {
+    grid-column: auto;
+
+    margin-bottom: 15px;
+  }
+
+
+  .agendamento-painel-formulario,
+  .agendamento-confirmacao {
+    padding: 24px 17px;
+
+    border-radius: 26px;
+  }
+
+
+  .agendamento-painel-topo {
+    flex-direction: column;
+  }
+
+
+  .agendamento-grade-formulario {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agendamento-grade-formulario
+  .campo-largo {
+    grid-column: auto;
+  }
+
+
+  .agendamento-formulario-acoes {
+    flex-direction: column-reverse;
+  }
+
+
+  .agendamento-formulario-acoes button {
+    width: 100%;
+  }
+
+
+  .agendamento-pets-grade,
+  .agendamento-servicos-grade {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agendamento-pets-grade > button,
+  .agendamento-servicos-grade > button {
+    min-height: 190px;
+  }
+
+
+  .agendamento-servicos-resumo {
+    align-items: stretch;
+
+    flex-direction: column;
+  }
+
+
+  .agendamento-servicos-resumo > button {
+    width: 100%;
+  }
+
+
+  .agendamento-revisao {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agendamento-revisao-destaque {
+    grid-column: auto;
+  }
+
+
+  .agendamento-sucesso {
+    padding: 34px 22px;
+
+    border-radius: 27px;
+  }
+
+
+  .agendamento-sucesso-resumo {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agendamento-sucesso-resumo > div,
+  .agendamento-sucesso-resumo > div:first-child {
+    padding: 15px 0;
+
+    border-right: 0;
+    border-bottom: 1px solid #33343a;
+  }
+
+
+  .agendamento-sucesso-resumo > div:last-child {
+    border-bottom: 0;
+  }
+
+
+  .agendamento-sucesso-acoes {
+    flex-direction: column;
+  }
+
+
+  .agendamento-sucesso-acoes button,
+  .agendamento-sucesso-acoes a {
+    width: 100%;
+  }
+}
+
+
+@media (max-width: 380px) {
+  .agendamento-painel-formulario,
+  .agendamento-confirmacao {
+    padding: 22px 15px;
+  }
+
+
+  .agendamento-formulario-titulo {
+    align-items: flex-start;
+  }
+
+
+  .agendamento-pet-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+
+  .agendamento-revisao article {
+    padding: 18px;
+  }
+
+
+  .agendamento-codigo-dev strong {
+    font-size: 1.35rem;
+  }
+}
