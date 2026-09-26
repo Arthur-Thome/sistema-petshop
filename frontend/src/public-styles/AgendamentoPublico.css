@@ -1,0 +1,1003 @@
+/*
+ * ============================================================
+ * AMORES PET — AGENDAMENTO PÚBLICO
+ * ============================================================
+ *
+ * Página focada na realização do agendamento.
+ * Mantém a identidade da Amores Pet, mas propositalmente
+ * possui uma composição diferente da página institucional.
+ */
+
+
+.agendamento-publico {
+  --amores-preto: #090b0e;
+  --amores-grafite: #14171b;
+  --amores-rosa: #f0008b;
+  --amores-rosa-forte: #ff1493;
+  --amores-rosa-claro: #fff0f8;
+  --amores-lima: #d9ef25;
+  --amores-branco: #ffffff;
+  --amores-fundo: #f6f6f8;
+  --amores-texto: #17171a;
+  --amores-texto-suave: #686871;
+  --amores-borda: #e2e2e7;
+
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background:
+    var(--amores-fundo);
+
+  color:
+    var(--amores-texto);
+}
+
+
+/*
+ * ============================================================
+ * CABEÇALHO
+ * ============================================================
+ */
+
+.agendamento-header {
+  width: 100%;
+
+  min-height: 88px;
+
+  padding:
+    10px
+    max(
+      24px,
+      calc((100% - 1440px) / 2)
+    );
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  background:
+    var(--amores-preto);
+
+  border-bottom:
+    3px solid var(--amores-rosa);
+}
+
+
+.agendamento-marca {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  color:
+    var(--amores-branco);
+
+  text-decoration: none;
+}
+
+
+.agendamento-marca img {
+  width: 64px;
+  height: 64px;
+
+  display: block;
+
+  object-fit: contain;
+
+  border-radius: 50%;
+}
+
+
+.agendamento-marca div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.agendamento-marca strong {
+  font-size: 1.05rem;
+}
+
+
+.agendamento-marca span {
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  font-size: 0.7rem;
+
+  font-weight: 650;
+
+  letter-spacing: 0.04em;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-voltar {
+  min-height: 44px;
+
+  padding:
+    0 19px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.18);
+
+  border-radius: 999px;
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  color:
+    var(--amores-branco);
+
+  font-size: 0.88rem;
+
+  font-weight: 750;
+
+  text-decoration: none;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+.agendamento-voltar:hover {
+  border-color:
+    rgba(255, 255, 255, 0.32);
+
+  background:
+    rgba(255, 255, 255, 0.1);
+}
+
+
+/*
+ * ============================================================
+ * CONTEÚDO
+ * ============================================================
+ */
+
+.agendamento-conteudo {
+  width:
+    min(100% - 48px, 1440px);
+
+  margin:
+    0 auto;
+
+  padding:
+    clamp(55px, 7vw, 105px) 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 0.8fr)
+    minmax(480px, 1.2fr);
+
+  gap:
+    clamp(50px, 8vw, 125px);
+
+  flex: 1;
+}
+
+
+/*
+ * ============================================================
+ * APRESENTAÇÃO
+ * ============================================================
+ */
+
+.agendamento-introducao {
+  position: relative;
+
+  padding-top: 20px;
+}
+
+
+.agendamento-etiqueta {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  margin-bottom: 18px;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.76rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.15em;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-etiqueta::before {
+  content: "";
+
+  width: 28px;
+  height: 3px;
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-lima);
+}
+
+
+.agendamento-introducao h1 {
+  max-width: 650px;
+
+  margin:
+    0 0 24px;
+
+  font-size:
+    clamp(3rem, 5vw, 5.7rem);
+
+  line-height: 0.97;
+
+  letter-spacing:
+    -0.055em;
+}
+
+
+.agendamento-introducao > p {
+  max-width: 590px;
+
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  font-size:
+    clamp(1rem, 1.2vw, 1.13rem);
+
+  line-height: 1.75;
+}
+
+
+/*
+ * ============================================================
+ * INDICADOR DAS ETAPAS
+ * ============================================================
+ */
+
+.agendamento-passos {
+  margin-top:
+    clamp(45px, 6vw, 80px);
+
+  display: grid;
+
+  gap: 0;
+
+  border-top:
+    1px solid var(--amores-borda);
+}
+
+
+.agendamento-passos div {
+  min-height: 68px;
+
+  display: grid;
+
+  grid-template-columns:
+    42px 1fr;
+
+  align-items: center;
+
+  gap: 12px;
+
+  border-bottom:
+    1px solid var(--amores-borda);
+}
+
+
+.agendamento-passos span {
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.72rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.08em;
+}
+
+
+.agendamento-passos strong {
+  font-size: 0.9rem;
+}
+
+
+/*
+ * ============================================================
+ * PAINEL DE INÍCIO
+ * ============================================================
+ */
+
+.agendamento-inicio {
+  position: relative;
+
+  align-self: start;
+
+  overflow: hidden;
+
+  padding:
+    clamp(30px, 4vw, 55px);
+
+  border:
+    1px solid var(--amores-borda);
+
+  border-radius:
+    clamp(28px, 4vw, 45px);
+
+  background:
+    var(--amores-branco);
+
+  box-shadow:
+    0 30px 80px
+    rgba(15, 15, 20, 0.08);
+}
+
+
+/*
+ * Elemento decorativo que mantém as cores
+ * da marca sem prejudicar a leitura do formulário.
+ */
+.agendamento-inicio::before {
+  content: "";
+
+  position: absolute;
+
+  width: 190px;
+  height: 190px;
+
+  top: -110px;
+  right: -70px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-lima);
+
+  pointer-events: none;
+}
+
+
+.agendamento-inicio::after {
+  content: "";
+
+  position: absolute;
+
+  width: 110px;
+  height: 110px;
+
+  top: -65px;
+  right: 65px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-rosa);
+
+  pointer-events: none;
+}
+
+
+.agendamento-inicio-cabecalho {
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 570px;
+}
+
+
+.agendamento-inicio-cabecalho > span {
+  display: block;
+
+  margin-bottom: 12px;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.74rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-inicio-cabecalho h2 {
+  margin:
+    0 0 13px;
+
+  font-size:
+    clamp(1.8rem, 3vw, 3rem);
+
+  line-height: 1.05;
+
+  letter-spacing:
+    -0.04em;
+}
+
+
+.agendamento-inicio-cabecalho p {
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  line-height: 1.65;
+}
+
+
+/*
+ * ============================================================
+ * OPÇÕES
+ * ============================================================
+ */
+
+.agendamento-opcoes {
+  position: relative;
+
+  z-index: 2;
+
+  margin-top: 38px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 15px;
+}
+
+
+.agendamento-opcao,
+.agendamento-opcao-principal {
+  min-height: 220px;
+
+  padding: 25px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  text-align: left;
+
+  border-radius: 24px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.agendamento-opcao {
+  border:
+    1px solid var(--amores-borda);
+
+  background:
+    var(--amores-branco);
+
+  color:
+    var(--amores-texto);
+}
+
+
+.agendamento-opcao-principal {
+  border:
+    1px solid var(--amores-preto);
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.agendamento-opcao:hover,
+.agendamento-opcao-principal:hover {
+  transform:
+    translateY(-5px);
+
+  box-shadow:
+    0 18px 40px
+    rgba(15, 15, 20, 0.1);
+}
+
+
+.agendamento-opcao:hover {
+  border-color:
+    var(--amores-rosa);
+}
+
+
+.agendamento-opcao span,
+.agendamento-opcao-principal span {
+  margin-bottom: auto;
+
+  font-size: 0.72rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+}
+
+
+.agendamento-opcao span {
+  color:
+    var(--amores-rosa);
+}
+
+
+.agendamento-opcao-principal span {
+  color:
+    var(--amores-lima);
+}
+
+
+.agendamento-opcao strong,
+.agendamento-opcao-principal strong {
+  margin:
+    45px 0 9px;
+
+  font-size:
+    clamp(1.1rem, 1.5vw, 1.35rem);
+
+  line-height: 1.15;
+}
+
+
+.agendamento-opcao small,
+.agendamento-opcao-principal small {
+  line-height: 1.55;
+
+  font-size: 0.8rem;
+}
+
+
+.agendamento-opcao small {
+  color:
+    var(--amores-texto-suave);
+}
+
+
+.agendamento-opcao-principal small {
+  color:
+    rgba(255, 255, 255, 0.58);
+}
+
+
+/*
+ * ============================================================
+ * LOGIN OPCIONAL
+ * ============================================================
+ */
+
+.agendamento-login {
+  position: relative;
+
+  z-index: 2;
+
+  margin-top: 28px;
+
+  padding-top: 25px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-top:
+    1px solid var(--amores-borda);
+}
+
+
+.agendamento-login p {
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  font-size: 0.87rem;
+}
+
+
+.agendamento-login button {
+  min-height: 46px;
+
+  padding:
+    7px 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1px solid var(--amores-borda);
+
+  border-radius: 999px;
+
+  background:
+    #f1f1f3;
+
+  color:
+    #8b8b92;
+
+  font-weight: 750;
+
+  cursor: not-allowed;
+}
+
+
+.agendamento-login button small {
+  margin-top: 1px;
+
+  font-size: 0.6rem;
+
+  font-weight: 600;
+}
+
+
+/*
+ * ============================================================
+ * RODAPÉ
+ * ============================================================
+ */
+
+.agendamento-footer {
+  min-height: 95px;
+
+  padding:
+    20px
+    max(
+      24px,
+      calc((100% - 1440px) / 2)
+    );
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  border-top:
+    1px solid var(--amores-borda);
+
+  background:
+    var(--amores-branco);
+}
+
+
+.agendamento-footer > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+
+.agendamento-footer strong {
+  font-size: 0.95rem;
+}
+
+
+.agendamento-footer span {
+  color:
+    var(--amores-texto-suave);
+
+  font-size: 0.72rem;
+}
+
+
+.agendamento-footer a {
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.85rem;
+
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+
+/*
+ * ============================================================
+ * TABLETS
+ * ============================================================
+ */
+
+@media (max-width: 1050px) {
+
+  .agendamento-conteudo {
+    width:
+      min(100% - 34px, 850px);
+
+    grid-template-columns: 1fr;
+
+    gap: 55px;
+  }
+
+
+  .agendamento-introducao {
+    max-width: 760px;
+  }
+
+
+  .agendamento-passos {
+    grid-template-columns:
+      repeat(5, minmax(0, 1fr));
+
+    border:
+      1px solid var(--amores-borda);
+
+    border-radius: 20px;
+
+    overflow: hidden;
+  }
+
+
+  .agendamento-passos div {
+    min-height: 90px;
+
+    padding: 15px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+    justify-content: center;
+
+    gap: 7px;
+
+    border-bottom: 0;
+
+    border-right:
+      1px solid var(--amores-borda);
+  }
+
+
+  .agendamento-passos div:last-child {
+    border-right: 0;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * CELULARES
+ * ============================================================
+ */
+
+@media (max-width: 680px) {
+
+  .agendamento-header {
+    min-height: 72px;
+
+    padding:
+      8px 14px;
+  }
+
+
+  .agendamento-marca {
+    gap: 9px;
+  }
+
+
+  .agendamento-marca img {
+    width: 50px;
+    height: 50px;
+  }
+
+
+  .agendamento-marca span {
+    display: none;
+  }
+
+
+  .agendamento-voltar {
+    min-height: 42px;
+
+    padding:
+      0 14px;
+
+    font-size: 0.78rem;
+  }
+
+
+  .agendamento-conteudo {
+    width:
+      calc(100% - 28px);
+
+    padding:
+      45px 0 65px;
+
+    gap: 40px;
+  }
+
+
+  .agendamento-introducao h1 {
+    font-size:
+      clamp(2.6rem, 13vw, 4rem);
+  }
+
+
+  /*
+   * Em celulares os passos voltam para uma lista.
+   * Isso evita cinco colunas excessivamente estreitas.
+   */
+  .agendamento-passos {
+    grid-template-columns: 1fr;
+
+    border: 0;
+
+    border-top:
+      1px solid var(--amores-borda);
+
+    border-radius: 0;
+  }
+
+
+  .agendamento-passos div {
+    min-height: 58px;
+
+    padding: 0;
+
+    display: grid;
+
+    grid-template-columns:
+      40px 1fr;
+
+    align-items: center;
+
+    border-right: 0;
+
+    border-bottom:
+      1px solid var(--amores-borda);
+  }
+
+
+  .agendamento-opcoes {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agendamento-opcao,
+  .agendamento-opcao-principal {
+    min-height: 190px;
+  }
+
+
+  .agendamento-login {
+    align-items: stretch;
+
+    flex-direction: column;
+  }
+
+
+  .agendamento-login button {
+    width: 100%;
+  }
+
+
+  .agendamento-footer {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    padding:
+      25px 14px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * TELAS MUITO PEQUENAS
+ * ============================================================
+ */
+
+@media (max-width: 380px) {
+
+  .agendamento-marca strong {
+    font-size: 0.86rem;
+  }
+
+
+  .agendamento-voltar {
+    padding:
+      0 11px;
+
+    font-size: 0.72rem;
+  }
+
+
+  .agendamento-conteudo {
+    width:
+      calc(100% - 20px);
+  }
+
+
+  .agendamento-inicio {
+    padding:
+      26px 20px;
+
+    border-radius: 25px;
+  }
+
+
+  .agendamento-opcao,
+  .agendamento-opcao-principal {
+    padding: 21px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * ACESSIBILIDADE
+ * ============================================================
+ */
+
+.agendamento-publico a:focus-visible,
+.agendamento-publico button:focus-visible {
+  outline:
+    3px solid
+    rgba(240, 0, 139, 0.4);
+
+  outline-offset: 4px;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .agendamento-publico *,
+  .agendamento-publico *::before,
+  .agendamento-publico *::after {
+    transition-duration:
+      0.01ms !important;
+  }
+
+}

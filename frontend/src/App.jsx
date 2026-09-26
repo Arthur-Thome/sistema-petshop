@@ -53,6 +53,9 @@ import GerenciarUsuario from "./pages/GerenciarUsuario";
 import HistoricoEstoque from "./pages/HistoricoEstoque";
 import PagamentosPendentes from "./pages/PagamentosPendentes";
 import RotaAdministrativo from "./components/RotaAdministrativo";
+import HomePublica from "./public-pages/HomePublica";
+import AgendamentoPublico from "./public-pages/AgendamentoPublico";
+import GaleriaPublica from "./public-pages/GaleriaPublica";
 
 
 function App() {
@@ -62,12 +65,17 @@ function App() {
 
         <Route
           path="/"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
-          }
+          element={<HomePublica />}
+        />
+
+        <Route
+          path="/agendar"
+          element={<AgendamentoPublico />}
+        />
+
+        <Route
+          path="/galeria"
+          element={<GaleriaPublica />}
         />
 
         <Route

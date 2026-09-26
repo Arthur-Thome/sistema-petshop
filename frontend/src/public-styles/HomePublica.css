@@ -1,0 +1,2360 @@
+/*
+ * ============================================================
+ * AMORES PET — SITE PÚBLICO
+ * ============================================================
+ *
+ * Identidade visual baseada na marca Amores Pet:
+ * preto/grafite, rosa, amarelo-limão e branco.
+ *
+ * Este arquivo pertence somente ao frontend público.
+ * O painel administrativo mantém seus próprios estilos.
+ */
+
+
+.site-publico {
+  --amores-preto: #090b0e;
+  --amores-grafite: #13161b;
+  --amores-grafite-claro: #20242a;
+
+  --amores-rosa: #f0008b;
+  --amores-rosa-forte: #ff1493;
+  --amores-rosa-escuro: #b80068;
+  --amores-rosa-claro: #ffe3f2;
+
+  --amores-lima: #d9ef25;
+  --amores-lima-claro: #f2fac1;
+
+  --amores-branco: #ffffff;
+  --amores-fundo: #f7f7f8;
+
+  --amores-texto: #17171a;
+  --amores-texto-suave: #6c6c74;
+
+  --amores-borda: #e4e4e8;
+
+  /*
+   * Limita o conteúdo em monitores muito largos,
+   * sem impedir fundos e seções de ocuparem toda a tela.
+   */
+  --site-largura:
+    min(100% - 48px, 1440px);
+
+  min-height: 100vh;
+
+  background:
+    var(--amores-fundo);
+
+  color:
+    var(--amores-texto);
+
+  overflow-x: hidden;
+}
+
+
+/*
+ * Faz a navegação por âncoras parar abaixo
+ * do cabeçalho fixo.
+ */
+.site-publico section {
+  scroll-margin-top: 100px;
+}
+
+
+/*
+ * ============================================================
+ * CABEÇALHO
+ * ============================================================
+ */
+
+.site-header {
+  position: sticky;
+  top: 0;
+
+  z-index: 1000;
+
+  width: 100%;
+
+  background:
+    rgba(9, 11, 14, 0.97);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.16);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+}
+
+
+.site-header-container {
+  width:
+    var(--site-largura);
+
+  min-height: 88px;
+
+  margin:
+    0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap:
+    clamp(20px, 3vw, 50px);
+}
+
+
+/*
+ * ============================================================
+ * MARCA
+ * ============================================================
+ */
+
+.site-marca {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  flex-shrink: 0;
+
+  color:
+    var(--amores-branco);
+
+  text-decoration: none;
+}
+
+
+.site-logo {
+  width: 68px;
+  height: 68px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  overflow: hidden;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-preto);
+}
+
+
+.site-logo img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: contain;
+}
+
+
+.site-marca-texto {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.site-marca-texto strong {
+  color:
+    var(--amores-branco);
+
+  font-size:
+    clamp(1rem, 1.2vw, 1.2rem);
+
+  line-height: 1.1;
+
+  letter-spacing:
+    -0.02em;
+}
+
+
+.site-marca-texto span {
+  color:
+    rgba(255, 255, 255, 0.58);
+
+  font-size: 0.7rem;
+
+  font-weight: 600;
+
+  letter-spacing: 0.04em;
+
+  text-transform: uppercase;
+}
+
+
+/*
+ * ============================================================
+ * MENU DESKTOP
+ * ============================================================
+ */
+
+.site-menu {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap:
+    clamp(13px, 1.5vw, 27px);
+
+  flex: 1;
+}
+
+
+.site-menu a {
+  position: relative;
+
+  padding:
+    34px 0;
+
+  color:
+    rgba(255, 255, 255, 0.78);
+
+  font-size:
+    clamp(0.76rem, 0.82vw, 0.91rem);
+
+  font-weight: 650;
+
+  text-decoration: none;
+
+  white-space: nowrap;
+
+  transition:
+    color 0.2s ease;
+}
+
+
+.site-menu a::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  bottom: 25px;
+
+  width: 0;
+  height: 3px;
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-rosa);
+
+  transform:
+    translateX(-50%);
+
+  transition:
+    width 0.2s ease;
+}
+
+
+.site-menu a:hover {
+  color:
+    var(--amores-branco);
+}
+
+
+.site-menu a:hover::after {
+  width: 100%;
+}
+
+
+/*
+ * ============================================================
+ * AÇÕES DO CABEÇALHO
+ * ============================================================
+ */
+
+.site-header-acoes {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  flex-shrink: 0;
+}
+
+
+.site-entrar,
+.site-agendar {
+  min-height: 44px;
+
+  padding:
+    0 19px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  font-size: 0.86rem;
+
+  font-weight: 750;
+
+  text-decoration: none;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.site-entrar {
+  color:
+    var(--amores-branco);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.18);
+
+  background:
+    rgba(255, 255, 255, 0.05);
+}
+
+
+.site-agendar {
+  color:
+    var(--amores-branco);
+
+  border:
+    1px solid var(--amores-rosa);
+
+  background:
+    var(--amores-rosa);
+
+  box-shadow:
+    0 9px 25px
+    rgba(240, 0, 139, 0.23);
+}
+
+
+.site-entrar:hover,
+.site-agendar:hover {
+  transform:
+    translateY(-2px);
+}
+
+
+.site-entrar:hover {
+  background:
+    rgba(255, 255, 255, 0.1);
+}
+
+
+.site-agendar:hover {
+  border-color:
+    var(--amores-rosa-forte);
+
+  background:
+    var(--amores-rosa-forte);
+
+  box-shadow:
+    0 12px 32px
+    rgba(240, 0, 139, 0.32);
+}
+
+
+/*
+ * ============================================================
+ * BOTÃO HAMBÚRGUER
+ * ============================================================
+ */
+
+.site-menu-mobile-botao {
+  width: 46px;
+  height: 46px;
+
+  padding: 0;
+
+  display: none;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  flex-shrink: 0;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.14);
+
+  border-radius: 14px;
+
+  background:
+    rgba(255, 255, 255, 0.06);
+
+  cursor: pointer;
+}
+
+
+.site-menu-mobile-botao span {
+  width: 20px;
+  height: 2px;
+
+  display: block;
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-branco);
+
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+
+
+.site-menu-mobile-botao.aberto span:nth-child(1) {
+  transform:
+    translateY(7px)
+    rotate(45deg);
+}
+
+
+.site-menu-mobile-botao.aberto span:nth-child(2) {
+  opacity: 0;
+}
+
+
+.site-menu-mobile-botao.aberto span:nth-child(3) {
+  transform:
+    translateY(-7px)
+    rotate(-45deg);
+}
+
+
+/*
+ * ============================================================
+ * MENU MOBILE
+ * ============================================================
+ */
+
+.site-menu-mobile {
+  display: none;
+
+  overflow: hidden;
+
+  background:
+    var(--amores-preto);
+
+  border-top:
+    1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+.site-menu-mobile nav {
+  width:
+    var(--site-largura);
+
+  margin:
+    0 auto;
+
+  padding:
+    18px 0 28px;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+
+.site-menu-mobile nav > a {
+  padding:
+    15px 4px;
+
+  color:
+    rgba(255, 255, 255, 0.82);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.07);
+
+  font-size: 0.95rem;
+
+  font-weight: 650;
+
+  text-decoration: none;
+}
+
+
+.site-menu-mobile nav > a:hover {
+  color:
+    var(--amores-rosa);
+}
+
+
+.site-menu-mobile-acoes {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+
+.site-menu-mobile-entrar,
+.site-menu-mobile-agendar {
+  min-height: 48px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  font-weight: 750;
+
+  text-decoration: none;
+}
+
+
+.site-menu-mobile-entrar {
+  color:
+    var(--amores-branco);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.2);
+}
+
+
+.site-menu-mobile-agendar {
+  color:
+    var(--amores-branco);
+
+  background:
+    var(--amores-rosa);
+}
+
+
+/*
+ * ============================================================
+ * HERO / CARROSSEL
+ * ============================================================
+ */
+
+.site-hero {
+  position: relative;
+
+  width:
+    var(--site-largura);
+
+  min-height:
+    min(
+      790px,
+      calc(100vh - 88px)
+    );
+
+  margin:
+    0 auto;
+
+  padding:
+    clamp(55px, 7vw, 110px) 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 0.9fr)
+    minmax(420px, 1.1fr);
+
+  align-items: center;
+
+  gap:
+    clamp(45px, 7vw, 120px);
+}
+
+
+/*
+ * Elemento decorativo inspirado nas cores
+ * fortes presentes na identidade da marca.
+ */
+.site-hero::before {
+  content: "";
+
+  position: absolute;
+
+  top: 6%;
+  left: -18%;
+
+  width: 420px;
+  height: 420px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(240, 0, 139, 0.08);
+
+  filter:
+    blur(10px);
+
+  pointer-events: none;
+}
+
+
+.site-hero-conteudo {
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 690px;
+}
+
+
+.site-hero-etiqueta,
+.site-secao-etiqueta {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 18px;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.77rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.15em;
+
+  text-transform: uppercase;
+}
+
+
+.site-hero-etiqueta::before {
+  content: "";
+
+  width: 28px;
+  height: 3px;
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-lima);
+}
+
+
+.site-hero h1 {
+  max-width: 780px;
+
+  margin:
+    0 0 25px;
+
+  color:
+    var(--amores-texto);
+
+  font-size:
+    clamp(2.8rem, 5vw, 5.7rem);
+
+  line-height: 0.98;
+
+  letter-spacing:
+    -0.055em;
+}
+
+
+.site-hero-conteudo > p {
+  max-width: 600px;
+
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  font-size:
+    clamp(1rem, 1.3vw, 1.2rem);
+
+  line-height: 1.7;
+}
+
+
+/*
+ * ============================================================
+ * BOTÕES DO HERO
+ * ============================================================
+ */
+
+.site-hero-acoes {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-top: 34px;
+}
+
+
+.site-hero-principal,
+.site-hero-secundario {
+  min-height: 54px;
+
+  padding:
+    0 26px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  font-weight: 800;
+
+  text-decoration: none;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.site-hero-principal {
+  color:
+    var(--amores-branco);
+
+  background:
+    var(--amores-rosa);
+
+  box-shadow:
+    0 14px 35px
+    rgba(240, 0, 139, 0.25);
+}
+
+
+.site-hero-secundario {
+  color:
+    var(--amores-texto);
+
+  border:
+    1px solid var(--amores-borda);
+
+  background:
+    var(--amores-branco);
+}
+
+
+.site-hero-principal:hover,
+.site-hero-secundario:hover {
+  transform:
+    translateY(-3px);
+}
+
+
+/*
+ * ============================================================
+ * CONTROLES DO CARROSSEL
+ * ============================================================
+ */
+
+.site-carrossel-controles {
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  margin-top: 45px;
+}
+
+
+.site-carrossel-seta {
+  width: 45px;
+  height: 45px;
+
+  display: grid;
+
+  place-items: center;
+
+  flex-shrink: 0;
+
+  padding: 0;
+
+  border:
+    1px solid var(--amores-borda);
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-branco);
+
+  color:
+    var(--amores-texto);
+
+  font-size: 1.25rem;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.site-carrossel-seta:hover {
+  color:
+    var(--amores-rosa);
+
+  border-color:
+    var(--amores-rosa);
+
+  transform:
+    scale(1.06);
+}
+
+
+.site-carrossel-indicadores {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+
+.site-carrossel-indicadores button {
+  width: 9px;
+  height: 9px;
+
+  padding: 0;
+
+  border: 0;
+
+  border-radius: 999px;
+
+  background:
+    #c9c9cf;
+
+  cursor: pointer;
+
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+
+
+.site-carrossel-indicadores button.ativo {
+  width: 30px;
+
+  background:
+    var(--amores-rosa);
+}
+
+
+/*
+ * ============================================================
+ * VISUAL DO CARROSSEL
+ * ============================================================
+ */
+
+.site-hero-visual {
+  position: relative;
+
+  min-width: 0;
+}
+
+
+.site-hero-imagem-placeholder {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 1.05 / 1;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  overflow: hidden;
+
+  padding:
+    clamp(25px, 4vw, 52px);
+
+  border-radius:
+    clamp(30px, 4vw, 62px);
+
+  background:
+    var(--amores-grafite);
+
+  box-shadow:
+    0 35px 90px
+    rgba(9, 11, 14, 0.2);
+
+  isolation: isolate;
+
+  transition:
+    background 0.4s ease;
+}
+
+
+.site-hero-imagem-placeholder::before {
+  content: "";
+
+  position: absolute;
+
+  z-index: -1;
+
+  width: 72%;
+  aspect-ratio: 1;
+
+  top: -22%;
+  right: -15%;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-rosa);
+
+  opacity: 0.92;
+}
+
+
+.site-hero-imagem-placeholder::after {
+  content: "";
+
+  position: absolute;
+
+  z-index: -1;
+
+  width: 43%;
+  aspect-ratio: 1;
+
+  left: -9%;
+  bottom: -12%;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-lima);
+}
+
+
+/*
+ * Cada slide recebe uma composição ligeiramente
+ * diferente mesmo antes das fotografias reais.
+ */
+
+.site-hero-imagem-placeholder.atendimentos::before {
+  background:
+    var(--amores-lima);
+
+  top: -18%;
+  right: -10%;
+}
+
+
+.site-hero-imagem-placeholder.atendimentos::after {
+  background:
+    var(--amores-rosa);
+}
+
+
+.site-hero-imagem-placeholder.creche {
+  background:
+    #161319;
+}
+
+
+.site-hero-imagem-placeholder.creche::before {
+  background:
+    var(--amores-rosa-forte);
+
+  width: 58%;
+
+  top: 5%;
+  right: -15%;
+}
+
+
+.site-hero-imagem-placeholder.hotel {
+  background:
+    #111318;
+}
+
+
+.site-hero-imagem-placeholder.hotel::before {
+  background:
+    var(--amores-lima);
+
+  width: 60%;
+}
+
+
+.site-hero-imagem-placeholder.hotel::after {
+  background:
+    var(--amores-rosa);
+}
+
+
+/*
+ * Caixa que ficará sobre a fotografia quando
+ * as imagens reais forem adicionadas.
+ */
+.site-hero-imagem-conteudo {
+  position: relative;
+
+  z-index: 2;
+
+  width:
+    min(100%, 440px);
+
+  padding:
+    clamp(20px, 3vw, 32px);
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.16);
+
+  border-radius: 25px;
+
+  background:
+    rgba(9, 11, 14, 0.82);
+
+  color:
+    var(--amores-branco);
+
+  backdrop-filter:
+    blur(12px);
+}
+
+
+.site-hero-slide-numero {
+  margin-bottom: 25px;
+
+  color:
+    var(--amores-lima);
+
+  font-size: 0.78rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.14em;
+}
+
+
+.site-hero-imagem-conteudo strong {
+  max-width: 340px;
+
+  font-size:
+    clamp(1.4rem, 2.4vw, 2.3rem);
+
+  line-height: 1.1;
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+.site-hero-imagem-conteudo small {
+  margin-top: 14px;
+
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  font-size: 0.76rem;
+}
+
+
+/*
+ * ============================================================
+ * ESTRUTURA GERAL DAS SEÇÕES
+ * ============================================================
+ */
+
+.site-secao {
+  width:
+    var(--site-largura);
+
+  margin:
+    0 auto;
+
+  padding:
+    clamp(75px, 9vw, 145px) 0;
+}
+
+
+.site-secao-cabecalho {
+  max-width: 770px;
+
+  margin-bottom:
+    clamp(38px, 5vw, 66px);
+}
+
+
+.site-secao-cabecalho > span {
+  display: block;
+
+  margin-bottom: 12px;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.76rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.15em;
+
+  text-transform: uppercase;
+}
+
+
+.site-secao-cabecalho h2,
+.site-historia h2,
+.site-localizacao h2,
+.site-galeria-chamada h2 {
+  margin:
+    0 0 18px;
+
+  font-size:
+    clamp(2rem, 4vw, 4rem);
+
+  line-height: 1.04;
+
+  letter-spacing:
+    -0.045em;
+}
+
+
+.site-secao-cabecalho p,
+.site-historia p,
+.site-localizacao p {
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  font-size:
+    clamp(0.96rem, 1.1vw, 1.08rem);
+
+  line-height: 1.75;
+}
+
+
+/*
+ * ============================================================
+ * SERVIÇOS
+ * ============================================================
+ */
+
+.site-servicos {
+  border-top:
+    1px solid var(--amores-borda);
+}
+
+
+.site-servicos-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap:
+    clamp(16px, 2vw, 28px);
+}
+
+
+.site-servico-card {
+  position: relative;
+
+  min-height: 340px;
+
+  padding:
+    clamp(25px, 3vw, 40px);
+
+  display: flex;
+
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border:
+    1px solid var(--amores-borda);
+
+  border-radius: 28px;
+
+  background:
+    var(--amores-branco);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+
+.site-servico-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 5px;
+
+  background:
+    var(--amores-rosa);
+
+  transform:
+    scaleX(0);
+
+  transform-origin: left;
+
+  transition:
+    transform 0.25s ease;
+}
+
+
+.site-servico-card:nth-child(2)::before {
+  background:
+    var(--amores-lima);
+}
+
+
+.site-servico-card:hover {
+  transform:
+    translateY(-8px);
+
+  border-color:
+    transparent;
+
+  box-shadow:
+    0 25px 60px
+    rgba(20, 20, 25, 0.1);
+}
+
+
+.site-servico-card:hover::before {
+  transform:
+    scaleX(1);
+}
+
+
+.site-servico-numero {
+  margin-bottom: auto;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.78rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.14em;
+}
+
+
+.site-servico-card:nth-child(2)
+.site-servico-numero {
+  color:
+    #98aa00;
+}
+
+
+.site-servico-card h3 {
+  margin:
+    65px 0 12px;
+
+  font-size:
+    clamp(1.4rem, 2vw, 2rem);
+
+  letter-spacing:
+    -0.025em;
+}
+
+
+.site-servico-card p {
+  margin:
+    0 0 25px;
+
+  color:
+    var(--amores-texto-suave);
+
+  line-height: 1.65;
+}
+
+
+.site-servico-card a {
+  width: fit-content;
+
+  color:
+    var(--amores-rosa);
+
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+
+/*
+ * ============================================================
+ * HISTÓRIA
+ * ============================================================
+ */
+
+.site-historia {
+  width: 100%;
+
+  padding:
+    clamp(75px, 9vw, 145px)
+    max(
+      24px,
+      calc((100% - 1440px) / 2)
+    );
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(300px, 1fr)
+    minmax(300px, 0.85fr);
+
+  align-items: center;
+
+  gap:
+    clamp(45px, 8vw, 130px);
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.site-historia-imagem {
+  position: relative;
+
+  min-height:
+    clamp(400px, 50vw, 680px);
+
+  display: grid;
+
+  place-items: center;
+
+  overflow: hidden;
+
+  padding: 30px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.1);
+
+  border-radius:
+    clamp(28px, 4vw, 54px);
+
+  background:
+    linear-gradient(
+      145deg,
+      #19151b,
+      #242126
+    );
+
+  color:
+    rgba(255, 255, 255, 0.62);
+
+  text-align: center;
+}
+
+
+.site-historia-imagem::before {
+  content: "";
+
+  position: absolute;
+
+  width: 300px;
+  height: 300px;
+
+  top: -100px;
+  right: -80px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-rosa);
+
+  opacity: 0.8;
+}
+
+
+.site-historia-imagem::after {
+  content: "";
+
+  position: absolute;
+
+  width: 170px;
+  height: 170px;
+
+  left: -50px;
+  bottom: -40px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-lima);
+}
+
+
+.site-historia-imagem span {
+  position: relative;
+
+  z-index: 2;
+}
+
+
+.site-historia-conteudo {
+  max-width: 620px;
+}
+
+
+.site-historia .site-secao-etiqueta {
+  color:
+    var(--amores-lima);
+}
+
+
+.site-historia p {
+  color:
+    rgba(255, 255, 255, 0.67);
+}
+
+
+.site-historia p + p {
+  margin-top: 18px;
+}
+
+
+/*
+ * ============================================================
+ * PRÊMIOS
+ * ============================================================
+ */
+
+.site-premios-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 1px;
+
+  overflow: hidden;
+
+  border:
+    1px solid var(--amores-borda);
+
+  border-radius: 30px;
+
+  background:
+    var(--amores-borda);
+}
+
+
+.site-premios-grid article {
+  min-height: 270px;
+
+  padding:
+    clamp(27px, 3vw, 42px);
+
+  background:
+    var(--amores-branco);
+}
+
+
+.site-premios-grid article > span {
+  display: inline-block;
+
+  margin-bottom: 55px;
+
+  color:
+    var(--amores-rosa);
+
+  font-weight: 850;
+}
+
+
+.site-premios-grid h3 {
+  margin:
+    0 0 12px;
+
+  font-size:
+    clamp(1.2rem, 1.8vw, 1.65rem);
+}
+
+
+.site-premios-grid p {
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  line-height: 1.65;
+}
+
+
+/*
+ * ============================================================
+ * GALERIA
+ * ============================================================
+ */
+
+.site-galeria-chamada {
+  position: relative;
+
+  width:
+    var(--site-largura);
+
+  margin:
+    clamp(30px, 5vw, 70px) auto
+    clamp(90px, 10vw, 160px);
+
+  padding:
+    clamp(35px, 5vw, 72px);
+
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 40px;
+
+  overflow: hidden;
+
+  border-radius:
+    clamp(28px, 4vw, 54px);
+
+  background:
+    var(--amores-rosa);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.site-galeria-chamada::after {
+  content: "";
+
+  position: absolute;
+
+  width: 260px;
+  height: 260px;
+
+  top: -130px;
+  right: 15%;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-lima);
+
+  opacity: 0.9;
+}
+
+
+.site-galeria-chamada > div,
+.site-galeria-chamada > a {
+  position: relative;
+
+  z-index: 2;
+}
+
+
+.site-galeria-chamada > div {
+  max-width: 770px;
+}
+
+
+.site-galeria-chamada span {
+  display: block;
+
+  margin-bottom: 12px;
+
+  color:
+    var(--amores-lima);
+
+  font-size: 0.76rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.15em;
+
+  text-transform: uppercase;
+}
+
+
+.site-galeria-chamada h2 {
+  margin-bottom: 0;
+}
+
+
+.site-galeria-chamada > a {
+  min-height: 52px;
+
+  padding:
+    0 25px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+
+/*
+ * ============================================================
+ * LOCALIZAÇÃO
+ * ============================================================
+ */
+
+.site-localizacao {
+  width:
+    var(--site-largura);
+
+  margin:
+    0 auto
+    clamp(85px, 10vw, 155px);
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 0.8fr)
+    minmax(400px, 1.2fr);
+
+  align-items: stretch;
+
+  gap:
+    clamp(35px, 5vw, 75px);
+}
+
+
+.site-localizacao-conteudo {
+  padding:
+    clamp(10px, 2vw, 30px) 0;
+}
+
+
+.site-localizacao-dados {
+  margin-top: 42px;
+
+  display: grid;
+
+  gap: 22px;
+}
+
+
+.site-localizacao-dados div {
+  padding-top: 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  border-top:
+    1px solid var(--amores-borda);
+}
+
+
+.site-localizacao-dados span {
+  color:
+    var(--amores-texto-suave);
+
+  font-size: 0.8rem;
+}
+
+
+.site-mapa-placeholder {
+  position: relative;
+
+  min-height: 480px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  overflow: hidden;
+
+  border-radius:
+    clamp(26px, 4vw, 48px);
+
+  background:
+    #e7e7e9;
+
+  color:
+    var(--amores-texto);
+}
+
+
+.site-mapa-placeholder::before {
+  content: "";
+
+  position: absolute;
+
+  width: 140px;
+  height: 140px;
+
+  top: -55px;
+  right: -45px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-rosa);
+}
+
+
+.site-mapa-placeholder span {
+  position: relative;
+
+  font-size:
+    clamp(1.4rem, 2vw, 2rem);
+
+  font-weight: 850;
+}
+
+
+.site-mapa-placeholder small {
+  position: relative;
+
+  color:
+    var(--amores-texto-suave);
+}
+
+
+/*
+ * ============================================================
+ * RODAPÉ
+ * ============================================================
+ */
+
+.site-footer {
+  padding:
+    clamp(55px, 7vw, 95px)
+    max(
+      24px,
+      calc((100% - 1440px) / 2)
+    );
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(280px, 2fr)
+    minmax(140px, 1fr)
+    minmax(140px, 1fr);
+
+  gap:
+    clamp(40px, 7vw, 100px);
+
+  border-top:
+    4px solid var(--amores-rosa);
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.site-footer > div {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  gap: 10px;
+}
+
+
+.site-footer strong {
+  font-size:
+    clamp(1.3rem, 2vw, 1.8rem);
+}
+
+
+.site-footer p {
+  max-width: 430px;
+
+  margin:
+    5px 0 0;
+
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  line-height: 1.65;
+}
+
+
+.site-footer span {
+  margin-bottom: 5px;
+
+  color:
+    var(--amores-lima);
+
+  font-size: 0.73rem;
+
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+}
+
+
+.site-footer a {
+  color:
+    rgba(255, 255, 255, 0.76);
+
+  text-decoration: none;
+}
+
+
+.site-footer a:hover {
+  color:
+    var(--amores-rosa);
+}
+
+
+/*
+ * ============================================================
+ * MONITORES ULTRAWIDE
+ * ============================================================
+ */
+
+@media (min-width: 1800px) {
+
+  .site-publico {
+    --site-largura:
+      min(100% - 120px, 1640px);
+  }
+
+
+  .site-hero {
+    min-height: 840px;
+  }
+
+
+  .site-historia,
+  .site-footer {
+    padding-left:
+      max(
+        60px,
+        calc((100% - 1640px) / 2)
+      );
+
+    padding-right:
+      max(
+        60px,
+        calc((100% - 1640px) / 2)
+      );
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * NOTEBOOKS MENORES
+ * ============================================================
+ */
+
+@media (max-width: 1220px) {
+
+  .site-menu {
+    gap: 13px;
+  }
+
+
+  .site-menu a {
+    font-size: 0.75rem;
+  }
+
+
+  .site-marca-texto span {
+    display: none;
+  }
+
+
+  .site-hero {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(350px, 0.9fr);
+
+    gap: 45px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * TABLETS / MENU MOBILE
+ * ============================================================
+ */
+
+@media (max-width: 1020px) {
+
+  .site-publico {
+    --site-largura:
+      min(100% - 34px, 920px);
+  }
+
+
+  .site-header-container {
+    min-height: 78px;
+  }
+
+
+  .site-logo {
+    width: 58px;
+    height: 58px;
+  }
+
+
+  .site-menu {
+    display: none;
+  }
+
+
+  .site-header-acoes {
+    margin-left: auto;
+  }
+
+
+  .site-menu-mobile-botao {
+    display: flex;
+  }
+
+
+  .site-menu-mobile.aberto {
+    display: block;
+  }
+
+
+  .site-hero {
+    min-height: auto;
+
+    grid-template-columns: 1fr;
+
+    padding:
+      70px 0 95px;
+  }
+
+
+  .site-hero-conteudo {
+    max-width: 780px;
+  }
+
+
+  .site-hero-visual {
+    width:
+      min(100%, 760px);
+  }
+
+
+  .site-hero-imagem-placeholder {
+    aspect-ratio: 16 / 10;
+  }
+
+
+  .site-servicos-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+
+  .site-servico-card:last-child {
+    grid-column:
+      1 / -1;
+  }
+
+
+  .site-historia {
+    grid-template-columns: 1fr;
+
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+
+  .site-historia-imagem {
+    min-height: 480px;
+  }
+
+
+  .site-historia-conteudo {
+    padding:
+      10px 16px 20px;
+  }
+
+
+  .site-premios-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .site-premios-grid article {
+    min-height: auto;
+  }
+
+
+  .site-premios-grid article > span {
+    margin-bottom: 30px;
+  }
+
+
+  .site-localizacao {
+    grid-template-columns: 1fr;
+  }
+
+
+  .site-mapa-placeholder {
+    min-height: 420px;
+  }
+
+    /*
+   * Em tablets, Entrar e Agendar continuam visíveis
+   * no cabeçalho. Portanto, não repetimos essas ações
+   * dentro do menu expansível.
+   */
+  .site-menu-mobile-acoes {
+    display: none;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * CELULARES
+ * ============================================================
+ */
+
+@media (max-width: 680px) {
+
+  .site-publico {
+    --site-largura:
+      calc(100% - 28px);
+  }
+
+
+  .site-header-container {
+    min-height: 70px;
+
+    gap: 9px;
+  }
+
+
+  .site-logo {
+    width: 52px;
+    height: 52px;
+  }
+
+
+  .site-marca-texto strong {
+    font-size: 0.92rem;
+  }
+
+
+  .site-marca-texto span {
+    display: none;
+  }
+
+
+  /*
+   * O menu mobile já possui Entrar e Agendar.
+   * Em celulares retiramos as ações duplicadas
+   * do cabeçalho para ganhar espaço.
+   */
+  .site-header-acoes {
+    display: none;
+  }
+
+
+  .site-menu-mobile-botao {
+    margin-left: auto;
+  }
+
+
+  
+    /*
+   * Em celulares as ações do cabeçalho desaparecem.
+   * Por isso Entrar e Agendar voltam a aparecer
+   * dentro do menu.
+   */
+  .site-menu-mobile-acoes {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+
+  .site-hero {
+    padding:
+      55px 0 75px;
+  }
+
+
+  .site-hero h1 {
+    font-size:
+      clamp(2.35rem, 12vw, 4rem);
+  }
+
+
+  .site-hero-acoes {
+    flex-direction: column;
+  }
+
+
+  .site-hero-principal,
+  .site-hero-secundario {
+    width: 100%;
+  }
+
+
+  .site-carrossel-controles {
+    margin-top: 34px;
+  }
+
+
+  .site-hero-imagem-placeholder {
+    aspect-ratio: 4 / 5;
+
+    padding: 22px;
+
+    border-radius: 28px;
+  }
+
+
+  .site-hero-imagem-conteudo {
+    width: 100%;
+  }
+
+
+  .site-servicos-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .site-servico-card:last-child {
+    grid-column: auto;
+  }
+
+
+  .site-servico-card {
+    min-height: 285px;
+  }
+
+
+  .site-historia {
+    padding-top: 60px;
+    padding-bottom: 75px;
+  }
+
+
+  .site-historia-imagem {
+    min-height: 390px;
+
+    border-radius: 27px;
+  }
+
+
+  .site-galeria-chamada {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 26px;
+  }
+
+
+  .site-galeria-chamada > a {
+    width: 100%;
+  }
+
+
+  .site-mapa-placeholder {
+    min-height: 350px;
+  }
+
+
+  .site-footer {
+    grid-template-columns: 1fr;
+
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * CELULARES MUITO PEQUENOS
+ * ============================================================
+ */
+
+@media (max-width: 380px) {
+
+  .site-publico {
+    --site-largura:
+      calc(100% - 20px);
+  }
+
+
+  .site-header-container {
+    min-height: 64px;
+  }
+
+
+  .site-logo {
+    width: 46px;
+    height: 46px;
+  }
+
+
+  .site-marca-texto strong {
+    font-size: 0.84rem;
+  }
+
+
+  .site-menu-mobile-botao {
+    width: 42px;
+    height: 42px;
+  }
+
+
+  .site-hero {
+    padding-top: 45px;
+  }
+
+
+  .site-hero h1 {
+    font-size:
+      clamp(2rem, 12vw, 2.8rem);
+  }
+
+
+  .site-carrossel-seta {
+    width: 41px;
+    height: 41px;
+  }
+
+
+  .site-servico-card,
+  .site-premios-grid article {
+    padding: 22px;
+  }
+
+
+  .site-historia {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+
+  .site-historia-conteudo {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+
+  .site-galeria-chamada {
+    padding:
+      26px 20px;
+  }
+
+
+  .site-mapa-placeholder {
+    min-height: 300px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * ACESSIBILIDADE
+ * ============================================================
+ */
+
+.site-publico a:focus-visible,
+.site-publico button:focus-visible {
+  outline:
+    3px solid
+    rgba(240, 0, 139, 0.4);
+
+  outline-offset: 4px;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .site-publico *,
+  .site-publico *::before,
+  .site-publico *::after {
+    scroll-behavior: auto !important;
+
+    transition-duration:
+      0.01ms !important;
+
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+  }
+
+}

@@ -1,0 +1,1054 @@
+/*
+ * ============================================================
+ * AMORES PET — GALERIA PÚBLICA
+ * ============================================================
+ *
+ * A Galeria possui composição própria.
+ * Mantemos as cores da marca, mas evitamos repetir
+ * o layout da Home ou da página de Agendamento.
+ */
+
+
+.galeria-publica {
+  --amores-preto: #090b0e;
+  --amores-grafite: #15171b;
+  --amores-rosa: #f0008b;
+  --amores-rosa-forte: #ff1493;
+  --amores-lima: #d9ef25;
+  --amores-branco: #ffffff;
+  --amores-fundo: #f7f7f8;
+  --amores-texto: #17171a;
+  --amores-texto-suave: #6c6c74;
+  --amores-borda: #e3e3e7;
+
+  min-height: 100vh;
+
+  overflow-x: hidden;
+
+  background:
+    var(--amores-fundo);
+
+  color:
+    var(--amores-texto);
+}
+
+
+/*
+ * ============================================================
+ * CABEÇALHO
+ * ============================================================
+ */
+
+.galeria-header {
+  min-height: 88px;
+
+  padding:
+    10px
+    max(
+      24px,
+      calc((100% - 1440px) / 2)
+    );
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 30px;
+
+  background:
+    var(--amores-preto);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+.galeria-marca {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  color:
+    var(--amores-branco);
+
+  text-decoration: none;
+}
+
+
+.galeria-marca img {
+  width: 64px;
+  height: 64px;
+
+  display: block;
+
+  object-fit: contain;
+
+  border-radius: 50%;
+}
+
+
+.galeria-marca > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.galeria-marca strong {
+  font-size: 1.05rem;
+}
+
+
+.galeria-marca span {
+  color:
+    rgba(255, 255, 255, 0.55);
+
+  font-size: 0.68rem;
+
+  font-weight: 650;
+
+  letter-spacing: 0.04em;
+
+  text-transform: uppercase;
+}
+
+
+.galeria-navegacao {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+
+.galeria-navegacao a {
+  min-height: 44px;
+
+  padding:
+    0 20px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  color:
+    var(--amores-branco);
+
+  font-size: 0.86rem;
+
+  font-weight: 750;
+
+  text-decoration: none;
+}
+
+
+.galeria-navegacao .galeria-agendar {
+  background:
+    var(--amores-rosa);
+
+  box-shadow:
+    0 10px 28px
+    rgba(240, 0, 139, 0.25);
+}
+
+
+/*
+ * ============================================================
+ * HERO
+ * ============================================================
+ */
+
+.galeria-hero {
+  width:
+    min(100% - 48px, 1440px);
+
+  margin:
+    0 auto;
+
+  padding:
+    clamp(65px, 8vw, 125px) 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(340px, 0.65fr);
+
+  align-items: end;
+
+  gap:
+    clamp(50px, 8vw, 120px);
+}
+
+
+.galeria-hero-texto {
+  max-width: 850px;
+}
+
+
+.galeria-hero-texto > span {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 18px;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.76rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.15em;
+
+  text-transform: uppercase;
+}
+
+
+.galeria-hero-texto > span::before {
+  content: "";
+
+  width: 28px;
+  height: 3px;
+
+  background:
+    var(--amores-lima);
+
+  border-radius: 999px;
+}
+
+
+.galeria-hero h1 {
+  margin:
+    0 0 25px;
+
+  font-size:
+    clamp(3rem, 6vw, 6.5rem);
+
+  line-height: 0.93;
+
+  letter-spacing:
+    -0.06em;
+}
+
+
+.galeria-hero p {
+  max-width: 630px;
+
+  margin: 0;
+
+  color:
+    var(--amores-texto-suave);
+
+  font-size:
+    clamp(1rem, 1.2vw, 1.13rem);
+
+  line-height: 1.75;
+}
+
+
+/*
+ * Bloco visual propositalmente diferente
+ * do carrossel existente na Home.
+ */
+.galeria-hero-destaque {
+  position: relative;
+
+  min-height: 310px;
+
+  padding:
+    clamp(27px, 4vw, 45px);
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+  justify-content: flex-end;
+
+  overflow: hidden;
+
+  border-radius:
+    50% 50% 35px 35px;
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.galeria-hero-destaque::before {
+  content: "";
+
+  position: absolute;
+
+  width: 170px;
+  height: 170px;
+
+  top: -40px;
+  right: -30px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-rosa);
+}
+
+
+.galeria-hero-destaque::after {
+  content: "";
+
+  position: absolute;
+
+  width: 100px;
+  height: 100px;
+
+  top: 80px;
+  right: 100px;
+
+  border-radius: 50%;
+
+  background:
+    var(--amores-lima);
+}
+
+
+.galeria-hero-destaque span,
+.galeria-hero-destaque strong {
+  position: relative;
+
+  z-index: 2;
+}
+
+
+.galeria-hero-destaque span {
+  margin-bottom: 10px;
+
+  color:
+    var(--amores-lima);
+
+  font-size: 0.7rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+}
+
+
+.galeria-hero-destaque strong {
+  max-width: 320px;
+
+  font-size:
+    clamp(1.7rem, 3vw, 3rem);
+
+  line-height: 1.05;
+
+  letter-spacing:
+    -0.04em;
+}
+
+
+/*
+ * ============================================================
+ * CONTEÚDO
+ * ============================================================
+ */
+
+.galeria-conteudo {
+  width:
+    min(100% - 48px, 1440px);
+
+  margin:
+    0 auto;
+
+  padding:
+    clamp(60px, 7vw, 100px) 0
+    clamp(90px, 10vw, 150px);
+
+  border-top:
+    1px solid var(--amores-borda);
+}
+
+
+.galeria-topo {
+  margin-bottom:
+    clamp(35px, 5vw, 65px);
+
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 40px;
+}
+
+
+.galeria-topo > div:first-child {
+  max-width: 610px;
+}
+
+
+.galeria-topo > div:first-child > span {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color:
+    var(--amores-rosa);
+
+  font-size: 0.73rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
+}
+
+
+.galeria-topo h2 {
+  margin: 0;
+
+  font-size:
+    clamp(2rem, 4vw, 4rem);
+
+  line-height: 1;
+
+  letter-spacing:
+    -0.045em;
+}
+
+
+/*
+ * ============================================================
+ * FILTROS
+ * ============================================================
+ */
+
+.galeria-filtros {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  justify-content: flex-end;
+
+  gap: 8px;
+}
+
+
+.galeria-filtros button {
+  min-height: 40px;
+
+  padding:
+    0 16px;
+
+  border:
+    1px solid var(--amores-borda);
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-branco);
+
+  color:
+    var(--amores-texto);
+
+  font-size: 0.76rem;
+
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+
+.galeria-filtros button.ativo {
+  border-color:
+    var(--amores-preto);
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+}
+
+
+/*
+ * ============================================================
+ * GRID DA GALERIA
+ * ============================================================
+ */
+
+.galeria-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(12, minmax(0, 1fr));
+
+  grid-auto-rows: 135px;
+
+  gap: 16px;
+}
+
+
+.galeria-item {
+  grid-column:
+    span 4;
+
+  grid-row:
+    span 3;
+
+  min-width: 0;
+}
+
+
+.galeria-item-grande {
+  grid-column:
+    span 8;
+
+  grid-row:
+    span 4;
+}
+
+
+.galeria-item-alto {
+  grid-row:
+    span 5;
+}
+
+
+.galeria-item-largo {
+  grid-column:
+    span 8;
+}
+
+
+.galeria-placeholder {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: 100%;
+
+  padding: 25px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+  justify-content: flex-end;
+
+  overflow: hidden;
+
+  border-radius: 26px;
+
+  background:
+    var(--amores-grafite);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.galeria-item:nth-child(2)
+.galeria-placeholder,
+.galeria-item:nth-child(5)
+.galeria-placeholder {
+  background:
+    var(--amores-rosa);
+}
+
+
+.galeria-item:nth-child(3)
+.galeria-placeholder {
+  background:
+    #22252a;
+}
+
+
+.galeria-item:nth-child(4)
+.galeria-placeholder {
+  background:
+    #d9ef25;
+
+  color:
+    var(--amores-preto);
+}
+
+
+.galeria-placeholder::before {
+  content: "";
+
+  position: absolute;
+
+  width: 140px;
+  height: 140px;
+
+  top: -55px;
+  right: -45px;
+
+  border-radius: 50%;
+
+  border:
+    22px solid rgba(255, 255, 255, 0.08);
+}
+
+
+.galeria-placeholder span,
+.galeria-placeholder small {
+  position: relative;
+
+  z-index: 2;
+}
+
+
+.galeria-placeholder span {
+  font-size:
+    clamp(1.15rem, 2vw, 1.8rem);
+
+  font-weight: 850;
+}
+
+
+.galeria-placeholder small {
+  margin-top: 6px;
+
+  opacity: 0.62;
+}
+
+
+/*
+ * ============================================================
+ * CHAMADA PARA AGENDAMENTO
+ * ============================================================
+ */
+
+.galeria-cta {
+  width:
+    min(100% - 48px, 1440px);
+
+  margin:
+    0 auto
+    clamp(90px, 10vw, 150px);
+
+  padding:
+    clamp(35px, 5vw, 70px);
+
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 40px;
+
+  border-radius:
+    clamp(28px, 4vw, 50px);
+
+  background:
+    var(--amores-rosa);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.galeria-cta > div {
+  max-width: 750px;
+}
+
+
+.galeria-cta span {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color:
+    var(--amores-lima);
+
+  font-size: 0.73rem;
+
+  font-weight: 850;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+}
+
+
+.galeria-cta h2 {
+  margin: 0;
+
+  font-size:
+    clamp(2rem, 4vw, 4rem);
+
+  line-height: 1;
+
+  letter-spacing:
+    -0.045em;
+}
+
+
+.galeria-cta > a {
+  min-height: 52px;
+
+  padding:
+    0 25px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 999px;
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+
+/*
+ * ============================================================
+ * RODAPÉ
+ * ============================================================
+ */
+
+.galeria-footer {
+  padding:
+    clamp(45px, 6vw, 75px)
+    max(
+      24px,
+      calc((100% - 1440px) / 2)
+    );
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 35px;
+
+  border-top:
+    4px solid var(--amores-rosa);
+
+  background:
+    var(--amores-preto);
+
+  color:
+    var(--amores-branco);
+}
+
+
+.galeria-footer-marca {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+}
+
+
+.galeria-footer-marca img {
+  width: 58px;
+  height: 58px;
+
+  object-fit: contain;
+
+  border-radius: 50%;
+}
+
+
+.galeria-footer-marca > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.galeria-footer-marca span {
+  color:
+    rgba(255, 255, 255, 0.5);
+
+  font-size: 0.68rem;
+
+  text-transform: uppercase;
+}
+
+
+.galeria-footer-links {
+  display: flex;
+
+  gap: 25px;
+}
+
+
+.galeria-footer-links a {
+  color:
+    rgba(255, 255, 255, 0.75);
+
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+
+.galeria-footer-links a:hover {
+  color:
+    var(--amores-rosa);
+}
+
+
+/*
+ * ============================================================
+ * TABLETS
+ * ============================================================
+ */
+
+@media (max-width: 1000px) {
+
+  .galeria-hero {
+    grid-template-columns: 1fr;
+  }
+
+
+  .galeria-hero-destaque {
+    width:
+      min(100%, 600px);
+  }
+
+
+  .galeria-topo {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+
+  .galeria-filtros {
+    justify-content: flex-start;
+  }
+
+
+  .galeria-item,
+  .galeria-item-grande,
+  .galeria-item-largo {
+    grid-column:
+      span 6;
+  }
+
+
+  .galeria-item-alto {
+    grid-row:
+      span 4;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * CELULARES
+ * ============================================================
+ */
+
+@media (max-width: 680px) {
+
+  .galeria-header {
+    min-height: 72px;
+
+    padding:
+      8px 14px;
+  }
+
+
+  .galeria-marca img {
+    width: 50px;
+    height: 50px;
+  }
+
+
+  .galeria-marca span {
+    display: none;
+  }
+
+
+  .galeria-navegacao {
+    gap: 3px;
+  }
+
+
+  .galeria-navegacao a {
+    min-height: 40px;
+
+    padding:
+      0 12px;
+
+    font-size: 0.76rem;
+  }
+
+
+  .galeria-hero,
+  .galeria-conteudo,
+  .galeria-cta {
+    width:
+      calc(100% - 28px);
+  }
+
+
+  .galeria-hero {
+    padding:
+      55px 0 75px;
+  }
+
+
+  .galeria-hero h1 {
+    font-size:
+      clamp(2.8rem, 14vw, 4.4rem);
+  }
+
+
+  .galeria-hero-destaque {
+    min-height: 270px;
+  }
+
+
+  .galeria-filtros {
+    width: 100%;
+
+    flex-wrap: nowrap;
+
+    overflow-x: auto;
+
+    padding-bottom: 8px;
+  }
+
+
+  .galeria-filtros button {
+    flex-shrink: 0;
+  }
+
+
+  .galeria-grid {
+    display: grid;
+
+    grid-template-columns: 1fr;
+
+    grid-auto-rows: auto;
+  }
+
+
+  .galeria-item,
+  .galeria-item-grande,
+  .galeria-item-alto,
+  .galeria-item-largo {
+    grid-column: auto;
+    grid-row: auto;
+
+    min-height: 330px;
+  }
+
+
+  .galeria-item-grande {
+    min-height: 430px;
+  }
+
+
+  .galeria-cta {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+
+  .galeria-cta > a {
+    width: 100%;
+  }
+
+
+  .galeria-footer {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * TELAS MUITO PEQUENAS
+ * ============================================================
+ */
+
+@media (max-width: 380px) {
+
+  .galeria-marca strong {
+    font-size: 0.85rem;
+  }
+
+
+  .galeria-navegacao a:first-child {
+    display: none;
+  }
+
+
+  .galeria-hero,
+  .galeria-conteudo,
+  .galeria-cta {
+    width:
+      calc(100% - 20px);
+  }
+
+
+  .galeria-placeholder {
+    padding: 20px;
+  }
+
+}
+
+
+/*
+ * ============================================================
+ * ACESSIBILIDADE
+ * ============================================================
+ */
+
+.galeria-publica a:focus-visible,
+.galeria-publica button:focus-visible {
+  outline:
+    3px solid
+    rgba(240, 0, 139, 0.4);
+
+  outline-offset: 4px;
+}
