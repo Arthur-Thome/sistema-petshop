@@ -1,0 +1,2960 @@
+/*
+ * ============================================================
+ * AGENDA PÚBLICA
+ * ============================================================
+ *
+ * Administração da disponibilidade exibida no site público.
+ *
+ * A página possui:
+ *
+ * 1. Calendário mensal;
+ * 2. Editor individual;
+ * 3. Abertura/configuração em massa;
+ * 4. Confirmação de operações destrutivas;
+ * 5. Autorização especial para Funcionário.
+ * ============================================================
+ */
+
+
+/* ============================================================
+   PÁGINA
+   ============================================================ */
+
+.agenda-publica-page {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 32px;
+  box-sizing: border-box;
+  color: #1f2937;
+}
+
+
+/* ============================================================
+   CABEÇALHO
+   ============================================================ */
+
+.agenda-publica-topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+
+.agenda-publica-eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.agenda-publica-topo h1 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  line-height: 1.08;
+}
+
+.agenda-publica-topo p {
+  max-width: 720px;
+  margin: 10px 0 0;
+  color: #6b7280;
+  line-height: 1.55;
+}
+
+.agenda-publica-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.agenda-botao-hoje,
+.agenda-botao-periodo {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.agenda-botao-hoje {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.agenda-botao-periodo {
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.agenda-botao-hoje:hover,
+.agenda-botao-periodo:hover {
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   AVISO DE FUNCIONÁRIO
+   ============================================================ */
+
+.agenda-aviso-funcionario {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+}
+
+.agenda-aviso-funcionario-icone {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: #fef3c7;
+}
+
+.agenda-aviso-funcionario strong,
+.agenda-aviso-funcionario span {
+  display: block;
+}
+
+.agenda-aviso-funcionario strong {
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+.agenda-aviso-funcionario span {
+  margin-top: 3px;
+  color: #a16207;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+   ALERTAS
+   ============================================================ */
+
+.agenda-alerta {
+  width: 100%;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.agenda-alerta-erro {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.agenda-alerta-sucesso {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.agenda-publica-page > .agenda-alerta {
+  margin-bottom: 20px;
+}
+
+
+/* ============================================================
+   CARD PRINCIPAL
+   ============================================================ */
+
+.agenda-publica-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+
+/* ============================================================
+   CALENDÁRIO
+   ============================================================ */
+
+.agenda-calendario {
+  min-width: 0;
+  padding: 24px;
+}
+
+.agenda-calendario-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.agenda-calendario-cabecalho > div:first-child > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #9ca3af;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.agenda-calendario-cabecalho h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.5rem;
+}
+
+.agenda-navegacao {
+  display: flex;
+  gap: 8px;
+}
+
+.agenda-navegacao button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.agenda-navegacao button:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+
+/* ============================================================
+   GRADE DO CALENDÁRIO
+   ============================================================ */
+
+.agenda-semana,
+.agenda-grade {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.agenda-semana {
+  margin-bottom: 8px;
+}
+
+.agenda-semana div {
+  padding: 8px 6px;
+  color: #9ca3af;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.agenda-grade {
+  gap: 7px;
+}
+
+.agenda-dia,
+.agenda-dia-vazio {
+  min-height: 112px;
+}
+
+.agenda-dia {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 12px;
+  overflow: hidden;
+  border-radius: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.agenda-dia:hover {
+  z-index: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.agenda-dia strong {
+  color: inherit;
+  font-size: 1rem;
+}
+
+.agenda-dia > span {
+  margin-top: auto;
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.82;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-dia::after {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  content: "";
+}
+
+.agenda-dia-nao-configurado {
+  border: 1px dashed #d1d5db;
+  background: #fafafa;
+  color: #6b7280;
+}
+
+.agenda-dia-nao-configurado::after {
+  border: 1px solid #9ca3af;
+  background: transparent;
+}
+
+.agenda-dia-publicado {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.agenda-dia-publicado::after {
+  background: #22c55e;
+}
+
+.agenda-dia-nao-publicado {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.agenda-dia-nao-publicado::after {
+  background: #3b82f6;
+}
+
+.agenda-dia-fechado {
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.agenda-dia-fechado::after {
+  background: #9ca3af;
+}
+
+.agenda-dia-selecionado {
+  outline: 3px solid rgba(17, 24, 39, 0.14);
+  outline-offset: 1px;
+}
+
+.agenda-carregando {
+  display: grid;
+  min-height: 450px;
+  place-items: center;
+  color: #6b7280;
+}
+
+
+/* ============================================================
+   RESUMO
+   ============================================================ */
+
+.agenda-resumo {
+  padding: 24px;
+  border-left: 1px solid #e5e7eb;
+  background: #111827;
+  color: #ffffff;
+}
+
+.agenda-resumo-eyebrow {
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.agenda-resumo h3 {
+  margin: 5px 0 0;
+  font-size: 1.35rem;
+}
+
+.agenda-resumo-destaque {
+  margin: 28px 0;
+  padding-bottom: 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.agenda-resumo-destaque strong {
+  display: block;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.agenda-resumo-destaque span {
+  display: block;
+  margin-top: 8px;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.agenda-resumo-lista {
+  display: grid;
+  gap: 13px;
+}
+
+.agenda-resumo-lista div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.agenda-resumo-lista span {
+  color: #d1d5db;
+  font-size: 0.84rem;
+}
+
+.agenda-resumo-lista strong {
+  font-size: 0.95rem;
+}
+
+.agenda-legenda {
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.agenda-legenda h4 {
+  margin: 0 0 14px;
+}
+
+.agenda-legenda div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  color: #d1d5db;
+  font-size: 0.8rem;
+}
+
+.agenda-legenda-cor {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.agenda-legenda-cor.publicado {
+  background: #22c55e;
+}
+
+.agenda-legenda-cor.aberto {
+  background: #3b82f6;
+}
+
+.agenda-legenda-cor.fechado {
+  background: #9ca3af;
+}
+
+.agenda-legenda-cor.nao-configurado {
+  border: 1px solid #9ca3af;
+  background: transparent;
+}
+
+/* ============================================================
+   EDITOR INDIVIDUAL
+   ============================================================ */
+
+.agenda-editor-overlay {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.agenda-editor {
+  display: flex;
+  width: min(560px, 100%);
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: -18px 0 50px rgba(15, 23, 42, 0.18);
+  animation: agenda-editor-entrada 0.22s ease-out;
+}
+
+@keyframes agenda-editor-entrada {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.agenda-editor-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 26px 28px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.agenda-editor-cabecalho > div > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.agenda-editor-cabecalho h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.45rem;
+  text-transform: capitalize;
+}
+
+.agenda-editor-fechar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.agenda-editor-conteudo {
+  flex: 1;
+  padding: 24px 28px 36px;
+  overflow-y: auto;
+}
+
+.agenda-editor-carregando {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  color: #6b7280;
+}
+
+.agenda-editor-bloco {
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.agenda-editor-bloco + .agenda-editor-bloco {
+  margin-top: 12px;
+}
+
+.agenda-editor-bloco-desabilitado {
+  background: #f9fafb;
+  opacity: 0.72;
+}
+
+.agenda-editor-bloco-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.agenda-editor-bloco-titulo > div > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #9ca3af;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.agenda-editor-bloco-titulo strong {
+  color: #1f2937;
+  font-size: 0.92rem;
+}
+
+.agenda-editor-bloco > p {
+  margin: 10px 0 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+
+/* SWITCH */
+
+.agenda-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 27px;
+  flex-shrink: 0;
+}
+
+.agenda-switch input {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.agenda-switch-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.agenda-switch-slider::before {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  content: "";
+  transition: transform 0.2s ease;
+}
+
+.agenda-switch input:checked + .agenda-switch-slider {
+  background: #111827;
+}
+
+.agenda-switch input:checked + .agenda-switch-slider::before {
+  transform: translateX(21px);
+}
+
+.agenda-switch input:disabled + .agenda-switch-slider {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+
+/* SEÇÕES */
+
+.agenda-editor-secao {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.agenda-editor-secao-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.agenda-editor-secao-cabecalho span {
+  display: block;
+  margin-bottom: 4px;
+  color: #9ca3af;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.agenda-editor-secao-cabecalho h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+}
+
+.agenda-editor-contador {
+  display: grid;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  place-items: center;
+  border-radius: 9px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 0.85rem;
+}
+
+
+/* HORÁRIOS */
+
+.agenda-adicionar-horario {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.agenda-adicionar-horario input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 13px;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.agenda-adicionar-horario button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #111827;
+  border-radius: 10px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agenda-adicionar-horario button:disabled,
+.agenda-adicionar-horario input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.agenda-horarios-vazio {
+  display: flex;
+  margin-top: 12px;
+  padding: 24px 18px;
+  align-items: center;
+  flex-direction: column;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  background: #fafafa;
+  text-align: center;
+}
+
+.agenda-horarios-vazio strong {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.agenda-horarios-vazio span {
+  margin-top: 4px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+.agenda-horarios-lista {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.agenda-horario-item {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 10px 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  background: #ffffff;
+}
+
+.agenda-horario-principal {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.agenda-horario-principal strong {
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.agenda-horario-principal span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.agenda-horario-disponivel {
+  border-left: 3px solid #22c55e;
+}
+
+.agenda-horario-ocupado {
+  border-left: 3px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.agenda-horario-bloqueado {
+  border-left: 3px solid #9ca3af;
+  background: #f9fafb;
+}
+
+.agenda-horario-remover {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.agenda-horario-remover:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.agenda-horario-protegido {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #fef3c7;
+}
+
+
+/* OBSERVAÇÃO */
+
+.agenda-editor-secao textarea {
+  width: 100%;
+  min-height: 105px;
+  padding: 12px 13px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.agenda-observacao-contador {
+  margin-top: 6px;
+  color: #9ca3af;
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+
+/* RODAPÉ */
+
+.agenda-editor-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 28px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.agenda-editor-cancelar,
+.agenda-editor-salvar {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agenda-editor-cancelar {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.agenda-editor-salvar {
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.agenda-editor-cancelar:disabled,
+.agenda-editor-salvar:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ============================================================
+   ABERTURA EM MASSA — OVERLAY
+   ============================================================ */
+
+.agenda-periodo-overlay {
+  position: fixed;
+  z-index: 1250;
+  inset: 0;
+  display: grid;
+  padding: 28px;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+
+/* ============================================================
+   MODAL DE PERÍODO
+   ============================================================ */
+
+.agenda-periodo-modal {
+  display: flex;
+  width: min(900px, 100%);
+  max-height: calc(100vh - 56px);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.3);
+  animation: agenda-periodo-entrada 0.2s ease-out;
+}
+
+@keyframes agenda-periodo-entrada {
+  from {
+    transform: translateY(14px) scale(0.985);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* CABEÇALHO */
+
+.agenda-periodo-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 25px 30px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #111827;
+  color: #ffffff;
+}
+
+.agenda-periodo-topo > div > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #9ca3af;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.agenda-periodo-topo h2 {
+  margin: 0;
+  font-size: 1.65rem;
+}
+
+.agenda-periodo-topo p {
+  margin: 7px 0 0;
+  color: #d1d5db;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.agenda-periodo-topo > button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+
+/* CONTEÚDO */
+
+.agenda-periodo-conteudo {
+  flex: 1;
+  padding: 26px 30px 34px;
+  overflow-y: auto;
+}
+
+.agenda-periodo-conteudo > .agenda-alerta {
+  margin-bottom: 18px;
+}
+
+
+/* RESULTADO DA OPERAÇÃO */
+
+.agenda-periodo-resultado {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 18px;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  background: #f0fdf4;
+}
+
+.agenda-periodo-resultado > strong {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+  color: #166534;
+}
+
+.agenda-periodo-resultado div {
+  padding: 10px;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.agenda-periodo-resultado span,
+.agenda-periodo-resultado b {
+  display: block;
+}
+
+.agenda-periodo-resultado span {
+  color: #6b7280;
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
+
+.agenda-periodo-resultado b {
+  margin-top: 5px;
+  color: #111827;
+  font-size: 1.15rem;
+}
+
+
+/* SEÇÕES NUMERADAS */
+
+.agenda-periodo-secao {
+  padding: 23px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.agenda-periodo-secao:first-of-type {
+  padding-top: 5px;
+}
+
+.agenda-periodo-secao:last-child {
+  border-bottom: 0;
+}
+
+.agenda-periodo-secao-titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 16px;
+}
+
+.agenda-periodo-secao-titulo > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.agenda-periodo-secao-titulo strong,
+.agenda-periodo-secao-titulo p {
+  display: block;
+}
+
+.agenda-periodo-secao-titulo strong {
+  color: #111827;
+  font-size: 0.94rem;
+}
+
+.agenda-periodo-secao-titulo p {
+  margin: 3px 0 0;
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+
+/* DATAS */
+
+.agenda-periodo-datas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-left: 45px;
+}
+
+.agenda-periodo-datas label > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #4b5563;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.agenda-periodo-datas input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+
+/* DIAS DA SEMANA */
+
+.agenda-periodo-dias {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+  padding-left: 45px;
+}
+
+.agenda-periodo-dias button {
+  min-width: 0;
+  padding: 11px 5px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.agenda-periodo-dias button strong,
+.agenda-periodo-dias button span {
+  display: block;
+}
+
+.agenda-periodo-dias button strong {
+  font-size: 0.72rem;
+}
+
+.agenda-periodo-dias button span {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 0.58rem;
+  text-overflow: ellipsis;
+}
+
+.agenda-periodo-dias button.ativo {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+
+/* ADICIONAR HORÁRIO */
+
+.agenda-periodo-adicionar {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) auto;
+  gap: 9px;
+  padding-left: 45px;
+}
+
+.agenda-periodo-adicionar input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.agenda-periodo-adicionar button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #111827;
+  border-radius: 10px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agenda-periodo-horarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-left: 45px;
+}
+
+.agenda-periodo-horarios > div {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 5px 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #f9fafb;
+}
+
+.agenda-periodo-horarios strong {
+  color: #111827;
+  font-size: 0.8rem;
+}
+
+.agenda-periodo-horarios button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.agenda-periodo-horarios button:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.agenda-periodo-vazio {
+  margin-top: 11px;
+  margin-left: 45px;
+  padding: 14px;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 0.78rem;
+}
+
+
+/* TRATAMENTO DE EXISTENTES */
+
+.agenda-periodo-tratamentos {
+  display: grid;
+  gap: 8px;
+  padding-left: 45px;
+}
+
+.agenda-periodo-tratamentos label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.agenda-periodo-tratamentos label.selecionado {
+  border-color: #111827;
+  background: #f9fafb;
+}
+
+.agenda-periodo-tratamentos input {
+  margin-top: 3px;
+  accent-color: #111827;
+}
+
+.agenda-periodo-tratamentos strong,
+.agenda-periodo-tratamentos span {
+  display: block;
+}
+
+.agenda-periodo-tratamentos strong {
+  color: #111827;
+  font-size: 0.84rem;
+}
+
+.agenda-periodo-tratamentos span {
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+
+/* AVISO DE SUBSTITUIÇÃO */
+
+.agenda-periodo-aviso-destrutivo {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  margin-left: 45px;
+  padding: 13px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+}
+
+.agenda-periodo-aviso-destrutivo strong {
+  flex-shrink: 0;
+  color: #b91c1c;
+  font-size: 0.78rem;
+}
+
+.agenda-periodo-aviso-destrutivo span {
+  color: #991b1b;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+
+/* PUBLICAÇÃO */
+
+.agenda-periodo-publicacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-left: 45px;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+  background: #f9fafb;
+}
+
+.agenda-periodo-publicacao strong,
+.agenda-periodo-publicacao > div > span {
+  display: block;
+}
+
+.agenda-periodo-publicacao strong {
+  color: #111827;
+  font-size: 0.84rem;
+}
+
+.agenda-periodo-publicacao > div > span {
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 0.74rem;
+}
+
+
+/* OBSERVAÇÃO */
+
+.agenda-periodo-secao > textarea {
+  width: calc(100% - 45px);
+  min-height: 90px;
+  margin-left: 45px;
+  padding: 12px 13px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.agenda-periodo-secao > .agenda-observacao-contador {
+  margin-left: 45px;
+}
+
+
+/* RODAPÉ DO MODAL */
+
+.agenda-periodo-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 17px 30px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+/* ============================================================
+   CONFIRMAÇÃO DE SUBSTITUIÇÃO
+   ============================================================ */
+
+.agenda-confirmacao-overlay {
+  position: fixed;
+  z-index: 1280;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(3px);
+}
+
+.agenda-confirmacao-modal {
+  width: min(470px, 100%);
+  padding: 30px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.3);
+}
+
+.agenda-confirmacao-icone {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  margin-bottom: 17px;
+  place-items: center;
+  border-radius: 13px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.agenda-confirmacao-modal > span {
+  color: #dc2626;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.agenda-confirmacao-modal h2 {
+  margin: 6px 0 13px;
+  color: #111827;
+  font-size: 1.45rem;
+}
+
+.agenda-confirmacao-modal p {
+  margin: 8px 0;
+  color: #6b7280;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.agenda-confirmacao-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.agenda-confirmacao-acoes button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agenda-confirmacao-acoes .agenda-confirmacao-substituir {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+
+/* ============================================================
+   AUTORIZAÇÃO
+   ============================================================ */
+
+.agenda-autorizacao-overlay {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(3px);
+}
+
+.agenda-autorizacao-modal {
+  width: min(440px, 100%);
+  padding: 30px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.agenda-autorizacao-icone {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  place-items: center;
+  border-radius: 13px;
+  background: #f3f4f6;
+  font-size: 1.25rem;
+}
+
+.agenda-autorizacao-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #9ca3af;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.agenda-autorizacao-modal h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.45rem;
+}
+
+.agenda-autorizacao-modal > p {
+  margin: 10px 0 22px;
+  color: #6b7280;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.agenda-autorizacao-modal .agenda-alerta {
+  margin-bottom: 16px;
+}
+
+.agenda-autorizacao-campo {
+  display: block;
+}
+
+.agenda-autorizacao-campo span {
+  display: block;
+  margin-bottom: 7px;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.agenda-autorizacao-campo input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+}
+
+.agenda-autorizacao-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.agenda-autorizacao-acoes button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agenda-autorizacao-acoes .agenda-autorizacao-confirmar {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.agenda-autorizacao-acoes button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+
+/* ============================================================
+   FOCO DOS CAMPOS
+   ============================================================ */
+
+.agenda-adicionar-horario input:focus,
+.agenda-editor-secao textarea:focus,
+.agenda-periodo-datas input:focus,
+.agenda-periodo-adicionar input:focus,
+.agenda-periodo-secao > textarea:focus,
+.agenda-autorizacao-campo input:focus {
+  border-color: #6b7280;
+  outline: 3px solid rgba(107, 114, 128, 0.12);
+}
+
+
+/* ============================================================
+   RESPONSIVIDADE
+   ============================================================ */
+
+@media (max-width: 1250px) {
+  .agenda-publica-page {
+    padding: 26px;
+  }
+
+  .agenda-publica-card {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+
+  .agenda-dia,
+  .agenda-dia-vazio {
+    min-height: 100px;
+  }
+}
+
+
+@media (max-width: 1050px) {
+  .agenda-publica-card {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-resumo {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    border-top: 1px solid #e5e7eb;
+    border-left: 0;
+  }
+
+  .agenda-resumo-destaque {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .agenda-legenda {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+}
+
+
+@media (max-width: 800px) {
+  .agenda-publica-page {
+    padding: 20px;
+  }
+
+  .agenda-publica-topo {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .agenda-publica-acoes {
+    width: 100%;
+  }
+
+  .agenda-publica-acoes button {
+    flex: 1;
+  }
+
+  .agenda-calendario {
+    overflow-x: auto;
+    padding: 18px;
+  }
+
+  .agenda-semana,
+  .agenda-grade {
+    min-width: 680px;
+  }
+
+  .agenda-resumo {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .agenda-legenda {
+    grid-column: 1 / -1;
+  }
+
+  .agenda-editor {
+    width: min(520px, 94vw);
+  }
+
+  .agenda-periodo-overlay {
+    padding: 16px;
+  }
+
+  .agenda-periodo-modal {
+    max-height: calc(100vh - 32px);
+  }
+
+  .agenda-periodo-resultado {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .agenda-periodo-dias {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+
+@media (max-width: 600px) {
+  .agenda-periodo-overlay {
+    padding: 0;
+  }
+
+  .agenda-periodo-modal {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .agenda-periodo-topo {
+    padding: 20px 18px;
+  }
+
+  .agenda-periodo-conteudo {
+    padding: 22px 18px 30px;
+  }
+
+  .agenda-periodo-rodape {
+    padding: 14px 18px;
+  }
+
+  .agenda-periodo-datas {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-periodo-dias {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .agenda-periodo-adicionar {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-periodo-datas,
+  .agenda-periodo-dias,
+  .agenda-periodo-adicionar,
+  .agenda-periodo-horarios,
+  .agenda-periodo-tratamentos {
+    padding-left: 0;
+  }
+
+  .agenda-periodo-vazio,
+  .agenda-periodo-aviso-destrutivo,
+  .agenda-periodo-publicacao,
+  .agenda-periodo-secao > textarea,
+  .agenda-periodo-secao > .agenda-observacao-contador {
+    margin-left: 0;
+  }
+
+  .agenda-periodo-secao > textarea {
+    width: 100%;
+  }
+
+  .agenda-periodo-resultado {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .agenda-publica-page {
+    padding: 14px;
+  }
+
+  .agenda-publica-acoes {
+    flex-direction: column;
+  }
+
+  .agenda-calendario-cabecalho {
+    align-items: flex-start;
+  }
+
+  .agenda-calendario-cabecalho h2 {
+    font-size: 1.25rem;
+  }
+
+  .agenda-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-legenda {
+    grid-column: auto;
+  }
+
+  .agenda-editor {
+    width: 100%;
+  }
+
+  .agenda-editor-cabecalho {
+    padding: 20px 18px;
+  }
+
+  .agenda-editor-conteudo {
+    padding: 20px 18px 30px;
+  }
+
+  .agenda-editor-rodape {
+    padding: 14px 18px;
+    flex-direction: column-reverse;
+  }
+
+  .agenda-adicionar-horario {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-editor-cancelar,
+  .agenda-editor-salvar {
+    width: 100%;
+  }
+
+  .agenda-confirmacao-overlay,
+  .agenda-autorizacao-overlay {
+    padding: 12px;
+  }
+
+  .agenda-confirmacao-modal,
+  .agenda-autorizacao-modal {
+    padding: 24px 20px;
+  }
+
+  .agenda-confirmacao-acoes,
+  .agenda-autorizacao-acoes {
+    flex-direction: column-reverse;
+  }
+
+  .agenda-confirmacao-acoes button,
+  .agenda-autorizacao-acoes button {
+    width: 100%;
+  }
+
+  .agenda-periodo-rodape {
+    flex-direction: column-reverse;
+  }
+
+  .agenda-periodo-rodape button {
+    width: 100%;
+  }
+
+  .agenda-periodo-resultado {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   FECHAMENTO EM MASSA
+   ============================================================
+
+   O fechamento possui identidade visual própria para deixar
+   claro que esta ação é diferente da abertura da agenda.
+
+   Apesar disso, mantém espaçamentos, tipografia, bordas e
+   comportamento compatíveis com o restante da página.
+   ============================================================ */
+
+
+/* ============================================================
+   BOTÃO FECHAR PERÍODO
+   ============================================================ */
+
+.agenda-botao-fechar-periodo {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.agenda-botao-fechar-periodo:hover {
+  transform: translateY(-1px);
+  border-color: #d97706;
+  background: #fef3c7;
+  box-shadow:
+    0 5px 14px
+    rgba(217, 119, 6, 0.12);
+}
+
+
+/* ============================================================
+   OVERLAY
+   ============================================================ */
+
+.agenda-fechamento-overlay {
+  position: fixed;
+  z-index: 1250;
+  inset: 0;
+
+  display: grid;
+  padding: 28px;
+
+  place-items: center;
+
+  background:
+    rgba(15, 23, 42, 0.68);
+
+  backdrop-filter: blur(3px);
+}
+
+
+/* ============================================================
+   MODAL PRINCIPAL
+   ============================================================ */
+
+.agenda-fechamento-modal {
+  display: flex;
+
+  width: min(820px, 100%);
+  max-height:
+    calc(100vh - 56px);
+
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius: 22px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 30px 90px
+    rgba(15, 23, 42, 0.34);
+
+  animation:
+    agenda-fechamento-entrada
+    0.2s ease-out;
+}
+
+
+@keyframes agenda-fechamento-entrada {
+  from {
+    transform:
+      translateY(16px)
+      scale(0.985);
+
+    opacity: 0;
+  }
+
+  to {
+    transform:
+      translateY(0)
+      scale(1);
+
+    opacity: 1;
+  }
+}
+
+
+/* ============================================================
+   CABEÇALHO DO FECHAMENTO
+   ============================================================ */
+
+.agenda-fechamento-topo {
+  position: relative;
+
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  padding: 26px 30px;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.08);
+
+  background:
+    linear-gradient(
+      135deg,
+      #111827 0%,
+      #1f2937 65%,
+      #292524 100%
+    );
+
+  color: #ffffff;
+}
+
+
+/*
+ * Esta pequena faixa diferencia visualmente o fechamento
+ * sem transformar todo o modal em uma tela vermelha.
+ */
+.agenda-fechamento-topo::before {
+  position: absolute;
+
+  top: 0;
+  right: 0;
+  left: 0;
+
+  height: 4px;
+
+  background: #f59e0b;
+
+  content: "";
+}
+
+
+.agenda-fechamento-topo > div > span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #fbbf24;
+
+  font-size: 0.68rem;
+  font-weight: 800;
+
+  letter-spacing: 0.13em;
+}
+
+
+.agenda-fechamento-topo h2 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 1.65rem;
+}
+
+
+.agenda-fechamento-topo p {
+  max-width: 590px;
+
+  margin: 7px 0 0;
+
+  color: #d1d5db;
+
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+
+.agenda-fechamento-topo > button {
+  display: grid;
+
+  width: 38px;
+  height: 38px;
+
+  padding: 0;
+
+  place-items: center;
+  flex-shrink: 0;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  color: #ffffff;
+
+  font-size: 1.5rem;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.agenda-fechamento-topo > button:hover {
+  border-color:
+    rgba(255, 255, 255, 0.28);
+
+  background:
+    rgba(255, 255, 255, 0.14);
+}
+
+
+.agenda-fechamento-topo > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+
+/* ============================================================
+   CONTEÚDO
+   ============================================================ */
+
+.agenda-fechamento-conteudo {
+  flex: 1;
+
+  padding: 26px 30px 34px;
+
+  overflow-y: auto;
+}
+
+
+.agenda-fechamento-conteudo >
+.agenda-alerta {
+  margin-bottom: 18px;
+}
+
+
+/* ============================================================
+   RESULTADO DO FECHAMENTO
+   ============================================================ */
+
+.agenda-fechamento-resultado {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap: 10px;
+
+  padding: 20px;
+
+  border:
+    1px solid #fde68a;
+
+  border-radius: 15px;
+
+  background: #fffbeb;
+}
+
+
+.agenda-fechamento-resultado >
+strong {
+  grid-column: 1 / -1;
+
+  margin-bottom: 4px;
+
+  color: #92400e;
+
+  font-size: 0.95rem;
+}
+
+
+.agenda-fechamento-resultado div {
+  min-width: 0;
+
+  padding: 12px;
+
+  border:
+    1px solid
+    rgba(245, 158, 11, 0.13);
+
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+
+.agenda-fechamento-resultado span,
+.agenda-fechamento-resultado b {
+  display: block;
+}
+
+
+.agenda-fechamento-resultado span {
+  color: #78716c;
+
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+
+.agenda-fechamento-resultado b {
+  margin-top: 5px;
+
+  color: #111827;
+
+  font-size: 1.18rem;
+}
+
+
+/* ============================================================
+   SEÇÕES NUMERADAS
+   ============================================================ */
+
+.agenda-fechamento-secao {
+  padding: 23px 0;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.agenda-fechamento-secao:first-child {
+  padding-top: 4px;
+}
+
+
+.agenda-fechamento-secao-titulo {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 13px;
+
+  margin-bottom: 16px;
+}
+
+
+.agenda-fechamento-secao-titulo >
+span {
+  display: grid;
+
+  width: 32px;
+  height: 32px;
+
+  place-items: center;
+  flex-shrink: 0;
+
+  border-radius: 9px;
+
+  background: #f59e0b;
+
+  color: #ffffff;
+
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+
+.agenda-fechamento-secao-titulo
+strong,
+.agenda-fechamento-secao-titulo
+p {
+  display: block;
+}
+
+
+.agenda-fechamento-secao-titulo
+strong {
+  color: #111827;
+
+  font-size: 0.94rem;
+}
+
+
+.agenda-fechamento-secao-titulo p {
+  margin: 3px 0 0;
+
+  color: #6b7280;
+
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+   DATAS
+   ============================================================ */
+
+.agenda-fechamento-datas {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 12px;
+
+  padding-left: 45px;
+}
+
+
+.agenda-fechamento-datas label >
+span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #4b5563;
+
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+
+.agenda-fechamento-datas input {
+  width: 100%;
+  min-height: 44px;
+
+  padding: 0 12px;
+
+  box-sizing: border-box;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #111827;
+
+  font: inherit;
+}
+
+
+.agenda-fechamento-datas input:focus {
+  border-color: #d97706;
+
+  outline:
+    3px solid
+    rgba(245, 158, 11, 0.12);
+}
+
+
+/* ============================================================
+   DIAS DA SEMANA
+   ============================================================ */
+
+.agenda-fechamento-dias {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  gap: 7px;
+
+  padding-left: 45px;
+}
+
+
+.agenda-fechamento-dias button {
+  min-width: 0;
+
+  padding: 11px 5px;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #6b7280;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+
+.agenda-fechamento-dias button:hover {
+  transform: translateY(-1px);
+
+  border-color: #fbbf24;
+
+  background: #fffbeb;
+}
+
+
+.agenda-fechamento-dias button strong,
+.agenda-fechamento-dias button span {
+  display: block;
+}
+
+
+.agenda-fechamento-dias button strong {
+  font-size: 0.72rem;
+}
+
+
+.agenda-fechamento-dias button span {
+  margin-top: 3px;
+
+  overflow: hidden;
+
+  font-size: 0.58rem;
+
+  text-overflow: ellipsis;
+}
+
+
+.agenda-fechamento-dias button.ativo {
+  border-color: #d97706;
+
+  background: #f59e0b;
+
+  color: #ffffff;
+}
+
+/* ============================================================
+   OBSERVAÇÃO DO FECHAMENTO
+   ============================================================ */
+
+.agenda-fechamento-secao > textarea {
+  width: calc(100% - 45px);
+  min-height: 100px;
+
+  margin-left: 45px;
+
+  padding: 12px 13px;
+
+  box-sizing: border-box;
+
+  resize: vertical;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font: inherit;
+  line-height: 1.45;
+
+  transition:
+    border-color 0.15s ease,
+    outline 0.15s ease;
+}
+
+
+.agenda-fechamento-secao > textarea:focus {
+  border-color: #d97706;
+
+  outline:
+    3px solid
+    rgba(245, 158, 11, 0.12);
+}
+
+
+.agenda-fechamento-secao >
+.agenda-observacao-contador {
+  margin-left: 45px;
+}
+
+
+/* ============================================================
+   AVISO DE PRESERVAÇÃO
+   ============================================================
+
+   Este bloco reforça uma regra importante do sistema:
+   fechar a agenda não significa cancelar o que já existe.
+   ============================================================ */
+
+.agenda-fechamento-preservacao {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 14px;
+
+  margin-top: 22px;
+
+  padding: 16px;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 13px;
+
+  background: #eff6ff;
+}
+
+
+.agenda-fechamento-preservacao-icone {
+  display: grid;
+
+  width: 42px;
+  height: 42px;
+
+  place-items: center;
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background: #dbeafe;
+
+  font-size: 1rem;
+}
+
+
+.agenda-fechamento-preservacao strong,
+.agenda-fechamento-preservacao span {
+  display: block;
+}
+
+
+.agenda-fechamento-preservacao strong {
+  color: #1e40af;
+
+  font-size: 0.86rem;
+}
+
+
+.agenda-fechamento-preservacao span {
+  margin-top: 4px;
+
+  color: #1d4ed8;
+
+  font-size: 0.77rem;
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   RODAPÉ DO FECHAMENTO
+   ============================================================ */
+
+.agenda-fechamento-rodape {
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding: 17px 30px;
+
+  border-top: 1px solid #e5e7eb;
+
+  background: #ffffff;
+}
+
+
+.agenda-fechamento-continuar {
+  min-height: 44px;
+
+  padding: 0 19px;
+
+  border: 1px solid #d97706;
+  border-radius: 10px;
+
+  background: #f59e0b;
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+
+.agenda-fechamento-continuar:hover {
+  transform: translateY(-1px);
+
+  background: #d97706;
+
+  box-shadow:
+    0 6px 16px
+    rgba(217, 119, 6, 0.2);
+}
+
+
+.agenda-fechamento-continuar:disabled {
+  transform: none;
+
+  cursor: not-allowed;
+
+  opacity: 0.6;
+
+  box-shadow: none;
+}
+
+
+/* ============================================================
+   CONFIRMAÇÃO DO FECHAMENTO
+   ============================================================
+
+   Aproveitamos a estrutura do modal de confirmação que já
+   existe, mas o fechamento recebe uma variação visual própria.
+   ============================================================ */
+
+.agenda-confirmacao-fechamento {
+  position: relative;
+
+  overflow: hidden;
+
+  border-top: 4px solid #f59e0b;
+}
+
+
+.agenda-confirmacao-fechamento
+.agenda-confirmacao-icone {
+  background: #fef3c7;
+
+  color: #b45309;
+}
+
+
+.agenda-confirmacao-fechamento >
+span {
+  color: #b45309;
+}
+
+
+.agenda-confirmacao-fechamento h2 {
+  color: #111827;
+}
+
+
+.agenda-confirmacao-acoes
+.agenda-confirmacao-fechar {
+  border-color: #b45309;
+
+  background: #b45309;
+
+  color: #ffffff;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+
+.agenda-confirmacao-acoes
+.agenda-confirmacao-fechar:hover {
+  transform: translateY(-1px);
+
+  border-color: #92400e;
+
+  background: #92400e;
+}
+
+
+/* ============================================================
+   REGRA EXPLICATIVA DA AUTORIZAÇÃO
+   ============================================================
+
+   O funcionário informa apenas a senha.
+   A identificação do Administrador/Gerente é responsabilidade
+   do backend, e não do frontend.
+   ============================================================ */
+
+.agenda-autorizacao-regra {
+  margin-bottom: 18px;
+
+  padding: 13px 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+
+  background: #f9fafb;
+}
+
+
+.agenda-autorizacao-regra strong,
+.agenda-autorizacao-regra span {
+  display: block;
+}
+
+
+.agenda-autorizacao-regra strong {
+  color: #374151;
+
+  font-size: 0.78rem;
+}
+
+
+.agenda-autorizacao-regra span {
+  margin-top: 4px;
+
+  color: #6b7280;
+
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+
+/* ============================================================
+   MELHORIAS DE INTERAÇÃO
+   ============================================================ */
+
+.agenda-botao-hoje:focus-visible,
+.agenda-botao-periodo:focus-visible,
+.agenda-botao-fechar-periodo:focus-visible,
+.agenda-fechamento-continuar:focus-visible,
+.agenda-confirmacao-acoes button:focus-visible,
+.agenda-fechamento-dias button:focus-visible {
+  outline: 3px solid rgba(245, 158, 11, 0.2);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   RESPONSIVIDADE DO FECHAMENTO
+   ============================================================ */
+
+
+/*
+ * Tablets e notebooks menores.
+ */
+@media (max-width: 800px) {
+  .agenda-fechamento-overlay {
+    padding: 16px;
+  }
+
+
+  .agenda-fechamento-modal {
+    max-height:
+      calc(100vh - 32px);
+  }
+
+
+  .agenda-fechamento-resultado {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+
+  .agenda-fechamento-dias {
+    grid-template-columns:
+      repeat(4, 1fr);
+  }
+}
+
+
+/*
+ * Celulares.
+ *
+ * Assim como o modal de abertura, o fechamento passa a ocupar
+ * toda a tela para não desperdiçar espaço com margens externas.
+ */
+@media (max-width: 600px) {
+  .agenda-fechamento-overlay {
+    padding: 0;
+  }
+
+
+  .agenda-fechamento-modal {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+
+    border: 0;
+    border-radius: 0;
+  }
+
+
+  .agenda-fechamento-topo {
+    padding: 20px 18px;
+  }
+
+
+  .agenda-fechamento-topo h2 {
+    font-size: 1.45rem;
+  }
+
+
+  .agenda-fechamento-conteudo {
+    padding: 22px 18px 30px;
+  }
+
+
+  .agenda-fechamento-rodape {
+    padding: 14px 18px;
+  }
+
+
+  .agenda-fechamento-datas {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agenda-fechamento-dias {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+
+  /*
+   * Retiramos o recuo lateral usado no desktop para aproveitar
+   * toda a largura disponível no celular.
+   */
+  .agenda-fechamento-datas,
+  .agenda-fechamento-dias {
+    padding-left: 0;
+  }
+
+
+  .agenda-fechamento-secao >
+  textarea,
+  .agenda-fechamento-secao >
+  .agenda-observacao-contador {
+    margin-left: 0;
+  }
+
+
+  .agenda-fechamento-secao >
+  textarea {
+    width: 100%;
+  }
+
+
+  .agenda-fechamento-resultado {
+    grid-template-columns:
+      1fr 1fr;
+  }
+}
+
+
+/*
+ * Celulares pequenos.
+ */
+@media (max-width: 520px) {
+  /*
+   * Agora existem três ações no cabeçalho:
+   * Hoje, Fechar período e Abrir período.
+   *
+   * O CSS anterior já transforma o container em coluna.
+   * Garantimos aqui que todos ocupem a largura disponível.
+   */
+  .agenda-publica-acoes
+  .agenda-botao-hoje,
+  .agenda-publica-acoes
+  .agenda-botao-fechar-periodo,
+  .agenda-publica-acoes
+  .agenda-botao-periodo {
+    width: 100%;
+  }
+
+
+  .agenda-fechamento-rodape {
+    flex-direction: column-reverse;
+  }
+
+
+  .agenda-fechamento-rodape button {
+    width: 100%;
+  }
+
+
+  .agenda-fechamento-resultado {
+    grid-template-columns: 1fr;
+  }
+
+
+  .agenda-fechamento-preservacao {
+    gap: 11px;
+
+    padding: 14px;
+  }
+
+
+  .agenda-confirmacao-fechamento {
+    width: 100%;
+  }
+}
+
+
+/*
+ * Telas extremamente pequenas.
+ */
+@media (max-width: 380px) {
+  .agenda-fechamento-topo {
+    gap: 12px;
+
+    padding:
+      18px 14px;
+  }
+
+
+  .agenda-fechamento-conteudo {
+    padding:
+      18px 14px
+      26px;
+  }
+
+
+  .agenda-fechamento-rodape {
+    padding:
+      12px 14px;
+  }
+
+
+  .agenda-fechamento-dias {
+    gap: 6px;
+  }
+
+
+  .agenda-fechamento-dias button {
+    padding:
+      10px 4px;
+  }
+
+
+  .agenda-fechamento-secao-titulo {
+    gap: 10px;
+  }
+
+
+  .agenda-fechamento-secao-titulo >
+  span {
+    width: 29px;
+    height: 29px;
+  }
+}

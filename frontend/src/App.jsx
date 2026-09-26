@@ -53,15 +53,39 @@ import GerenciarUsuario from "./pages/GerenciarUsuario";
 import HistoricoEstoque from "./pages/HistoricoEstoque";
 import PagamentosPendentes from "./pages/PagamentosPendentes";
 import RotaAdministrativo from "./components/RotaAdministrativo";
+
+/*
+ * Site público da Amores Pet.
+ *
+ * Estas páginas não exigem autenticação porque fazem
+ * parte da área acessível aos clientes.
+ */
 import HomePublica from "./public-pages/HomePublica";
 import AgendamentoPublico from "./public-pages/AgendamentoPublico";
 import GaleriaPublica from "./public-pages/GaleriaPublica";
+
+/*
+ * Administração da Agenda Pública.
+ *
+ * Diferentemente das páginas protegidas por
+ * RotaAdministrativo, esta tela pode ser acessada também
+ * pelo Funcionário.
+ *
+ * A autorização adicional exigida do Funcionário ocorre
+ * no momento de alterar a agenda e é validada novamente
+ * pelo backend.
+ */
+import AgendaPublica from "./pages/AgendaPublica";
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* ===================================================
+            SITE PÚBLICO
+            =================================================== */}
 
         <Route
           path="/"
@@ -77,6 +101,11 @@ function App() {
           path="/galeria"
           element={<GaleriaPublica />}
         />
+
+
+        {/* ===================================================
+            AUTENTICAÇÃO
+            =================================================== */}
 
         <Route
           path="/login"
@@ -94,6 +123,10 @@ function App() {
         />
 
 
+        {/* ===================================================
+            ÁREA INTERNA PROTEGIDA
+            =================================================== */}
+
         <Route
           element={
             <RotaProtegida>
@@ -107,6 +140,10 @@ function App() {
             element={<Dashboard />}
           />
 
+
+          {/* =================================================
+              TUTORES
+              ================================================= */}
 
           <Route
             path="/tutores"
@@ -129,26 +166,34 @@ function App() {
           />
 
 
+          {/* =================================================
+              PETS
+              ================================================= */}
+
           <Route
-            path="pets"
+            path="/pets"
             element={<Pets />}
           />
 
           <Route
-            path="pets/novo"
+            path="/pets/novo"
             element={<FormularioPet />}
           />
 
           <Route
-            path="pets/:id"
+            path="/pets/:id"
             element={<DetalhesPet />}
           />
 
           <Route
-            path="pets/:id/editar"
+            path="/pets/:id/editar"
             element={<FormularioPet />}
           />
 
+
+          {/* =================================================
+              CRECHE
+              ================================================= */}
 
           <Route
             path="/creche"
@@ -156,20 +201,24 @@ function App() {
           />
 
           <Route
-            path="creche/entrada"
+            path="/creche/entrada"
             element={<EntradaCreche />}
           />
 
           <Route
-            path="creche/:id/saida"
+            path="/creche/:id/saida"
             element={<SaidaCreche />}
           />
 
           <Route
-            path="creche/historico"
+            path="/creche/historico"
             element={<HistoricoCreche />}
           />
 
+
+          {/* =================================================
+              HOTEL
+              ================================================= */}
 
           <Route
             path="/hotel"
@@ -177,43 +226,48 @@ function App() {
           />
 
           <Route
-            path="hotel/nova-reserva"
+            path="/hotel/nova-reserva"
             element={<NovaReservaHotel />}
           />
 
           <Route
-            path="hotel/:id/checkin"
+            path="/hotel/:id/checkin"
             element={<CheckinHotel />}
           />
 
           <Route
-            path="hotel/:id/checkout"
+            path="/hotel/:id/checkout"
             element={<CheckoutHotel />}
           />
 
           <Route
-            path="hotel/:id/cancelar"
+            path="/hotel/:id/cancelar"
             element={<CancelarReservaHotel />}
           />
 
           <Route
-            path="hotel/historico"
+            path="/hotel/historico"
             element={<HistoricoHotel />}
           />
 
           <Route
-            path="hotel/:id"
+            path="/hotel/:id"
             element={<DetalhesHotel />}
           />
 
 
-          {/*
-           * "Atendimentos" é o novo endereço público do módulo.
-           *
-           * Os nomes internos dos componentes permanecem
-           * temporariamente como BanhoTosa para que a migração
-           * possa ser realizada e testada em etapas.
-           */}
+          {/* =================================================
+              ATENDIMENTOS
+              =================================================
+
+              "Atendimentos" é o novo endereço público do
+              antigo módulo Banho e Tosa.
+
+              Os nomes internos dos componentes permanecem
+              temporariamente como BanhoTosa enquanto a
+              migração é realizada de forma gradual.
+          */}
+
           <Route
             path="/atendimentos"
             element={<BanhoTosa />}
@@ -276,39 +330,67 @@ function App() {
           />
 
 
+          {/* =================================================
+              PRODUTOS
+              ================================================= */}
+
           <Route
-            path="produtos"
+            path="/produtos"
             element={<Produtos />}
           />
 
           <Route
-            path="produtos/novo"
+            path="/produtos/novo"
             element={<FormularioProduto />}
           />
 
           <Route
-            path="produtos/:id"
+            path="/produtos/:id"
             element={<DetalhesProduto />}
           />
 
           <Route
-            path="produtos/:id/movimentar"
+            path="/produtos/:id/movimentar"
             element={<MovimentarEstoque />}
           />
 
           <Route
-            path="produtos/:id/editar"
+            path="/produtos/:id/editar"
             element={<FormularioProduto />}
           />
 
 
-          {/*
-           * Área administrativa operacional.
-           *
-           * Administrador e Gerente possuem acesso.
-           * A proteção visual complementa a proteção
-           * existente nas respectivas rotas do backend.
-           */}
+          {/* =================================================
+              AGENDA PÚBLICA
+              =================================================
+
+              Os três perfis internos podem consultar esta
+              página.
+
+              Administrador e Gerente podem realizar
+              alterações diretamente.
+
+              Funcionário precisa fornecer a senha válida
+              de um Administrador ou Gerente ativo no
+              momento da alteração.
+
+              A regra de segurança definitiva permanece
+              no backend.
+          */}
+
+          <Route
+            path="/agenda-publica"
+            element={<AgendaPublica />}
+          />
+
+
+          {/* =================================================
+              ADMINISTRATIVO OPERACIONAL
+              =================================================
+
+              Administrador e Gerente possuem acesso.
+          */}
+
           <Route
             path="/administrativo/estoque"
             element={
@@ -328,12 +410,14 @@ function App() {
           />
 
 
-          {/*
-           * Administração sensível do sistema.
-           *
-           * Esta área permanece exclusiva para
-           * Administradores.
-           */}
+          {/* =================================================
+              ADMINISTRAÇÃO DO SISTEMA
+              =================================================
+
+              Usuários, segurança e auditoria permanecem
+              exclusivos do Administrador.
+          */}
+
           <Route
             path="/administracao"
             element={
@@ -390,6 +474,10 @@ function App() {
 
         </Route>
 
+
+        {/* ===================================================
+            ENDEREÇO NÃO ENCONTRADO
+            =================================================== */}
 
         <Route
           path="*"

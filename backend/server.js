@@ -32,6 +32,7 @@ const hotelRoutes = require("./src/routes/hotelRoutes");
 const banhoTosaRoutes = require("./src/routes/banhoTosaRoutes");
 const servicoRoutes = require("./src/routes/servicoRoutes");
 const auditoriaRoutes = require("./src/routes/auditoriaRoutes");
+const agendaPublicaRoutes = require("./src/routes/agendaPublicaRoutes");
 const path = require("path");
 
 const app = express();
@@ -152,6 +153,17 @@ app.use("/api/atendimentos", banhoTosaRoutes);
 app.use("/api/banho-tosa", banhoTosaRoutes);
 app.use("/api/servicos", servicoRoutes);
 app.use("/api/auditoria", auditoriaRoutes);
+/*
+ * Agenda pública.
+ *
+ * Por enquanto estamos registrando as rotas administrativas
+ * autenticadas do módulo.
+ *
+ * Mais adiante este mesmo módulo também receberá endpoints
+ * públicos de leitura de disponibilidade, sem expor as rotas
+ * administrativas.
+ */
+app.use("/api/agenda-publica", agendaPublicaRoutes);
 
 
 

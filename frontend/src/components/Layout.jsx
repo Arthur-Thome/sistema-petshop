@@ -6,12 +6,14 @@ import {
 
 import "../styles/Layout.css";
 
+
 function Layout() {
   const navigate = useNavigate();
 
   const usuario = JSON.parse(
     localStorage.getItem("usuario") || "{}"
   );
+
 
   /*
    * Administrador e Gerente podem acessar recursos
@@ -24,6 +26,7 @@ function Layout() {
     usuario.perfil === "administrador" ||
     usuario.perfil === "gerente";
 
+
   function sair() {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
@@ -33,9 +36,15 @@ function Layout() {
     });
   }
 
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
+
+        {/* =================================================
+            IDENTIDADE DO SISTEMA
+            ================================================= */}
+
         <div className="sidebar-header">
           <div className="sidebar-logo">
             🐾
@@ -43,11 +52,20 @@ function Layout() {
 
           <div>
             <h2>Pet Shop</h2>
-            <span>Sistema de Gestão</span>
+
+            <span>
+              Sistema de Gestão
+            </span>
           </div>
         </div>
 
+
+        {/* =================================================
+            MENU
+            ================================================= */}
+
         <nav className="sidebar-menu">
+
           <NavLink to="/dashboard">
             <span>▦</span>
             Dashboard
@@ -62,6 +80,11 @@ function Layout() {
             <span>🐾</span>
             Pets
           </NavLink>
+
+
+          {/* =================================================
+              ATENDIMENTOS
+              ================================================= */}
 
           <div className="menu-section">
             ATENDIMENTOS
@@ -90,6 +113,11 @@ function Layout() {
             Atendimentos
           </NavLink>
 
+
+          {/* =================================================
+              GESTÃO
+              ================================================= */}
+
           <div className="menu-section">
             GESTÃO
           </div>
@@ -104,14 +132,41 @@ function Layout() {
             Serviços
           </NavLink>
 
-          {/*
-           * O Administrativo operacional é exibido somente
-           * para Administrador e Gerente.
-           *
-           * Funcionários continuam utilizando Produtos para
-           * consulta, mas não recebem acesso ao histórico
-           * administrativo de movimentações.
-           */}
+
+          {/* =================================================
+              SITE PÚBLICO
+              =================================================
+
+              A Agenda Pública pode ser consultada por
+              Administrador, Gerente e Funcionário.
+
+              Funcionários também podem preparar alterações,
+              mas o backend exige autorização de um
+              Administrador ou Gerente ativo para efetivá-las.
+          */}
+
+          <div className="menu-section">
+            SITE PÚBLICO
+          </div>
+
+          <NavLink to="/agenda-publica">
+            <span>📅</span>
+            Agenda Pública
+          </NavLink>
+
+
+          {/* =================================================
+              ADMINISTRATIVO
+              =================================================
+
+              O Administrativo operacional é exibido somente
+              para Administrador e Gerente.
+
+              Funcionários continuam utilizando Produtos para
+              consulta, mas não recebem acesso ao histórico
+              administrativo de movimentações.
+          */}
+
           {podeAcessarAdministrativo && (
             <>
               <div className="menu-section">
@@ -130,12 +185,17 @@ function Layout() {
             </>
           )}
 
-          {/*
-           * Sistema -> Administração permanece separado.
-           *
-           * Esta área contém usuários, segurança e auditoria
-           * completa e continua exclusiva do Administrador.
-           */}
+
+          {/* =================================================
+              SISTEMA
+              =================================================
+
+              Sistema -> Administração permanece separado.
+
+              Esta área contém usuários, segurança e auditoria
+              completa e continua exclusiva do Administrador.
+          */}
+
           {usuario.perfil ===
             "administrador" && (
             <>
@@ -150,6 +210,11 @@ function Layout() {
             </>
           )}
         </nav>
+
+
+        {/* =================================================
+            USUÁRIO LOGADO
+            ================================================= */}
 
         <div className="sidebar-user">
           <div className="user-avatar">
@@ -178,11 +243,17 @@ function Layout() {
         </div>
       </aside>
 
+
+      {/* ===================================================
+          CONTEÚDO DA ROTA ATUAL
+          =================================================== */}
+
       <main className="main-content">
         <Outlet />
       </main>
     </div>
   );
 }
+
 
 export default Layout;
