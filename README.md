@@ -277,19 +277,16 @@ npm install
 
 ## 3. Criar o banco de dados
 
-No PostgreSQL, crie um banco chamado:
+Siga o [procedimento de instalação do banco](backend/src/database/README.md).
 
-```text
-sistema_petshop
-```
+O ponto de entrada `backend/src/database/schema.sql` exige `psql`, um banco
+vazio e a confirmação explícita do nome do destino. Ele executa o bootstrap
+consolidado e as correções posteriores em uma transação. Não é um atualizador
+de bancos existentes e recusa o banco protegido `sistema_petshop`.
 
-Depois execute o arquivo:
-
-```text
-backend/src/database/schema.sql
-```
-
-Esse arquivo contém a estrutura necessária para o banco de dados.
+As migrations históricas `020`–`024` já estão incorporadas ao bootstrap e não
+devem ser reaplicadas sobre uma instalação nova. A carga inicial de serviços
+é opcional; preços devem ser revisados antes do uso.
 
 ---
 
@@ -328,11 +325,23 @@ não devem ser colocadas no README nem enviadas ao GitHub.
 
 ## 5. Criar o primeiro Administrador
 
-O projeto possui o mecanismo utilizado para criação do primeiro usuário Administrador.
+Após concluir a instalação do banco, o script para criar o primeiro Administrador
+é `backend/src/scripts/criarAdmin.js`.
 
 Antes de executá-lo, configure no `.env` os dados necessários do administrador inicial.
 
 Utilize somente esse procedimento para a configuração inicial do ambiente.
+
+Com o terminal na pasta `backend`, confirme que `DB_HOST`, `DB_PORT`, `DB_NAME`
+e `DB_USER` apontam para a instalação nova antes de executar:
+
+```bash
+node src/scripts/criarAdmin.js
+```
+
+Esse script escreve no banco configurado e carrega `.env`. Não o execute contra
+o banco principal durante os testes de instalação; o teste automatizado usa
+dados fictícios e não carrega `.env`.
 
 Depois disso, novos usuários devem ser administrados através do próprio sistema.
 
@@ -466,11 +475,17 @@ npm install
 
 # Banco de dados
 
-O banco principal utilizado pelo projeto é:
+O banco da instalação atual do projeto é:
 
 ```text
 sistema_petshop
 ```
+
+Esse banco existente é protegido e não deve ser usado para testar a instalação.
+O procedimento de instalação nova usa `amores_pet_novo` como exemplo de nome.
+O `DB_NAME` da nova instalação deve corresponder exatamente ao banco novo
+criado pelo usuário, junto com o host, porta e usuário dessa instalação.
+Não reaproveite a configuração do banco atual inadvertidamente.
 
 Entre as estruturas do banco está o relacionamento:
 
