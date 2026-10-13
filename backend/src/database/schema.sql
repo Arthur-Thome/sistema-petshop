@@ -1,5 +1,5 @@
 -- Instalacao NOVA via psql. Nao e um atualizador de bancos existentes.
--- Base consolidada 024 + correcoes 025 e 026; sem reaplicar 020-024.
+-- Base consolidada 024 + correcoes 025/026 + preparacao D1 027/028; sem reaplicar 020-024.
 -- Exemplo completo em README.md deste diretorio.
 \ir confirmar_destino.sql
 BEGIN;
@@ -20,6 +20,8 @@ END $$;
 SET search_path TO public;
 \ir migrations/025_recuperacoes_senha.sql
 \ir migrations/026_unicidade_email_usuarios.sql
+\ir migrations/027_estados_confirmacao_publica.sql
+\ir migrations/028_historico_atendimentos.sql
 \ir verificar_estrutura.sql
 COMMIT;
-\echo Instalacao concluida: baseline 024 + correcoes 025 e 026.
+\echo Instalacao concluida: baseline 024 + correcoes 025/026 + preparacao D1 027/028.

@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + D1 027/028.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -10,6 +10,15 @@ DECLARE
 BEGIN
     PERFORM set_config('search_path', 'pg_catalog, public', true);
     FOR item IN SELECT * FROM (VALUES
+        ('historico_atendimentos', 'id', 'bigint', true, NULL),
+        ('historico_atendimentos', 'banho_tosa_id', 'integer', true, NULL),
+        ('historico_atendimentos', 'evento', 'character varying(40)', true, NULL),
+        ('historico_atendimentos', 'estado_anterior', 'character varying(30)', false, NULL),
+        ('historico_atendimentos', 'estado_novo', 'character varying(30)', true, NULL),
+        ('historico_atendimentos', 'usuario_id', 'integer', false, NULL),
+        ('historico_atendimentos', 'tutor_id', 'integer', false, NULL),
+        ('historico_atendimentos', 'motivo', 'text', false, NULL),
+        ('historico_atendimentos', 'criado_em', 'timestamp with time zone', true, 'CURRENT_TIMESTAMP'),
         ('agenda_publica_dias', 'id', 'integer', true, NULL),
         ('agenda_publica_dias', 'data', 'date', true, NULL),
         ('agenda_publica_dias', 'aberto', 'boolean', true, 'false'),
@@ -247,12 +256,16 @@ BEGIN
     -- PKs, UNIQUEs, todas as FKs e CHECKs da baseline. Nomes podem variar,
     -- mas a definicao, inclusive ON DELETE, precisa coincidir. Nunca a altera.
     FOR item IN SELECT * FROM (VALUES
+        ('historico_atendimentos', 'PRIMARY KEY (id)'),
+        ('historico_atendimentos', 'FOREIGN KEY (banho_tosa_id) REFERENCES banho_tosa(id) ON DELETE RESTRICT'),
+        ('historico_atendimentos', 'FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT'),
+        ('historico_atendimentos', 'FOREIGN KEY (tutor_id) REFERENCES tutores(id) ON DELETE RESTRICT'),
         ('agenda_publica_dias', 'UNIQUE (data)'),
         ('agenda_publica_dias', 'PRIMARY KEY (id)'),
         ('agenda_publica_dias', 'FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL'),
         ('agenda_publica_dias', 'FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL'),
         ('agenda_publica_horarios', 'PRIMARY KEY (id)'),
-        ('agenda_publica_horarios', 'CHECK (((status)::text = ANY (ARRAY[(''DISPONIVEL''::character varying)::text, (''OCUPADO''::character varying)::text, (''BLOQUEADO''::character varying)::text])))'),
+        ('agenda_publica_horarios', 'CHECK (((status)::text = ANY (ARRAY[(''DISPONIVEL''::character varying)::text, (''OCUPADO''::character varying)::text, (''BLOQUEADO''::character varying)::text, (''RESERVADO''::character varying)::text])))'),
         ('agenda_publica_horarios', 'FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL'),
         ('agenda_publica_horarios', 'FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL'),
         ('agenda_publica_horarios', 'FOREIGN KEY (agenda_dia_id) REFERENCES agenda_publica_dias(id) ON DELETE CASCADE'),
@@ -265,7 +278,7 @@ BEGIN
         ('agenda_publica_operacoes', 'FOREIGN KEY (executado_por) REFERENCES usuarios(id)'),
         ('banho_tosa', 'PRIMARY KEY (id)'),
         ('banho_tosa', 'CHECK (((origem)::text = ANY (ARRAY[(''INTERNO''::character varying)::text, (''PUBLICO''::character varying)::text])))'),
-        ('banho_tosa', 'CHECK (((status)::text = ANY (ARRAY[(''AGENDADO''::character varying)::text, (''EM_ATENDIMENTO''::character varying)::text, (''FINALIZADO''::character varying)::text, (''CANCELADO''::character varying)::text])))'),
+        ('banho_tosa', 'CHECK (((status)::text = ANY (ARRAY[(''AGENDADO''::character varying)::text, (''EM_ATENDIMENTO''::character varying)::text, (''FINALIZADO''::character varying)::text, (''CANCELADO''::character varying)::text, (''AGUARDANDO_CONFIRMACAO''::character varying)::text, (''RECUSADO''::character varying)::text])))'),
         ('banho_tosa', 'FOREIGN KEY (agenda_publica_horario_id) REFERENCES agenda_publica_horarios(id) ON DELETE RESTRICT'),
         ('banho_tosa', 'FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE RESTRICT'),
         ('banho_tosa', 'FOREIGN KEY (usuario_cancelamento_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
@@ -370,5 +383,17 @@ BEGIN
             RAISE EXCEPTION 'Indice unico essencial ausente/incompativel em %: %', item.tabela, item.definicao;
         END IF;
     END LOOP;
+    FOR item IN SELECT unnest(ARRAY['chk_historico_atendimento_ator',
+        'chk_historico_atendimento_motivo', 'chk_historico_atendimento_transicao']) AS nome LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.historico_atendimentos'::regclass
+            AND conname = item.nome AND contype = 'c' AND convalidated) THEN
+            RAISE EXCEPTION 'Constraint essencial do historico ausente: %', item.nome;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indrelid = 'public.historico_atendimentos'::regclass
+        AND indisvalid AND indisready AND indpred IS NULL
+        AND split_part(pg_get_indexdef(indexrelid), ' USING btree ', 2) = '(banho_tosa_id, criado_em, id)') THEN
+        RAISE EXCEPTION 'Indice do historico ausente';
+    END IF;
 END $$;
-SELECT 'Contrato da instalacao nova validado: 19 tabelas, tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
+SELECT 'Contrato da instalacao nova validado: 20 tabelas, tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;

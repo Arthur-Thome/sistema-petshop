@@ -3,23 +3,39 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const { spawnSync, spawn } = require('node:child_process');
 
 const options = {};
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i];
-  if (!['--host', '--port', '--user', '--database', '--data-directory', '--psql'].includes(key) || !process.argv[i + 1]) {
-    throw new Error('Use --host IP_LOOPBACK --port PORT --user USUARIO --database sistema_petshop_teste_instalacao --data-directory DIRETORIO_DO_CLUSTER [--psql CAMINHO]');
+  if (!['--host', '--port', '--user', '--database', '--data-directory', '--psql', '--pg-ctl'].includes(key) || !process.argv[i + 1]) {
+    throw new Error('Use --host IP_LOOPBACK --port PORT --user USUARIO --database sistema_petshop_teste_instalacao --data-directory DIRETORIO_TEMPORARIO --pg-ctl CAMINHO [--psql CAMINHO]');
   }
   options[key.slice(2)] = process.argv[i + 1];
 }
 for (const key of ['host', 'port', 'user', 'database', 'data-directory']) assert.ok(options[key], `Informe --${key}`);
+assert.ok(options['pg-ctl'] && path.isAbsolute(options['pg-ctl']), 'Informe --pg-ctl com caminho absoluto');
 assert.equal(options.database, 'sistema_petshop_teste_instalacao', 'Destino recusado: somente o banco de testes e permitido');
 assert.match(options.port, /^\d+$/);
+assert.notEqual(Number(options.port), 5432, 'Use instancia temporaria dedicada, nunca a porta padrao');
 assert.ok(Number(options.port) >= 1 && Number(options.port) <= 65535, 'Porta invalida');
 assert.ok(['127.0.0.1', '::1'].includes(options.host), 'Somente IP literal de loopback e permitido');
 assert.ok(path.isAbsolute(options['data-directory']), 'Diretorio do cluster deve ser absoluto');
+const relativeCluster = path.relative(os.tmpdir(), path.resolve(options['data-directory']));
+assert.ok(!relativeCluster.startsWith('..') && !path.isAbsolute(relativeCluster) && /^amores-pet-test-[a-f0-9]{32}[\\/]data$/.test(relativeCluster), 'Cluster temporario exclusivo obrigatorio');
 const clusterDirectory = options['data-directory'].replaceAll('\\', '/').replace(/\/$/, '');
+// Comprova localmente o processo PostgreSQL e o listener ANTES de invocar psql.
+// pg_ctl status consulta apenas o PID file do cluster explicitamente indicado.
+const statusCluster = spawnSync(options['pg-ctl'], ['-D', options['data-directory'], 'status'],
+  { encoding: 'utf8', windowsHide: true, timeout: 3000 });
+assert.ifError(statusCluster.error);
+assert.equal(statusCluster.status, 0, 'pg_ctl nao comprovou servidor ativo neste cluster');
+const linhasPid = fs.readFileSync(path.join(options['data-directory'], 'postmaster.pid'), 'utf8').split(/\r?\n/);
+assert.ok(Number.isSafeInteger(Number(linhasPid[0])) && Number(linhasPid[0]) > 0, 'PID PostgreSQL invalido');
+assert.equal(path.resolve(linhasPid[1] || ''), path.resolve(options['data-directory']), 'Cluster indicado difere do postmaster.pid');
+assert.equal(Number(linhasPid[3]), Number(options.port), 'Porta do processo PostgreSQL diverge da porta informada');
+assert.ok(String(linhasPid[5] || '').split(',').map(value => value.trim()).includes(options.host), 'Listener nao esta limitado ao loopback solicitado');
 const directory = path.resolve(__dirname, '..');
 const args = ['-X', '-w', '-h', options.host, '-p', options.port, '-U', options.user,
   '-d', options.database, '-v', 'ON_ERROR_STOP=1', '-v', `banco_confirmado=${options.database}`,
@@ -39,7 +55,8 @@ SELECT current_database() = :'banco_confirmado'
   AND inet_server_addr() = :'host_confirmado'::inet
   AND inet_server_port() = :'porta_confirmada'::integer
   AND replace(current_setting('data_directory'), chr(92), '/') = :'diretorio_confirmado'
-  AND current_user = :'usuario_confirmado' AS instancia_correta \\gset
+  AND current_user = :'usuario_confirmado'
+  AND NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'sistema_petshop') AS instancia_correta \\gset
 \\if :instancia_correta
 \\else
   DO $$ BEGIN RAISE EXCEPTION 'Instancia de testes divergente; nenhuma escrita autorizada'; END $$;
@@ -71,6 +88,8 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
+const preparacaoD1 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n';
+
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
 console.log(psql(guard + empty).trim());
 console.log(`Destino confirmado: ${options.database}, ${options.host}:${options.port}`);
@@ -87,7 +106,8 @@ for (const [extra, error] of [
   [['--database', 'sistema_petshop'], /Destino recusado/],
   [['--host', '192.0.2.1'], /Somente IP literal/],
   [['--port', '70000'], /Porta invalida/],
-  [['--data-directory', path.join(options['data-directory'], 'cluster_errado')], /Instancia de testes divergente/],
+  [['--data-directory', path.join(options['data-directory'], 'cluster_errado')], /Cluster temporario exclusivo/],
+  [['--pg-ctl', 'relativo.exe'], /caminho absoluto/],
 ]) {
   const result = subprocess(extra);
   assert.ok(result.status !== 0 && result.status !== null, result.stdout + result.stderr);
@@ -135,7 +155,7 @@ CREATE TABLE public.recuperacoes_senha (
  token_hash varchar(255) NOT NULL UNIQUE, expira_em timestamp NOT NULL, utilizado_em timestamp DEFAULT NULL,
  criado_em timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, extra text NOT NULL DEFAULT 'permitido'
 );
-` + corrections + '\\ir verificar_estrutura.sql\nROLLBACK;\n');
+` + corrections + preparacaoD1 + '\\ir verificar_estrutura.sql\nROLLBACK;\n');
   psql(guard + empty);
   console.log(`PASS: 025 aceita identity ${identity}, default NULL e coluna extra com default`);
 }
@@ -148,7 +168,7 @@ console.log('PASS: duplicidade de email interrompe a correcao');
 
 psql(guard + 'BEGIN;\n' + baseline +
   "INSERT INTO usuarios (nome,email,senha_hash) VALUES ('Preservar','preservar@example.invalid','hash-original');\n" +
-  corrections + corrections + `
+  corrections + corrections + preparacaoD1 + `
 DO $$ BEGIN
   IF (SELECT count(*) FROM usuarios) <> 1 OR NOT EXISTS (
     SELECT 1 FROM usuarios WHERE nome = 'Preservar' AND senha_hash = 'hash-original'
@@ -160,6 +180,25 @@ ROLLBACK;
 `);
 psql(guard + empty);
 console.log('PASS: baseline antiga + correcoes repetidas preservam registro sintetico');
+
+// Valida que 027/028 ampliam os estados sem reclassificar atendimentos legados.
+psql(guard + 'BEGIN;\n' + baseline + `
+INSERT INTO tutores (nome, telefone, endereco) VALUES ('Tutor legado', '000', 'Teste') RETURNING id \\gset tutor_
+INSERT INTO pets (tutor_id, nome, especie) VALUES (:tutor_id, 'Pet legado', 'cao') RETURNING id \\gset pet_
+INSERT INTO banho_tosa (pet_id, agendado_para, origem, status)
+VALUES (:pet_id, '2099-01-01 10:00', 'INTERNO', 'AGENDADO') RETURNING id \\gset atendimento_
+` + corrections + preparacaoD1 + `
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM banho_tosa b JOIN pets p ON p.id = b.pet_id
+      WHERE p.nome = 'Pet legado' AND b.origem = 'INTERNO' AND b.status = 'AGENDADO') THEN
+    RAISE EXCEPTION 'Atendimento legado foi reclassificado pela migration D1';
+  END IF;
+END $$;
+\\ir verificar_estrutura.sql
+ROLLBACK;
+`);
+psql(guard + empty);
+console.log('PASS: 027/028 preservam atendimento interno legado AGENDADO e default');
 
 psql('\\ir schema.sql\n');
 console.log('PASS: instalacao nova completa');
@@ -207,6 +246,7 @@ for (const [label, mutation, expected] of [
   ['CHECK de estoque ausente', 'ALTER TABLE produtos DROP CONSTRAINT chk_produto_quantidade;', /Constraint essencial/],
   ['FK de pet ausente', 'ALTER TABLE pets DROP CONSTRAINT fk_pets_tutor;', /Constraint essencial/],
   ['unicidade de dia-horario ausente', 'ALTER TABLE agenda_publica_horarios DROP CONSTRAINT uq_agenda_publica_horario;', /Constraint essencial/],
+  ['CHECK D1 ausente', 'ALTER TABLE historico_atendimentos DROP CONSTRAINT chk_historico_atendimento_motivo;', /Constraint essencial/],
   ['indice de slot ausente', 'DROP INDEX public.idx_banho_tosa_agenda_publica_horario;', /Indice unico essencial/],
 ]) {
   console.log(`Destino confirmado para mutacao reversivel (${label}): ${options.host}:${options.port}/${options.database}`);
@@ -286,7 +326,7 @@ async function testarLockTimeout() {
   try {
     await ready;
     const start = Date.now();
-    psql(guard + 'BEGIN; CREATE TABLE public.rollback_timeout_teste(id integer);\n\\ir migrations/026_unicidade_email_usuarios.sql\nCOMMIT;\n', /lock timeout|tempo limite.*bloqueio/i);
+    psql(guard + 'BEGIN; CREATE TABLE public.rollback_timeout_teste(id integer);\n\\ir migrations/026_unicidade_email_usuarios.sql\nCOMMIT;\n', /lock timeout|tempo (?:limite|de espera).*bloqueio|timeout.*bloqueio/i);
     assert.ok(Date.now() - start < 12000, 'Lock esperou alem do limite previsto');
   } finally {
     await exited;

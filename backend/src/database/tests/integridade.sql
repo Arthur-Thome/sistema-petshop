@@ -103,5 +103,55 @@ BEGIN
     VALUES (pet, '2099-02-01', '2099-02-02', usuario);
     INSERT INTO logs (usuario_id, acao, entidade, registro_id) VALUES (usuario, 'TESTE', 'pets', pet);
     RAISE NOTICE 'PASS: sessoes publicas, verificacoes, creche, hotel e logs';
+
+    -- D1: novos estados nao alteram o default dos atendimentos antigos.
+    INSERT INTO banho_tosa (pet_id, agendado_para, origem, status)
+    VALUES (pet, '2099-01-01 10:15', 'PUBLICO', 'AGUARDANDO_CONFIRMACAO')
+    RETURNING id INTO atendimento;
+    UPDATE agenda_publica_horarios SET status = 'RESERVADO' WHERE id = horario_id_teste;
+    INSERT INTO historico_atendimentos
+        (banho_tosa_id, evento, estado_novo, tutor_id)
+    VALUES (atendimento, 'SOLICITACAO_CRIADA', 'AGUARDANDO_CONFIRMACAO', tutor);
+    BEGIN
+        INSERT INTO historico_atendimentos
+            (banho_tosa_id, evento, estado_anterior, estado_novo, usuario_id, motivo)
+        VALUES (atendimento, 'SOLICITACAO_RECUSADA', 'AGUARDANDO_CONFIRMACAO', 'RECUSADO', usuario, E' \n\t');
+        RAISE EXCEPTION 'FALHOU: motivo vazio aceito';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+    BEGIN
+        INSERT INTO historico_atendimentos
+            (banho_tosa_id, evento, estado_anterior, estado_novo, usuario_id, tutor_id)
+        VALUES (atendimento, 'SOLICITACAO_CONFIRMADA', 'AGUARDANDO_CONFIRMACAO', 'AGENDADO', usuario, tutor);
+        RAISE EXCEPTION 'FALHOU: ator ambiguo aceito';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+    BEGIN
+        INSERT INTO historico_atendimentos
+            (banho_tosa_id, evento, estado_novo, usuario_id)
+        VALUES (atendimento, 'SOLICITACAO_CONFIRMADA', 'AGENDADO', usuario);
+        RAISE EXCEPTION 'FALHOU: confirmacao sem estado anterior aceita';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+    BEGIN
+        INSERT INTO historico_atendimentos
+            (banho_tosa_id, evento, estado_anterior, estado_novo, usuario_id)
+        VALUES (atendimento, 'EVENTO_INVALIDO', 'AGUARDANDO_CONFIRMACAO', 'AGENDADO', usuario);
+        RAISE EXCEPTION 'FALHOU: evento desconhecido aceito';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+    UPDATE banho_tosa SET status = 'RECUSADO' WHERE id = atendimento;
+    INSERT INTO historico_atendimentos
+        (banho_tosa_id, evento, estado_anterior, estado_novo, usuario_id, motivo)
+    VALUES (atendimento, 'SOLICITACAO_RECUSADA', 'AGUARDANDO_CONFIRMACAO', 'RECUSADO', usuario, 'Teste D1');
+    IF EXISTS (SELECT 1 FROM pagamentos_banho_tosa WHERE banho_tosa_id = atendimento) THEN
+        RAISE EXCEPTION 'FALHOU: solicitacao recebeu cobranca automatica';
+    END IF;
+    BEGIN
+        DELETE FROM banho_tosa WHERE id = atendimento;
+        RAISE EXCEPTION 'FALHOU: atendimento com historico excluido';
+    EXCEPTION WHEN foreign_key_violation THEN NULL;
+    END;
+    RAISE NOTICE 'PASS: estados D1, motivos, atores, transicoes e historico preservado';
 END $$;
 ROLLBACK;

@@ -13,9 +13,11 @@ Ordem fixa, sem migration runner na aplicação:
 3. Restabelecer `search_path` para `public`.
 4. `migrations/025_recuperacoes_senha.sql`.
 5. `migrations/026_unicidade_email_usuarios.sql`.
-6. `verificar_estrutura.sql` e commit da transação SQL.
+6. `migrations/027_estados_confirmacao_publica.sql`.
+7. `migrations/028_historico_atendimentos.sql`.
+8. `verificar_estrutura.sql` e commit da transação SQL.
 
-Resultado: 19 tabelas funcionais, sem dados de clientes e sem administrador.
+Resultado: 20 tabelas funcionais, sem dados de clientes e sem administrador.
 O bootstrap e as migrations 020–024 permanecem intactos. Não executar todas
 as migrations por wildcard: a base já incorpora 020–024, inclusive com alguns
 nomes de índices/constraints diferentes.
@@ -115,7 +117,7 @@ sem editar as migrations históricas.
 psql -X -h 127.0.0.1 -p 5432 -U postgres -d amores_pet_novo -v ON_ERROR_STOP=1 -f backend/src/database/verificar_estrutura.sql
 ```
 
-A verificação só lê catálogos: confere as 19 tabelas esperadas, tipos,
+A verificação só lê catálogos: confere as 20 tabelas esperadas, tipos,
 nulabilidade, defaults, sequências, PKs, FKs, CHECKs e índices únicos listados.
 As constraints esperadas precisam estar validadas e não ser adiáveis.
 Esse contrato descreve a instalação nova; não certifica equivalência com
@@ -125,7 +127,7 @@ essa conferência.
 
 ## Testes isolados
 
-Preferir uma instância temporária em porta própria, sem acesso ao cluster
+É obrigatória uma instância temporária em porta própria, sem acesso ao cluster
 principal. Docker não é necessário. As ferramentas `initdb` e `pg_ctl` do
 PostgreSQL permitem criar/iniciar um cluster separado; confira seu diretório
 e porta antes de criar o banco. Não iniciar/parar o serviço PostgreSQL principal.
@@ -137,11 +139,16 @@ com o usuário `petshop_instalacao`:
 ```sh
 psql -X -h 127.0.0.1 -p 55439 -U petshop_instalacao -d postgres -c "SELECT current_database(), inet_server_port(), current_setting('data_directory');"
 createdb -h 127.0.0.1 -p 55439 -U petshop_instalacao --maintenance-db=postgres --template=template0 --encoding=UTF8 sistema_petshop_teste_instalacao
-node backend/src/database/tests/instalacao.cjs --host 127.0.0.1 --port 55439 --user petshop_instalacao --database sistema_petshop_teste_instalacao --data-directory "C:/caminho/absoluto/do/cluster-temporario"
+node backend/src/database/tests/instalacao.cjs --host 127.0.0.1 --port 55439 --user petshop_instalacao --database sistema_petshop_teste_instalacao --data-directory "CAMINHO_TEMPORARIO/amores-pet-test-0123456789abcdef0123456789abcdef/data" --pg-ctl "C:/PostgreSQL/bin/pg_ctl.exe"
 ```
 
 Confirme a identidade da instância e o nome **antes de criar o banco**.
 Substitua `--data-directory` pelo diretório real retornado pelo servidor.
+O diretório deve ficar sob o temporário do sistema, no padrão acima; use um
+identificador exclusivo para o cluster. Antes de conectar, o teste executa o
+`pg_ctl status` informado e confere `postmaster.pid`: processo, diretório,
+porta e endereço de escuta precisam coincidir. A porta 5432 é recusada, assim
+como qualquer instância que contenha um banco chamado `sistema_petshop`.
 O teste exige todos os argumentos e confere banco, usuário, endereço, porta e
 diretório do cluster em cada sessão, antes das escritas. Só aceita IP literal
 de loopback (`127.0.0.1` ou `::1`) e não carrega `.env`.
@@ -179,3 +186,20 @@ destrutivo. Nunca limpar o banco principal.
 
 Os testes SQL exercitam integridade e compatibilidade estrutural; não substituem
 testes HTTP, envio real de e-mail ou a validação visual do sistema.
+
+## Preparacao D1 (027/028)
+
+As migrations novas ampliam estados e criam historico operacional, sem ativar
+o fluxo pendente nos controllers. Nao aplicar isoladamente esperando o novo
+comportamento HTTP. 028 e de execucao unica e recusa tabela preexistente.
+029 (reutilizacao) fica para o bloco operacional. Ver [contratos D1](../../docs/etapa21-d1.md).
+
+As migrations 027/028 e a suite estrutural atualizada ainda precisam de
+execucao em PostgreSQL temporario autorizado. A validacao local D1 usa
+Jest/Supertest sem banco; nao comprova a execucao dessas migrations.
+
+A suite de instalacao agora exige porta diferente de 5432 e cluster temporario
+em `<diretorio temporario>/amores-pet-test-<32hex>/data`, sem banco
+`sistema_petshop` na instancia. Os exemplos anteriores precisam usar esse
+cluster dedicado para testes. Nao ha limpeza automatica; testes SQL gravam
+apenas em ambiente vazio confirmado e preservam o banco instalado ao final.
