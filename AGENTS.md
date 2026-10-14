@@ -474,9 +474,11 @@ CSS deve permanecer organizado e separado conforme padrão existente.
 
 # 20. Agendamento público
 
-O agendamento realizado pelo cliente cria um agendamento oficial.
-
-Não é apenas uma solicitação aguardando aprovação administrativa, salvo se uma regra futura alterar explicitamente esse comportamento.
+O agendamento realizado pelo cliente cria uma solicitação oficial com estado
+`AGUARDANDO_CONFIRMACAO` e reserva provisoriamente o horário (`RESERVADO`).
+A equipe confirma ou recusa a solicitação; somente a confirmação transforma o
+atendimento em `AGENDADO`, o horário em `OCUPADO` e cria a cobrança pendente.
+Não apresentar solicitações pendentes como agendamentos confirmados.
 
 O cliente deve selecionar um Pet válido.
 

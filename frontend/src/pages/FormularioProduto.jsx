@@ -261,11 +261,27 @@ async function salvarProduto(event) {
     };
 
 
-    const resposta =
-      await api.post(
-        "/produtos",
-        dadosCadastro
+    let resposta;
+    try {
+      resposta = await api.post("/produtos", dadosCadastro);
+    } catch (erroDuplicidade) {
+      if (erroDuplicidade.response?.status !== 409
+        || erroDuplicidade.response?.data?.codigo !== "POSSIVEL_DUPLICIDADE") {
+        throw erroDuplicidade;
+      }
+      const semelhantes = erroDuplicidade.response.data.produtos_semelhantes || [];
+      const resumo = semelhantes.map((produto) => produto.nome + " (" + produto.unidade + ")").join("\n");
+      const continuar = window.confirm(
+        "Encontramos produto(s) ativo(s) com o mesmo nome e unidade:\n\n"
+        + resumo
+        + "\n\nCadastre mesmo assim? Nomes iguais podem ser legítimos quando representam produtos diferentes."
       );
+      if (!continuar) return;
+      resposta = await api.post("/produtos", {
+        ...dadosCadastro,
+        confirmar_possivel_duplicidade: true,
+      });
+    }
 
 
     navigate(

@@ -1,0 +1,40 @@
+.relatorios-page { width: min(100% - 36px, 1440px); margin: 0 auto; padding: 32px 0 60px; color: #25212a; }
+.relatorios-header { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 26px; }
+.relatorios-header span { color: #a32872; font-size: .72rem; font-weight: 800; letter-spacing: .14em; }
+.relatorios-header h1 { margin: 6px 0; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+.relatorios-header p { margin: 0; color: #716a76; }
+.relatorios-header button, .relatorios-filtros button { border: 0; border-radius: 10px; padding: 12px 18px; background: #a32872; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+.relatorios-header button:hover, .relatorios-filtros button:hover { background: #7e1e58; }
+.relatorios-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.relatorios-filtros { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(150px, .5fr) minmax(150px, .5fr) auto; align-items: end; gap: 14px; padding: 20px; border: 1px solid #e9e3eb; border-radius: 14px; background: white; }
+.relatorios-filtros label { display: grid; gap: 7px; color: #554e5a; font-size: .88rem; font-weight: 650; }
+.relatorios-filtros input, .relatorios-filtros select { width: 100%; min-height: 42px; box-sizing: border-box; border: 1px solid #d8d1db; border-radius: 8px; padding: 8px 10px; background: white; color: #25212a; font: inherit; }
+.relatorios-filtros button:disabled { opacity: .6; cursor: wait; }
+.relatorios-erro, .relatorios-vazio { margin: 22px 0; padding: 18px; border-radius: 12px; background: #f5f2f6; color: #5e5662; }
+.relatorios-erro { background: #fff0f0; color: #8d2525; }
+.relatorios-periodo, .relatorios-nota { margin: 20px 0 12px; color: #706875; font-size: .88rem; }
+.relatorios-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin: 18px 0 24px; }
+.relatorios-kpis article { display: grid; gap: 10px; min-height: 76px; padding: 17px; border: 1px solid #eee7ef; border-radius: 12px; background: #fff; }
+.relatorios-kpis span { color: #746c79; font-size: .82rem; }
+.relatorios-kpis strong { font-size: 1.35rem; }
+.relatorios-grafico, .relatorios-tabela { margin-top: 22px; padding: 20px; border: 1px solid #e9e3eb; border-radius: 14px; background: white; }
+.relatorios-grafico h2, .relatorios-tabela h2 { margin: 0 0 16px; font-size: 1.12rem; }
+.relatorios-barra { display: grid; grid-template-columns: minmax(130px, 220px) 1fr 50px; align-items: center; gap: 12px; margin: 11px 0; font-size: .85rem; }
+.relatorios-barra span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.relatorios-barra div { height: 10px; border-radius: 10px; background: #f1eaf1; overflow: hidden; }
+.relatorios-barra i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a32872, #e0b933); }
+.relatorios-barra b { text-align: right; }
+.relatorios-tabela > div { overflow-x: auto; }
+.relatorios-tabela table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.relatorios-tabela th, .relatorios-tabela td { padding: 11px 10px; border-bottom: 1px solid #eee8ef; text-align: left; vertical-align: top; }
+.relatorios-tabela th { color: #5f5664; white-space: nowrap; }
+@media (max-width: 850px) { .relatorios-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .relatorios-page { width: min(100% - 24px, 1440px); padding-top: 22px; } .relatorios-header { align-items: start; flex-direction: column; } .relatorios-filtros { grid-template-columns: 1fr; padding: 14px; } .relatorios-filtros button { width: 100%; } .relatorios-grafico, .relatorios-tabela { padding: 14px; } .relatorios-barra { grid-template-columns: minmax(90px, 120px) 1fr 30px; gap: 8px; } }
+
+@media print {
+  .relatorios-page { width: 100%; padding: 0; color: #111; }
+  .relatorios-acoes, .relatorios-filtros { display: none !important; }
+  .relatorios-kpis, .relatorios-grafico, .relatorios-tabela { break-inside: avoid; box-shadow: none; }
+  .relatorios-tabela > div { overflow: visible; }
+  .relatorios-tabela table { font-size: 9pt; }
+}

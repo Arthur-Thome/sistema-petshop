@@ -19,8 +19,9 @@ Ordem fixa, sem migration runner na aplicação:
 9. `migrations/030_verificacao_email_publico.sql` (D2).
 10. `migrations/031_porte_gigante_pet.sql` (D3).
 11. `migrations/032_conteudo_site_galeria.sql` (Bloco E).
+12. `migrations/033_notificacoes_internas.sql` (Etapa 23).
 
-Resultado apos Etapa 21: estrutura funcional sem dados de clientes e sem administrador. A 032 cria somente a linha singleton vazia de configuracao institucional; nao inclui conteudo comercial ou premiacoes.
+Resultado apos Etapa 23: estrutura funcional sem dados de clientes e sem administrador. A 032 cria somente a linha singleton vazia de configuracao institucional; nao inclui conteudo comercial ou premiacoes. A 033 cria notificacoes operacionais persistentes e preferencias por usuario.
 O bootstrap e as migrations 020–024 permanecem intactos. Não executar todas
 as migrations por wildcard: a base já incorpora 020–024, inclusive com alguns
 nomes de índices/constraints diferentes.
@@ -120,7 +121,7 @@ sem editar as migrations históricas.
 psql -X -h 127.0.0.1 -p 5432 -U postgres -d amores_pet_novo -v ON_ERROR_STOP=1 -f backend/src/database/verificar_estrutura.sql
 ```
 
-A verificação só lê catálogos: confere as 23 tabelas esperadas, tipos,
+A verificação só lê catálogos: confere as 25 tabelas esperadas, tipos,
 nulabilidade, defaults, sequências, PKs, FKs, CHECKs e índices únicos listados.
 As constraints esperadas precisam estar validadas e não ser adiáveis.
 Esse contrato descreve a instalação nova; não certifica equivalência com
@@ -225,3 +226,13 @@ em `<diretorio temporario>/amores-pet-test-<32hex>/data`, sem banco
 `sistema_petshop` na instancia. Os exemplos anteriores precisam usar esse
 cluster dedicado para testes. Nao ha limpeza automatica; testes SQL gravam
 apenas em ambiente vazio confirmado e preservam o banco instalado ao final.
+
+## Notificacoes internas (Etapa 23 / migration 033)
+
+A migration 033 cria notificacoes individuais para usuarios ativos e preferencias
+de aviso visual ou sonoro. Triggers gravam eventos de atendimento, hotel,
+movimentacoes/estoque baixo e cadastros na mesma transacao das alteracoes de
+negocio. A API filtra pelo usuario autenticado. Atendimentos previstos nas
+proximas 24 horas sao materializados de forma idempotente ao consultar a
+central. Em atualizacoes existentes, aplique 033 somente apos revisar 027-032;
+a aplicacao nao executa migrations na inicializacao.

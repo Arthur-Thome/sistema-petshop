@@ -27,6 +27,12 @@ BEGIN
     INSERT INTO usuarios (nome, email, senha_hash, perfil)
     VALUES ('Teste instalacao', 'instalacao@example.invalid', 'hash-ficticio', 'administrador')
     RETURNING id INTO usuario;
+    INSERT INTO preferencias_notificacao (usuario_id, modo) VALUES (usuario, 'VISUAL');
+    BEGIN
+        UPDATE preferencias_notificacao SET modo = 'AMBOS' WHERE usuario_id = usuario;
+        RAISE EXCEPTION 'FALHOU: preferencia visual e sonora simultanea aceita';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
     BEGIN
         INSERT INTO usuarios (nome, email, senha_hash)
         VALUES ('Duplicado', 'INSTALACAO@example.invalid', 'hash-ficticio');
@@ -53,6 +59,13 @@ BEGIN
     RAISE NOTICE 'PASS: usuarios, recuperacao de senha, unicidade e FK';
 
     INSERT INTO tutores (nome, telefone, endereco) VALUES ('Tutor teste', '000', 'Ficticio') RETURNING id INTO tutor;
+    IF NOT EXISTS (
+        SELECT 1 FROM notificacoes_internas
+        WHERE usuario_id = usuario AND evento = 'NOVO_CADASTRO'
+          AND titulo = 'Novo cadastro' AND destino = '/tutores'
+    ) THEN
+        RAISE EXCEPTION 'FALHOU: trigger transacional de novo tutor nao notificou';
+    END IF;
     INSERT INTO tutores (nome, telefone, endereco) VALUES ('Outro tutor', '000', 'Ficticio') RETURNING id INTO outro_tutor;
     INSERT INTO pets (tutor_id, nome, especie) VALUES (tutor, 'Pet teste', 'cao') RETURNING id INTO pet;
     INSERT INTO pet_tutores (pet_id, tutor_id, principal) VALUES (pet, tutor, true);

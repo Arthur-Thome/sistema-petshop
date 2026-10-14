@@ -1,0 +1,15 @@
+.notificacao-sino { position: relative; flex: 0 0 auto; }
+.notificacao-botao { position: relative; width: 38px; height: 38px; border: 1px solid #ded6e0; border-radius: 50%; background: #fff; color: #61274d; font-size: 1.35rem; cursor: pointer; }
+.notificacao-botao b { position: absolute; top: -6px; right: -7px; min-width: 17px; height: 17px; padding: 0 3px; border-radius: 10px; background: #ad2b72; color: white; font-size: .62rem; line-height: 17px; }
+.notificacao-painel { position: absolute; z-index: 100; right: 0; bottom: calc(100% + 10px); width: min(360px, calc(100vw - 28px)); max-height: min(70vh, 540px); overflow: auto; padding: 14px; border: 1px solid #e7dfe9; border-radius: 14px; background: white; color: #2c2630; box-shadow: 0 12px 36px #24132d26; }
+.notificacao-painel header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.notificacao-painel header strong { font-size: 1rem; }
+.notificacao-painel header button, .notificacao-painel select { border: 1px solid #ddd3df; border-radius: 7px; padding: 6px 8px; background: white; color: #574d5c; font: inherit; font-size: .75rem; }
+.notificacao-preferencia { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0; color: #645b68; font-size: .8rem; }
+.notificacao-painel ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.notificacao-painel li { border: 1px solid #eee8f0; border-radius: 9px; }
+.notificacao-painel li.nao-lida { border-left: 3px solid #ac2d76; background: #fff9fd; }
+.notificacao-painel li > button { display: grid; width: 100%; gap: 4px; padding: 10px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.notificacao-painel li span, .notificacao-painel time { color: #756b79; font-size: .78rem; }
+.notificacao-painel time { font-size: .7rem; }
+.notificacao-vazia { color: #766d79; font-size: .85rem; text-align: center; }

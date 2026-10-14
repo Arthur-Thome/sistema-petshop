@@ -1,5 +1,5 @@
 -- Instalacao NOVA via psql. Nao e um atualizador de bancos existentes.
--- Base consolidada 024 + correcoes 025/026 + Etapa 21 027-032; sem reaplicar 020-024.
+-- Base consolidada 024 + correcoes 025/026 + Etapa 21 027-033; sem reaplicar 020-024.
 -- Exemplo completo em README.md deste diretorio.
 \ir confirmar_destino.sql
 BEGIN;
@@ -26,6 +26,7 @@ SET search_path TO public;
 \ir migrations/030_verificacao_email_publico.sql
 \ir migrations/031_porte_gigante_pet.sql
 \ir migrations/032_conteudo_site_galeria.sql
+\ir migrations/033_notificacoes_internas.sql
 \ir verificar_estrutura.sql
 COMMIT;
-\echo Instalacao concluida: baseline 024 + correcoes 025/026 + Etapa 21 027-032.
+\echo Instalacao concluida: baseline 024 + correcoes 025/026 + Etapa 21 027-033.

@@ -4,7 +4,7 @@ Sistema web desenvolvido para centralizar e facilitar o gerenciamento das princi
 
 O projeto possui frontend, backend e banco de dados separados, com autenticação de usuários, controle de permissões, auditoria e diferentes módulos operacionais.
 
-> A identidade visual e o nome definitivo do estabelecimento serão configurados posteriormente.
+> O sistema utiliza a marca Amores Pet; informações comerciais e institucionais devem ser cadastradas pela equipe responsável.
 
 ---
 
@@ -58,7 +58,7 @@ O projeto possui frontend, backend e banco de dados separados, com autenticaçã
 - Cancelamento
 - Histórico de hospedagens
 
-### Banho e Tosa / Atendimentos
+### Atendimentos
 
 - Cadastro de serviços
 - Registro de atendimentos
@@ -68,7 +68,9 @@ O projeto possui frontend, backend e banco de dados separados, com autenticaçã
 - Comprovante interno
 - Informações para pagamento via PIX
 
-> A nomenclatura "Banho e Tosa" poderá ser substituída por "Atendimentos" em uma atualização futura.
+> A interface e as rotas atuais usam “Atendimentos”. Identificadores legados de
+> componentes, tabelas e APIs permanecem para compatibilidade com os dados e
+> integrações existentes.
 
 ### Administrativo
 
@@ -98,6 +100,16 @@ Inclui:
 ### Dashboard
 
 O Dashboard apresenta informações e atalhos de acordo com o perfil do usuário autenticado.
+
+### Relatórios e notificações
+
+- Relatórios operacionais de atendimentos, creche, hotel e estoque para a equipe.
+- Indicadores financeiros restritos a gerente e administrador.
+- Exportação de relatórios CSV e impressão pelo navegador para salvar em PDF.
+- Sino individual com eventos operacionais e escolha entre aviso visual ou sonoro.
+
+As rotas, os critérios dos indicadores e os limites conhecidos estão em
+`backend/docs/etapa22-relatorios.md` e `backend/docs/etapa23-funcionalidades.md`.
 
 ---
 

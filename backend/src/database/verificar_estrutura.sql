@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-032.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-033.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -440,7 +440,7 @@ BEGIN
         RAISE EXCEPTION 'Constraints D2 da tabela de limites ausentes';
     END IF;
 END $$;
-SELECT 'Contrato da instalacao nova validado: baseline e Etapa 21 D1-D6/E; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
+SELECT 'Contrato da instalacao nova validado: baseline e Etapa 21 D1-D6/E e notificacoes Etapa 23; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
 
 DO $$
 DECLARE
@@ -507,3 +507,60 @@ BEGIN
     END IF;
 END $$;
 SELECT 'Contrato estrutural E validado: conteudo, premiacoes, galeria, autoria, publicacao e metadados.' AS resultado;
+
+DO $$
+DECLARE
+    item record;
+    atual record;
+BEGIN
+    FOR item IN SELECT * FROM (VALUES
+        ('notificacoes_internas', 'id', 'bigint', true),
+        ('notificacoes_internas', 'usuario_id', 'integer', true),
+        ('notificacoes_internas', 'evento', 'character varying(60)', true),
+        ('notificacoes_internas', 'chave_dedupe', 'character varying(240)', true),
+        ('notificacoes_internas', 'titulo', 'character varying(120)', true),
+        ('notificacoes_internas', 'mensagem', 'character varying(240)', true),
+        ('notificacoes_internas', 'destino', 'character varying(180)', true),
+        ('notificacoes_internas', 'criado_em', 'timestamp with time zone', true),
+        ('notificacoes_internas', 'lida_em', 'timestamp with time zone', false),
+        ('preferencias_notificacao', 'usuario_id', 'integer', true),
+        ('preferencias_notificacao', 'modo', 'character varying(10)', true),
+        ('preferencias_notificacao', 'atualizado_em', 'timestamp with time zone', true)
+    ) AS esperado(tabela, coluna, tipo, obrigatoria)
+    LOOP
+        SELECT format_type(a.atttypid, a.atttypmod) AS tipo, a.attnotnull AS obrigatoria
+          INTO atual
+          FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+          JOIN pg_attribute a ON a.attrelid = c.oid
+         WHERE n.nspname = 'public' AND c.relname = item.tabela
+           AND a.attname = item.coluna AND a.attnum > 0 AND NOT a.attisdropped;
+        IF NOT FOUND OR atual.tipo <> item.tipo OR atual.obrigatoria <> item.obrigatoria THEN
+            RAISE EXCEPTION 'Estrutura de notificacoes ausente/incompativel: %.%', item.tabela, item.coluna;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.notificacoes_internas'::regclass
+        AND conname = 'uq_notificacoes_usuario_dedupe' AND contype = 'u' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.notificacoes_internas'::regclass
+        AND conname = 'chk_notificacoes_evento' AND contype = 'c' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.notificacoes_internas'::regclass
+        AND conname = 'chk_notificacoes_destino_local' AND contype = 'c' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.preferencias_notificacao'::regclass
+        AND conname = 'chk_preferencias_notificacao_modo' AND contype = 'c' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.notificacoes_internas'::regclass
+        AND contype = 'f' AND pg_get_constraintdef(oid, false) = 'FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE')
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.preferencias_notificacao'::regclass
+        AND contype = 'f' AND pg_get_constraintdef(oid, false) = 'FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE') THEN
+        RAISE EXCEPTION 'Constraints essenciais da migration 033 ausentes ou incompativeis';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = 'public.idx_notificacoes_usuario_recent'::regclass AND indisvalid AND indisready)
+       OR NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = 'public.idx_notificacoes_usuario_nao_lida'::regclass AND indisvalid AND indisready AND indpred IS NOT NULL) THEN
+        RAISE EXCEPTION 'Indices da migration 033 ausentes ou invalidos';
+    END IF;
+    IF (SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal
+        AND tgname IN ('trg_notificacao_atendimento', 'trg_notificacao_hotel', 'trg_notificacao_tutores',
+                       'trg_notificacao_pets', 'trg_notificacao_produtos', 'trg_notificacao_movimentacao_estoque',
+                       'trg_notificacao_estoque_baixo')) <> 7 THEN
+        RAISE EXCEPTION 'Triggers transacionais da migration 033 incompletos';
+    END IF;
+END $$;
+SELECT 'Contrato estrutural de notificacoes 033 validado: persistencia, preferencia exclusiva, deduplicacao, indices e triggers.' AS resultado;

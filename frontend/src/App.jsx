@@ -54,6 +54,7 @@ import HistoricoEstoque from "./pages/HistoricoEstoque";
 import PagamentosPendentes from "./pages/PagamentosPendentes";
 import RotaAdministrativo from "./components/RotaAdministrativo";
 import ConteudoSite from "./pages/ConteudoSite";
+import Relatorios from "./pages/Relatorios";
 
 /*
  * Site público da Amores Pet.
@@ -139,6 +140,11 @@ function App() {
           <Route
             path="/dashboard"
             element={<Dashboard />}
+          />
+
+          <Route
+            path="/relatorios"
+            element={<Relatorios />}
           />
 
 

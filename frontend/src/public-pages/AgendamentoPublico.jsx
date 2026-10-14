@@ -290,6 +290,8 @@ function mascaraCEP(valor) {
 function AgendamentoPublico() {
   const [instanteAtual, setInstanteAtual] = useState(() => new Date());
   const hoje = criarDataLocal(dataAtualSaoPaulo(instanteAtual));
+  const [buscandoCepPublico, setBuscandoCepPublico] = useState(false);
+  const [erroCepPublico, setErroCepPublico] = useState("");
 
 
   /*
@@ -1342,6 +1344,37 @@ function AgendamentoPublico() {
     setRacaPetEdicao(raca);
     setPortePetEdicao(porte);
     setErroFluxo("");
+  }
+
+
+  async function buscarCepTutorPublico() {
+    const cep = String(dadosTutor.cep || "").replace(/[^0-9]/g, "");
+    if (cep.length !== 8) {
+      setErroCepPublico("Informe um CEP com oito dígitos.");
+      return;
+    }
+
+    try {
+      setBuscandoCepPublico(true);
+      setErroCepPublico("");
+      const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      if (!resposta.ok) throw new Error("Consulta de CEP indisponível.");
+      const endereco = await resposta.json();
+      if (endereco.erro) throw new Error("CEP não encontrado.");
+
+      setDadosTutor((atual) => ({
+        ...atual,
+        cep: mascaraCEP(cep),
+        endereco: endereco.logradouro || atual.endereco,
+        bairro: endereco.bairro || atual.bairro,
+        cidade: endereco.localidade || atual.cidade,
+        estado: endereco.uf || atual.estado,
+      }));
+    } catch (erro) {
+      setErroCepPublico(erro.message || "Não foi possível consultar o CEP.");
+    } finally {
+      setBuscandoCepPublico(false);
+    }
   }
 
 
@@ -2458,6 +2491,10 @@ function AgendamentoPublico() {
                       }
                       maxLength={9}
                     />
+                    <button type="button" onClick={buscarCepTutorPublico} disabled={buscandoCepPublico}>
+                      {buscandoCepPublico ? "Consultando…" : "Buscar endereço pelo CEP"}
+                    </button>
+                    {erroCepPublico && <small role="alert">{erroCepPublico}</small>}
                   </label>
 
 

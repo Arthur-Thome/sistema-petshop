@@ -88,7 +88,7 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
-const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n';
+const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n\\ir migrations/033_notificacoes_internas.sql\n';
 
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
 console.log(psql(guard + empty).trim());
@@ -246,7 +246,8 @@ console.log('PASS: correcoes idempotentes, sem indices adicionais');
 // Alteracoes negativas somente na transacao de teste: a falha do verificador
 // desconecta o psql e reverte a mutacao. Confirma-se o snapshot depois de cada caso.
 for (const [label, mutation, expected] of [
-  ['tipo incorreto', 'ALTER TABLE produtos ALTER COLUMN quantidade_atual TYPE bigint;', /Tipo\/nulabilidade/],
+  // Evita alterar colunas usadas em evento de trigger (por exemplo estoque baixo).
+  ['tipo incorreto', 'ALTER TABLE produtos ALTER COLUMN descricao TYPE varchar(2000);', /Tipo\/nulabilidade/],
   ['nulabilidade incorreta', 'ALTER TABLE produtos ALTER COLUMN quantidade_atual DROP NOT NULL;', /Tipo\/nulabilidade/],
   ['default incorreto', "ALTER TABLE agenda_publica_horarios ALTER COLUMN status SET DEFAULT 'BLOQUEADO';", /Default incompativel/],
   ['CHECK de estoque ausente', 'ALTER TABLE produtos DROP CONSTRAINT chk_produto_quantidade;', /Constraint essencial/],

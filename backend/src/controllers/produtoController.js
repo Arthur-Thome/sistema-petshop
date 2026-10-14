@@ -226,6 +226,24 @@ async function cadastrarProduto(req, res) {
     }
 
 
+    const duplicados = await pool.query(
+      `SELECT id, nome, unidade, categoria
+       FROM produtos
+       WHERE ativo = TRUE
+         AND lower(btrim(nome)) = lower(btrim($1))
+         AND lower(btrim(unidade)) = lower(btrim($2))
+       ORDER BY id
+       LIMIT 10`,
+      [dados.nome, dados.unidade]
+    );
+    if (duplicados.rows.length && req.body?.confirmar_possivel_duplicidade !== true) {
+      return res.status(409).json({
+        codigo: "POSSIVEL_DUPLICIDADE",
+        mensagem: "Já existe produto ativo com o mesmo nome e unidade. Revise antes de cadastrar.",
+        produtos_semelhantes: duplicados.rows,
+      });
+    }
+
     const resultado =
       await pool.query(
         `

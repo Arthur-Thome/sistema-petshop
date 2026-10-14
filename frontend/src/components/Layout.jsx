@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import "../styles/Layout.css";
+import NotificacaoSino from "./NotificacaoSino";
 
 
 function Layout() {
@@ -137,6 +138,11 @@ function Layout() {
             Serviços
           </NavLink>
 
+          <NavLink to="/relatorios">
+            <span>▤</span>
+            Relatórios
+          </NavLink>
+
 
           {/* =================================================
               SITE PÚBLICO
@@ -243,6 +249,8 @@ function Layout() {
               {usuario.perfil}
             </span>
           </div>
+
+          <NotificacaoSino />
 
           <button
             className="logout-button"
