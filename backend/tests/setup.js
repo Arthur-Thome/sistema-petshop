@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'chave-ficticia-exclusiva-da-suite-http-d1';
 process.env.FRONTEND_URL = 'http://localhost:5173';
+process.env.CLIENTE_PUBLICO_PEPPER = 'pepper-ficticio-de-testes-com-mais-de-32-bytes';
 jest.mock('dotenv', () => ({ config: () => { throw new Error('dotenv proibido nos testes'); } }));
 // Nenhum teste padrao abre sockets PostgreSQL, mesmo com DB_* herdado.
 jest.mock('../src/database/connection', () => ({
@@ -9,5 +10,6 @@ jest.mock('../src/database/connection', () => ({
 }));
 jest.mock('../src/services/emailService', () => ({
   enviarEmail: jest.fn(() => { throw new Error('Envio real proibido em testes'); }),
+  enviarCodigoVerificacao: jest.fn(() => { throw new Error('Envio SMTP real proibido em testes'); }),
   verificarConexaoEmail: jest.fn(),
 }));

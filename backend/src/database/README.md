@@ -15,9 +15,10 @@ Ordem fixa, sem migration runner na aplicação:
 5. `migrations/026_unicidade_email_usuarios.sql`.
 6. `migrations/027_estados_confirmacao_publica.sql`.
 7. `migrations/028_historico_atendimentos.sql`.
-8. `verificar_estrutura.sql` e commit da transação SQL.
+8. `migrations/030_verificacao_email_publico.sql` (D2; 029 continua reservado).
+9. `verificar_estrutura.sql` e commit da transação SQL.
 
-Resultado: 20 tabelas funcionais, sem dados de clientes e sem administrador.
+Resultado apos D2: 21 tabelas funcionais, sem dados de clientes e sem administrador.
 O bootstrap e as migrations 020–024 permanecem intactos. Não executar todas
 as migrations por wildcard: a base já incorpora 020–024, inclusive com alguns
 nomes de índices/constraints diferentes.
@@ -194,9 +195,20 @@ o fluxo pendente nos controllers. Nao aplicar isoladamente esperando o novo
 comportamento HTTP. 028 e de execucao unica e recusa tabela preexistente.
 029 (reutilizacao) fica para o bloco operacional. Ver [contratos D1](../../docs/etapa21-d1.md).
 
-As migrations 027/028 e a suite estrutural atualizada ainda precisam de
-execucao em PostgreSQL temporario autorizado. A validacao local D1 usa
-Jest/Supertest sem banco; nao comprova a execucao dessas migrations.
+As migrations 027/028 foram validadas durante o D1 em PostgreSQL 17 temporario.
+O Jest/Supertest nao substitui testes HTTP contra uma instalacao real.
+
+## Identificacao publica por e-mail (D2 / 030)
+
+030 e aditiva e cria contexto/desafio/prova de cadastro e limites compartilhados
+por PostgreSQL. A instalacao nova inclui 030 depois de 028; a 029 segue reservada.
+Para upgrade, revisar e aplicar explicitamente `migrations/030_verificacao_email_publico.sql`
+com `psql -1` (transacao unica) no ambiente escolhido. A migration nao abre/fecha
+transacao propria para preservar o rollback global do `schema.sql`. A aplicacao nao
+executa migrations ao iniciar.
+Configure `CLIENTE_PUBLICO_PEPPER` (32 bytes aleatorios ou mais, igual em todas
+as instancias) e SMTP (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_SECURE`, `EMAIL_USER`,
+`EMAIL_PASSWORD`) antes de habilitar o fluxo. Ver [documentacao D2](../docs/etapa21-d2.md).
 
 A suite de instalacao agora exige porta diferente de 5432 e cluster temporario
 em `<diretorio temporario>/amores-pet-test-<32hex>/data`, sem banco

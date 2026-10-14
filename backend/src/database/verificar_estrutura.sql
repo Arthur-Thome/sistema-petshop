@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + D1 027/028.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + D1 027/028 + D2 030.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -205,14 +205,26 @@ BEGIN
         ('usuarios', 'atualizado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
         ('usuarios', 'versao_sessao', 'integer', true, '1'),
         ('verificacoes_cliente_publico', 'id', 'bigint', true, NULL),
-        ('verificacoes_cliente_publico', 'tutor_id', 'integer', true, NULL),
+        ('verificacoes_cliente_publico', 'tutor_id', 'integer', false, NULL),
         ('verificacoes_cliente_publico', 'canal', 'character varying(20)', true, NULL),
-        ('verificacoes_cliente_publico', 'destino_normalizado', 'character varying(255)', true, NULL),
+        ('verificacoes_cliente_publico', 'destino_normalizado', 'character varying(255)', false, NULL),
         ('verificacoes_cliente_publico', 'codigo_hash', 'character varying(255)', true, NULL),
         ('verificacoes_cliente_publico', 'tentativas', 'integer', true, '0'),
         ('verificacoes_cliente_publico', 'expira_em', 'timestamp without time zone', true, NULL),
         ('verificacoes_cliente_publico', 'confirmado_em', 'timestamp without time zone', false, NULL),
         ('verificacoes_cliente_publico', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
+        ('verificacoes_cliente_publico', 'contexto', 'character varying(20)', true, '''IDENTIFICACAO''::character varying'),
+        ('verificacoes_cliente_publico', 'cpf_hash', 'character varying(64)', false, NULL),
+        ('verificacoes_cliente_publico', 'desafio_hash', 'character varying(64)', false, NULL),
+        ('verificacoes_cliente_publico', 'enviado_em', 'timestamp without time zone', false, NULL),
+        ('verificacoes_cliente_publico', 'prova_cadastro_hash', 'character varying(64)', false, NULL),
+        ('verificacoes_cliente_publico', 'prova_expira_em', 'timestamp without time zone', false, NULL),
+        ('verificacoes_cliente_publico', 'cadastro_concluido_em', 'timestamp without time zone', false, NULL),
+        ('limites_cliente_publico', 'chave_hash', 'character varying(64)', true, NULL),
+        ('limites_cliente_publico', 'janela_inicio', 'timestamp with time zone', true, NULL),
+        ('limites_cliente_publico', 'quantidade', 'integer', true, NULL),
+        ('limites_cliente_publico', 'ultima_solicitacao', 'timestamp with time zone', true, NULL),
+        ('limites_cliente_publico', 'atualizado_em', 'timestamp with time zone', true, 'CURRENT_TIMESTAMP'),
         ('recuperacoes_senha', 'id', 'integer', true, NULL),
         ('recuperacoes_senha', 'usuario_id', 'integer', true, NULL),
         ('recuperacoes_senha', 'token_hash', 'character varying(255)', true, NULL),
@@ -395,5 +407,25 @@ BEGIN
         AND split_part(pg_get_indexdef(indexrelid), ' USING btree ', 2) = '(banho_tosa_id, criado_em, id)') THEN
         RAISE EXCEPTION 'Indice do historico ausente';
     END IF;
+    IF (SELECT count(*) FROM pg_constraint
+        WHERE conrelid = 'public.verificacoes_cliente_publico'::regclass
+          AND conname IN ('chk_verificacao_cliente_contexto', 'chk_verificacao_cliente_d2_cadastro')
+          AND contype = 'c' AND convalidated) <> 2 THEN
+        RAISE EXCEPTION 'Constraints D2 de contexto/desafio ausentes ou nao validadas';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
+        WHERE i.indrelid = 'public.verificacoes_cliente_publico'::regclass
+          AND c.relname = 'idx_verificacao_cliente_desafio_hash'
+          AND i.indisunique AND i.indisvalid AND i.indisready) THEN
+        RAISE EXCEPTION 'Indice unico D2 do desafio ausente';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'public.limites_cliente_publico'::regclass
+          AND conname = 'limites_cliente_publico_pkey' AND contype = 'p' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'public.limites_cliente_publico'::regclass
+          AND conname = 'limites_cliente_publico_quantidade_check' AND contype = 'c' AND convalidated) THEN
+        RAISE EXCEPTION 'Constraints D2 da tabela de limites ausentes';
+    END IF;
 END $$;
-SELECT 'Contrato da instalacao nova validado: 20 tabelas, tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
+SELECT 'Contrato da instalacao nova validado: baseline, D1 e D2; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;

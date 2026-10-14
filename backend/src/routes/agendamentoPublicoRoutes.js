@@ -8,13 +8,12 @@ const {
 );
 
 const {
-  solicitarIdentificacao,
-  confirmarIdentificacao,
-  listarPetsCliente,
   cadastrarNovoCliente,
 } = require(
   "../controllers/clientePublicoController"
 );
+const verificacaoPublica = require("../controllers/clientePublicoVerificacaoController");
+const { listarPetsCliente } = require("../controllers/clientePublicoController");
 
 const autenticarClientePublico = require(
   "../middleware/clientePublicoMiddleware"
@@ -50,26 +49,27 @@ router.get(
  */
 router.post(
   "/identificacao/solicitar",
-  solicitarIdentificacao
+  verificacaoPublica.solicitarIdentificacao
 );
 
 
 router.post(
   "/identificacao/confirmar",
-  confirmarIdentificacao
+  verificacaoPublica.confirmarIdentificacao
 );
 
 
 /*
  * Primeira utilização do portal.
  *
- * Tutor e primeiro Pet são criados juntos e o backend
- * devolve uma sessão temporária para continuar o fluxo.
+ * O e-mail precisa ser verificado antes de concluir Tutor,
+ * primeiro Pet e sessão temporária em uma transação.
  */
-router.post(
-  "/cadastro",
-  cadastrarNovoCliente
-);
+router.post("/cadastro/solicitar", verificacaoPublica.solicitarCadastro);
+router.post("/cadastro/confirmar", verificacaoPublica.confirmarCadastro);
+router.post("/cadastro/concluir", cadastrarNovoCliente);
+// Compatibilidade de URL preservada sem permitir contornar a verificacao.
+router.post("/cadastro", cadastrarNovoCliente);
 
 
 /*

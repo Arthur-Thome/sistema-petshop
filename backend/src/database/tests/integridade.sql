@@ -98,6 +98,17 @@ BEGIN
     VALUES (tutor, repeat('c', 64), CURRENT_TIMESTAMP + INTERVAL '2 hours');
     INSERT INTO verificacoes_cliente_publico (tutor_id, canal, destino_normalizado, codigo_hash, expira_em)
     VALUES (tutor, 'EMAIL', 'teste@example.invalid', 'hash-ficticio', CURRENT_TIMESTAMP + INTERVAL '10 minutes');
+    INSERT INTO verificacoes_cliente_publico
+      (tutor_id, canal, destino_normalizado, codigo_hash, expira_em, contexto, cpf_hash, desafio_hash)
+    VALUES
+      (NULL, 'EMAIL', NULL, repeat('d', 64), CURRENT_TIMESTAMP + INTERVAL '10 minutes',
+       'CADASTRO', repeat('e', 64), repeat('f', 64));
+    INSERT INTO limites_cliente_publico (chave_hash, janela_inicio, quantidade, ultima_solicitacao)
+    VALUES (repeat('a', 64), CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP);
+    IF NOT EXISTS (SELECT 1 FROM verificacoes_cliente_publico WHERE desafio_hash = repeat('f', 64) AND tutor_id IS NULL)
+       OR NOT EXISTS (SELECT 1 FROM limites_cliente_publico WHERE chave_hash = repeat('a', 64)) THEN
+        RAISE EXCEPTION 'FALHOU: persistencia D2 de desafio de cadastro ou limite';
+    END IF;
     INSERT INTO creche (pet_id, usuario_entrada_id) VALUES (pet, usuario);
     INSERT INTO hotel (pet_id, entrada_prevista, saida_prevista, usuario_criacao_id)
     VALUES (pet, '2099-02-01', '2099-02-02', usuario);

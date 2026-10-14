@@ -11,6 +11,7 @@ const {
   validarCPF,
   formatarCPF,
 } = require("../utils/cpf");
+const verificacaoD2 = require("../services/verificacaoClientePublicoService");
 
 
 const DURACAO_CODIGO_MINUTOS = 10;
@@ -352,15 +353,6 @@ async function solicitarIdentificacao(
       mensagem:
         "Código de verificação gerado.",
     };
-
-
-    if (
-      process.env.NODE_ENV !==
-      "production"
-    ) {
-      resposta.codigo_desenvolvimento =
-        codigo;
-    }
 
 
     return res.status(200).json(
@@ -1191,6 +1183,27 @@ for (
     await client.query("BEGIN");
 
     transacaoIniciada = true;
+    await verificacaoD2.limitePorIp(client, req);
+
+    const provaCadastro = typeof req.body.prova_cadastro === "string" ? req.body.prova_cadastro : "";
+    const provaResult = await client.query(
+      `SELECT id, cpf_hash, destino_normalizado, prova_expira_em, cadastro_concluido_em
+       FROM verificacoes_cliente_publico
+       WHERE contexto = 'CADASTRO' AND prova_cadastro_hash = $1
+       FOR UPDATE`,
+      [verificacaoD2.hmac(`prova:${provaCadastro}`)]
+    );
+    const prova = provaResult.rows[0];
+    if (
+      !provaCadastro || !prova || prova.cadastro_concluido_em ||
+      !prova.prova_expira_em || new Date(prova.prova_expira_em).getTime() <= Date.now() ||
+      prova.cpf_hash !== verificacaoD2.hmac(`cpf:${cpfFormatado.replace(/\D/g, "")}`) ||
+      prova.destino_normalizado !== email
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(403).json({ codigo: "EMAIL_NAO_VERIFICADO", mensagem: "Verifique o e-mail antes de concluir o cadastro." });
+    }
 
 
     /*
@@ -1424,6 +1437,11 @@ const resultadoPet =
       ]
     );
 
+    await client.query(
+      "UPDATE verificacoes_cliente_publico SET cadastro_concluido_em = CURRENT_TIMESTAMP WHERE id = $1",
+      [prova.id]
+    );
+
 
     /*
      * O cadastro acabou de ser realizado pelo próprio
@@ -1490,6 +1508,11 @@ const resultadoPet =
     /*
      * Mantemos proteção também para concorrência no CPF.
      */
+    if (erro.status === 429) {
+      res.set("Retry-After", String(erro.retryAfter));
+      return res.status(429).json({ codigo: "LIMITE_TEMPORARIO", mensagem: "Aguarde antes de tentar novamente.", tentar_novamente_em: erro.retryAfter });
+    }
+
     if (erro.code === "23505") {
       return res.status(409).json({
         codigo:
@@ -1521,8 +1544,6 @@ const resultadoPet =
 }
 
 module.exports = {
-  solicitarIdentificacao,
-  confirmarIdentificacao,
   listarPetsCliente,
   cadastrarNovoCliente,
 };

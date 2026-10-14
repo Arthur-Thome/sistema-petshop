@@ -269,10 +269,7 @@ function AgendamentoPublico() {
     setEtapa,
   ] = useState("INICIO");
 
-  const [
-    tipoCliente,
-    setTipoCliente,
-  ] = useState(null);
+  const [, setTipoCliente] = useState(null);
 
   const [
     erroFluxo,
@@ -326,6 +323,8 @@ function AgendamentoPublico() {
     codigo,
     setCodigo,
   ] = useState("");
+
+  const [contextoVerificacao, setContextoVerificacao] = useState("IDENTIFICACAO");
 
 
   /*
@@ -837,6 +836,29 @@ function AgendamentoPublico() {
     );
   }
 
+  function limparDadosTutor() {
+    sessionStorage.removeItem("amores_pet_token_cliente");
+    setTokenCliente("");
+    setTutor(null);
+    setPets([]);
+    setPetSelecionado(null);
+    setServicos([]);
+    setServicosSelecionados([]);
+    setDiasDisponiveis([]);
+    setDataSelecionada(null);
+    setHorarioSelecionado(null);
+    setResultadoAgendamento(null);
+  }
+
+  function tratarSessaoExpirada(erro) {
+    if (erro.response?.status !== 401) return false;
+    limparDadosTutor();
+    setEtapa("IDENTIFICACAO");
+    setTipoCliente("EXISTENTE");
+    setErroFluxo("Sua sessao expirou. Identifique-se novamente para continuar; os dados preenchidos foram mantidos nesta pagina.");
+    return true;
+  }
+
 
   function cabecalhoCliente(
     token = tokenCliente
@@ -934,6 +956,8 @@ function AgendamentoPublico() {
         resposta.data
       );
 
+      setContextoVerificacao("IDENTIFICACAO");
+
       setCodigo("");
 
       setEtapa("CODIGO");
@@ -949,6 +973,24 @@ function AgendamentoPublico() {
       setCarregandoFluxo(
         false
       );
+    }
+  }
+
+  async function reenviarCodigo() {
+    try {
+      setCarregandoFluxo(true);
+      const cadastro = contextoVerificacao === "CADASTRO";
+      const resposta = await axios.post(
+        `${API_URL}/agendamento-publico/${cadastro ? "cadastro/solicitar" : "identificacao/solicitar"}`,
+        cadastro ? { tutor: dadosTutor, pet: dadosPet } : { cpf: cpfIdentificacao }
+      );
+      setVerificacao(resposta.data);
+      setCodigo("");
+      setErroFluxo("Se os dados corresponderem, enviaremos um novo codigo por e-mail.");
+    } catch (erro) {
+      setErroFluxo(erro.response?.data?.mensagem || "Nao foi possivel reenviar o codigo.");
+    } finally {
+      setCarregandoFluxo(false);
     }
   }
 
@@ -977,19 +1019,28 @@ function AgendamentoPublico() {
     try {
       setCarregandoFluxo(true);
 
-      const resposta =
-        await axios.post(
-          `${API_URL}/agendamento-publico/identificacao/confirmar`,
-          {
-            verificacao_id:
-              verificacao
-                ?.verificacao_id,
+      const endpoint = contextoVerificacao === "CADASTRO" ? "cadastro/confirmar" : "identificacao/confirmar";
+      const resposta = await axios.post(`${API_URL}/agendamento-publico/${endpoint}`, {
+        desafio: verificacao?.desafio,
+        codigo,
+      });
 
-            codigo,
-          }
-        );
+      if (contextoVerificacao === "CADASTRO") {
+        const petParaAPI = { ...dadosPet, castrado: dadosPet.castrado === "" ? null : dadosPet.castrado === "sim" };
+        const cadastro = await axios.post(`${API_URL}/agendamento-publico/cadastro/concluir`, {
+          tutor: dadosTutor, pet: petParaAPI, prova_cadastro: resposta.data.prova_cadastro,
+        });
+        limparDadosTutor();
+        guardarSessao(cadastro.data.token);
+        setTutor(cadastro.data.tutor);
+        await carregarPets(cadastro.data.token);
+        setPetSelecionado(cadastro.data.pet);
+        setEtapa("PET");
+        return;
+      }
 
 
+      limparDadosTutor();
       guardarSessao(
         resposta.data.token
       );
@@ -1006,6 +1057,7 @@ function AgendamentoPublico() {
       setEtapa("PET");
 
     } catch (erro) {
+      if (tratarSessaoExpirada(erro)) return;
       setErroFluxo(
         erro.response?.data
           ?.mensagem ||
@@ -1023,8 +1075,9 @@ function AgendamentoPublico() {
   async function carregarPets(
     token = tokenCliente
   ) {
-    const resposta =
-      await axios.get(
+    let resposta;
+    try {
+      resposta = await axios.get(
         `${API_URL}/agendamento-publico/meus-pets`,
         {
           headers:
@@ -1033,6 +1086,10 @@ function AgendamentoPublico() {
             ),
         }
       );
+    } catch (erro) {
+      tratarSessaoExpirada(erro);
+      throw erro;
+    }
 
 
     setPets(
@@ -1179,7 +1236,7 @@ function AgendamentoPublico() {
 
       const resposta =
         await axios.post(
-          `${API_URL}/agendamento-publico/cadastro`,
+          `${API_URL}/agendamento-publico/cadastro/solicitar`,
           {
             tutor:
               dadosTutor,
@@ -1189,31 +1246,11 @@ function AgendamentoPublico() {
           }
         );
 
-
-      guardarSessao(
-        resposta.data.token
-      );
-
-      setTutor(
-        resposta.data.tutor
-      );
-
-
-      /*
-       * O cadastro retorna o primeiro Pet.
-       * Ainda consultamos /meus-pets para manter o frontend
-       * usando a mesma fonte dos clientes existentes.
-       */
-      await carregarPets(
-        resposta.data.token
-      );
-
-
-      setPetSelecionado(
-        resposta.data.pet
-      );
-
-      setEtapa("PET");
+      setContextoVerificacao("CADASTRO");
+      setVerificacao(resposta.data);
+      setCodigo("");
+      setEtapa("CODIGO_CADASTRO");
+      return;
 
     } catch (erro) {
       setErroFluxo(
@@ -1288,6 +1325,7 @@ function AgendamentoPublico() {
       );
 
     } catch (erro) {
+      if (tratarSessaoExpirada(erro)) return;
       console.error(
         "Erro ao carregar serviços:",
         erro
@@ -1546,6 +1584,7 @@ function AgendamentoPublico() {
       setEtapa("SUCESSO");
 
     } catch (erro) {
+      if (tratarSessaoExpirada(erro)) return;
       console.error(
         "Erro ao confirmar agendamento:",
         erro
@@ -1605,9 +1644,9 @@ function AgendamentoPublico() {
     }
 
 
-    if (etapa === "CODIGO") {
+    if (etapa === "CODIGO" || etapa === "CODIGO_CADASTRO") {
       setEtapa(
-        "IDENTIFICACAO"
+        contextoVerificacao === "CADASTRO" ? "CADASTRO" : "IDENTIFICACAO"
       );
 
       setCodigo("");
@@ -1941,6 +1980,7 @@ function AgendamentoPublico() {
                 </p>
               </div>
 
+              <p>O codigo e enviado exclusivamente por e-mail. Se nao tiver acesso ao endereco cadastrado, procure a equipe Amores Pet para atendimento assistido.</p>
 
               <button
                 type="button"
@@ -2003,7 +2043,7 @@ function AgendamentoPublico() {
         )}
 
 
-        {etapa === "CODIGO" && (
+        {(etapa === "CODIGO" || etapa === "CODIGO_CADASTRO") && (
           <section className="agendamento-painel-formulario">
 
             <div className="agendamento-painel-topo">
@@ -2047,28 +2087,6 @@ function AgendamentoPublico() {
                       .destino_mascarado
                   }
                 </strong>
-              </div>
-            )}
-
-
-            {verificacao
-              ?.codigo_desenvolvimento && (
-              <div className="agendamento-codigo-dev">
-                <span>
-                  Ambiente de desenvolvimento
-                </span>
-
-                <strong>
-                  {
-                    verificacao
-                      .codigo_desenvolvimento
-                  }
-                </strong>
-
-                <small>
-                  Este código não será exibido
-                  em produção.
-                </small>
               </div>
             )}
 
@@ -2118,6 +2136,10 @@ function AgendamentoPublico() {
                   : "Confirmar código"}
               </button>
             </form>
+
+            <button type="button" className="agendamento-acao-secundaria" onClick={reenviarCodigo} disabled={carregandoFluxo}>
+              Reenviar codigo por e-mail
+            </button>
 
           </section>
         )}
