@@ -88,7 +88,7 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
-const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n';
+const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n';
 
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
 console.log(psql(guard + empty).trim());
@@ -288,6 +288,9 @@ console.log(psql('\\ir tests/integridade.sql\n').split('\n').filter(line => line
 psql(guard + `DO $$ DECLARE t record; total bigint; BEGIN
   FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
     EXECUTE format('SELECT count(*) FROM public.%I', t.tablename) INTO total;
+    IF t.tablename = 'site_conteudo' THEN
+      EXECUTE 'SELECT count(*) FROM public.site_conteudo WHERE id <> 1' INTO total;
+    END IF;
     IF total <> 0 THEN RAISE EXCEPTION 'Dados de teste persistiram em %', t.tablename; END IF;
   END LOOP;
 END $$;`);

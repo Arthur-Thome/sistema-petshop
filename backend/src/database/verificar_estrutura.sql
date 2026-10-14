@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-031.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-032.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -440,4 +440,70 @@ BEGIN
         RAISE EXCEPTION 'Constraints D2 da tabela de limites ausentes';
     END IF;
 END $$;
-SELECT 'Contrato da instalacao nova validado: baseline e Etapa 21 D1-D5; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
+SELECT 'Contrato da instalacao nova validado: baseline e Etapa 21 D1-D6/E; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
+
+DO $$
+DECLARE
+    item record;
+    atual record;
+BEGIN
+    FOR item IN SELECT * FROM (VALUES
+        ('site_galeria', 'id', 'bigint', true),
+        ('site_galeria', 'arquivo_nome', 'character varying(80)', true),
+        ('site_galeria', 'mime_type', 'character varying(20)', true),
+        ('site_galeria', 'tamanho_bytes', 'integer', true),
+        ('site_galeria', 'texto_alternativo', 'character varying(255)', true),
+        ('site_galeria', 'ordem', 'integer', true),
+        ('site_galeria', 'publicado', 'boolean', true),
+        ('site_galeria', 'removido_em', 'timestamp with time zone', false),
+        ('site_galeria', 'criado_por', 'integer', false),
+        ('site_galeria', 'atualizado_por', 'integer', false),
+        ('site_galeria', 'criado_em', 'timestamp with time zone', true),
+        ('site_conteudo', 'id', 'smallint', true),
+        ('site_conteudo', 'titulo_principal', 'character varying(180)', false),
+        ('site_conteudo', 'historia', 'text', false),
+        ('site_conteudo', 'email', 'character varying(255)', false),
+        ('site_conteudo', 'cep', 'character varying(8)', false),
+        ('site_conteudo', 'uf', 'character(2)', false),
+        ('site_conteudo', 'google_maps_url', 'character varying(2048)', false),
+        ('site_conteudo', 'imagem_principal_id', 'bigint', false),
+        ('site_conteudo', 'criado_por', 'integer', false),
+        ('site_conteudo', 'atualizado_em', 'timestamp with time zone', true),
+        ('site_premiacoes', 'id', 'bigint', true),
+        ('site_premiacoes', 'titulo', 'character varying(150)', true),
+        ('site_premiacoes', 'ano', 'smallint', false),
+        ('site_premiacoes', 'imagem_galeria_id', 'bigint', false),
+        ('site_premiacoes', 'ordem', 'integer', true),
+        ('site_premiacoes', 'publicado', 'boolean', true),
+        ('site_premiacoes', 'removido_em', 'timestamp with time zone', false),
+        ('site_premiacoes', 'criado_por', 'integer', false)
+    ) AS esperado(tabela, coluna, tipo, obrigatoria)
+    LOOP
+        SELECT format_type(a.atttypid, a.atttypmod) AS tipo, a.attnotnull AS obrigatoria
+          INTO atual
+          FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+          JOIN pg_attribute a ON a.attrelid = c.oid
+         WHERE n.nspname = 'public' AND c.relname = item.tabela
+           AND a.attname = item.coluna AND a.attnum > 0 AND NOT a.attisdropped;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Coluna E ausente: %.%', item.tabela, item.coluna;
+        END IF;
+        IF atual.tipo <> item.tipo OR atual.obrigatoria <> item.obrigatoria THEN
+            RAISE EXCEPTION 'Coluna E ausente/incompativel: %.%', item.tabela, item.coluna;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM public.site_conteudo WHERE id = 1) THEN
+        RAISE EXCEPTION 'Registro singleton de conteudo institucional ausente';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_site_conteudo_singleton' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_site_galeria_mime' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_site_galeria_arquivo_nome' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_site_premiacao_titulo' AND convalidated) THEN
+        RAISE EXCEPTION 'Constraints essenciais E ausentes ou nao validadas';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = 'public.idx_site_galeria_publicada_ordem'::regclass AND indisvalid AND indisready)
+       OR NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = 'public.idx_site_premiacoes_publicadas_ordem'::regclass AND indisvalid AND indisready) THEN
+        RAISE EXCEPTION 'Indices de publicacao E ausentes ou invalidos';
+    END IF;
+END $$;
+SELECT 'Contrato estrutural E validado: conteudo, premiacoes, galeria, autoria, publicacao e metadados.' AS resultado;

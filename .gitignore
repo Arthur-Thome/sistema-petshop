@@ -36,3 +36,7 @@ backend/src/uploads/**/*
 !backend/src/uploads/.gitkeep
 !backend/src/uploads/pets/
 !backend/src/uploads/pets/.gitkeep
+
+# Galeria institucional persistente, segregada dos arquivos de pets.
+backend/storage/site-gallery/*
+!backend/storage/site-gallery/.gitkeep

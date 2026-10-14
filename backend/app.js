@@ -16,6 +16,7 @@ const servicoRoutes = require("./src/routes/servicoRoutes");
 const auditoriaRoutes = require("./src/routes/auditoriaRoutes");
 const agendaPublicaRoutes = require("./src/routes/agendaPublicaRoutes");
 const agendamentoPublicoRoutes = require("./src/routes/agendamentoPublicoRoutes");
+const siteConteudoRoutes = require("./src/routes/siteConteudoRoutes");
 const path = require("path");
 
 const app = express();
@@ -148,6 +149,7 @@ app.use("/api/auditoria", auditoriaRoutes);
  */
 app.use("/api/agenda-publica", agendaPublicaRoutes);
 app.use("/api/agendamento-publico", agendamentoPublicoRoutes);
+app.use("/api/site-conteudo", siteConteudoRoutes);
 
 
 

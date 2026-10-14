@@ -195,23 +195,29 @@ function Layout() {
               SISTEMA
               =================================================
 
-              Sistema -> Administração permanece separado.
+              Conteúdo do site fica disponível para gestão.
 
               Esta área contém usuários, segurança e auditoria
               completa e continua exclusiva do Administrador.
           */}
 
-          {usuario.perfil ===
-            "administrador" && (
+          {podeAcessarAdministrativo && (
             <>
               <div className="menu-section">
                 SISTEMA
               </div>
 
-              <NavLink to="/administracao">
-                <span>⚙</span>
-                Administração
+              <NavLink to="/sistema/conteudo-site">
+                <span>✎</span>
+                Conteúdo do Site
               </NavLink>
+
+              {usuario.perfil === "administrador" && (
+                <NavLink to="/administracao">
+                  <span>⚙</span>
+                  Administração
+                </NavLink>
+              )}
             </>
           )}
         </nav>

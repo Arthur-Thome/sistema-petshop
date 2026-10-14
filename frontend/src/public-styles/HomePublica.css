@@ -2358,3 +2358,36 @@
   }
 
 }
+
+.site-hero-imagem-real {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.site-hero-imagem-conteudo {
+  position: relative;
+  z-index: 1;
+}
+
+.site-historia-imagem-real {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.site-historia-imagem span { font-weight: 800; }
+.site-institucional-texto { white-space: pre-line; }
+.site-premio-imagem { width: 100%; aspect-ratio: 16 / 9; margin-bottom: 22px; border-radius: 14px; object-fit: cover; }
+.site-premios-grid article > span { margin-bottom: 20px; }
+.site-premios-grid article small { display: block; margin-bottom: 10px; color: var(--amores-texto-suave); }
+.site-localizacao-sem-mapa { grid-template-columns: minmax(0, 1fr); }
+.site-localizacao-contatos { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 24px; }
+.site-localizacao-contatos a, .site-mapa-link { color: var(--amores-rosa); font-weight: 800; }
+.site-mapa-link { display: inline-block; margin-top: 22px; }

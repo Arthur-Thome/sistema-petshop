@@ -6,8 +6,19 @@ import {
 import {
   Link,
 } from "react-router-dom";
+import axios from "axios";
 
 import "../public-styles/HomePublica.css";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
+function linkWhatsapp(numero) {
+  const digitos = String(numero || "").replace(/\D/g, "");
+  const internacional = digitos.startsWith("55") && (digitos.length === 12 || digitos.length === 13)
+    ? digitos
+    : `55${digitos}`;
+  return `https://wa.me/${internacional}`;
+}
 
 
 /*
@@ -73,6 +84,23 @@ function HomePublica() {
 
   const [carrosselPausado, setCarrosselPausado] =
     useState(false);
+  const [conteudoPublico, setConteudoPublico] = useState({ configuracoes: {}, premios: [], galeria: [] });
+
+  useEffect(() => {
+    let ativo = true;
+    axios.get(`${API_URL}/site-conteudo/publico`)
+      .then(({ data }) => { if (ativo) setConteudoPublico({ configuracoes: data.configuracoes || {}, premios: data.premios || [], galeria: data.galeria || [] }); })
+      .catch(() => { if (ativo) setConteudoPublico({ configuracoes: {}, premios: [], galeria: [] }); });
+    return () => { ativo = false; };
+  }, []);
+
+  const configuracoes = conteudoPublico.configuracoes;
+  const slidesVisiveis = slides.map((item, index) => index === 0 ? {
+    ...item,
+    titulo: configuracoes.titulo_principal || item.titulo,
+    descricao: configuracoes.subtitulo_principal || item.descricao,
+    destaque: configuracoes.destaque_institucional || item.destaque,
+  } : item);
 
 
   /*
@@ -89,7 +117,7 @@ function HomePublica() {
 
     const intervalo = setInterval(() => {
       setSlideAtual((atual) =>
-        atual === slides.length - 1
+        atual === slidesVisiveis.length - 1
           ? 0
           : atual + 1
       );
@@ -98,10 +126,7 @@ function HomePublica() {
     return () => {
       clearInterval(intervalo);
     };
-  }, [
-    slideAtual,
-    carrosselPausado,
-  ]);
+  }, [slideAtual, carrosselPausado, slidesVisiveis.length]);
 
 
   /*
@@ -116,7 +141,7 @@ function HomePublica() {
   function slideAnterior() {
     setSlideAtual((atual) =>
       atual === 0
-        ? slides.length - 1
+      ? slidesVisiveis.length - 1
         : atual - 1
     );
   }
@@ -124,14 +149,21 @@ function HomePublica() {
 
   function proximoSlide() {
     setSlideAtual((atual) =>
-      atual === slides.length - 1
+      atual === slidesVisiveis.length - 1
         ? 0
         : atual + 1
     );
   }
 
 
-  const slide = slides[slideAtual];
+  const slide = slidesVisiveis[slideAtual] || slidesVisiveis[0];
+  const enderecoCompleto = [configuracoes.logradouro, configuracoes.numero, configuracoes.complemento,
+    configuracoes.bairro, configuracoes.cidade, configuracoes.uf, configuracoes.cep]
+    .filter(Boolean).join(", ");
+  const enderecoSuficiente = Boolean(configuracoes.logradouro && configuracoes.cidade && configuracoes.uf);
+  const linkMaps = configuracoes.google_maps_url || (enderecoSuficiente
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}` : "");
+  const temLocalizacao = Boolean(enderecoCompleto || configuracoes.telefone || configuracoes.whatsapp || configuracoes.email || configuracoes.horario_funcionamento);
 
 
   return (
@@ -182,21 +214,21 @@ function HomePublica() {
               Serviços
             </a>
 
-            <a href="#historia">
+            {(configuracoes.historia || configuracoes.missao || configuracoes.diferenciais) && <a href="#historia">
               Nossa História
-            </a>
+            </a>}
 
-            <a href="#premios">
+            {conteudoPublico.premios.length > 0 && <a href="#premios">
               Prêmios
-            </a>
+            </a>}
 
             <Link to="/galeria">
               Galeria
             </Link>
 
-            <a href="#localizacao">
+            {temLocalizacao && <a href="#localizacao">
               Localização
-            </a>
+            </a>}
           </nav>
 
 
@@ -285,19 +317,19 @@ function HomePublica() {
               Serviços
             </a>
 
-            <a
+            {(configuracoes.historia || configuracoes.missao || configuracoes.diferenciais) && <a
               href="#historia"
               onClick={fecharMenu}
             >
               Nossa História
-            </a>
+            </a>}
 
-            <a
+            {conteudoPublico.premios.length > 0 && <a
               href="#premios"
               onClick={fecharMenu}
             >
               Prêmios
-            </a>
+            </a>}
 
             <Link
               to="/galeria"
@@ -306,12 +338,12 @@ function HomePublica() {
               Galeria
             </Link>
 
-            <a
+            {temLocalizacao && <a
               href="#localizacao"
               onClick={fecharMenu}
             >
               Localização
-            </a>
+            </a>}
 
 
             <div className="site-menu-mobile-acoes">
@@ -410,7 +442,7 @@ function HomePublica() {
                 className="site-carrossel-indicadores"
                 aria-label="Selecionar slide"
               >
-                {slides.map(
+                {slidesVisiveis.map(
                   (item, indice) => (
                     <button
                       key={item.id}
@@ -468,6 +500,10 @@ function HomePublica() {
               }
             >
 
+              {slideAtual === 0 && configuracoes.imagem_principal_url && (
+                <img className="site-hero-imagem-real" src={`${API_URL}${configuracoes.imagem_principal_url}`} alt="" />
+              )}
+
               <div className="site-hero-imagem-conteudo">
 
                 <span className="site-hero-slide-numero">
@@ -504,7 +540,13 @@ function HomePublica() {
           id="servicos"
         >
 
-          <div className="site-secao-cabecalho">
+            <div className="site-secao-cabecalho">
+              <span>Nossos serviços</span>
+              <h2>{configuracoes.servicos_titulo || "Tudo que seu pet precisa em um só lugar"}</h2>
+              <p>{configuracoes.servicos_texto || configuracoes.apresentacao || "Conheça alguns dos cuidados e experiências oferecidos pela nossa equipe."}</p>
+            </div>
+
+            <div className="site-secao-cabecalho" style={{ display: "none" }}>
 
             <span>
               Nossos serviços
@@ -601,10 +643,24 @@ function HomePublica() {
          * NOSSA HISTÓRIA
          * ======================================================
          */}
-        <section
-          className="site-historia"
-          id="historia"
-        >
+        {(configuracoes.historia || configuracoes.missao || configuracoes.diferenciais) && (
+          <section className="site-historia" id="historia">
+            <div className="site-historia-imagem">
+              {configuracoes.imagem_historia_url
+                ? <img className="site-historia-imagem-real" src={API_URL + configuracoes.imagem_historia_url} alt="" />
+                : <span>Amores Pet</span>}
+            </div>
+            <div className="site-historia-conteudo">
+              <span className="site-secao-etiqueta">Nossa história</span>
+              {configuracoes.historia_titulo && <h2>{configuracoes.historia_titulo}</h2>}
+              {configuracoes.historia && <p>{configuracoes.historia}</p>}
+              {configuracoes.missao && <p><strong>Propósito</strong><br />{configuracoes.missao}</p>}
+              {configuracoes.diferenciais && <p className="site-institucional-texto">{configuracoes.diferenciais}</p>}
+            </div>
+          </section>
+        )}
+
+        <section className="site-historia" id="historia-antiga" style={{ display: "none" }}>
 
           <div className="site-historia-imagem">
             <span>
@@ -646,10 +702,27 @@ function HomePublica() {
          * PRÊMIOS
          * ======================================================
          */}
-        <section
-          className="site-secao site-premios"
-          id="premios"
-        >
+        {conteudoPublico.premios.length > 0 && (
+          <section className="site-secao site-premios" id="premios">
+            <div className="site-secao-cabecalho">
+              <span>Reconhecimentos</span>
+              <h2>Prêmios e conquistas</h2>
+            </div>
+            <div className="site-premios-grid">
+              {conteudoPublico.premios.map((item, index) => (
+                <article key={item.id}>
+                  {item.imagem_url && <img className="site-premio-imagem" src={API_URL + item.imagem_url} alt={item.imagem_alt || ""} />}
+                  <span>{String(index + 1).padStart(2, "0")}{item.ano ? ` · ${item.ano}` : ""}</span>
+                  <h3>{item.titulo}</h3>
+                  {item.instituicao && <small>{item.instituicao}</small>}
+                  {item.descricao && <p>{item.descricao}</p>}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="site-secao site-premios" id="premios-antigos" style={{ display: "none" }}>
 
           <div className="site-secao-cabecalho">
 
@@ -743,8 +816,7 @@ function HomePublica() {
             </span>
 
             <h2>
-              Momentos que fazem parte
-              da nossa história
+              {configuracoes.galeria_titulo || "Momentos que fazem parte da nossa história"}
             </h2>
 
           </div>
@@ -762,10 +834,24 @@ function HomePublica() {
          * LOCALIZAÇÃO
          * ======================================================
          */}
-        <section
-          className="site-localizacao"
-          id="localizacao"
-        >
+        {temLocalizacao && (
+          <section className="site-localizacao site-localizacao-sem-mapa" id="localizacao">
+            <div className="site-localizacao-conteudo">
+              <span className="site-secao-etiqueta">Onde estamos</span>
+              {configuracoes.nome_comercial && <h2>{configuracoes.nome_comercial}</h2>}
+              {enderecoCompleto && <div className="site-localizacao-dados"><div><span>Endereço</span><strong>{enderecoCompleto}</strong></div></div>}
+              {configuracoes.horario_funcionamento && <div className="site-localizacao-dados"><div><span>Horários informativos</span><strong>{configuracoes.horario_funcionamento}</strong></div></div>}
+              <div className="site-localizacao-contatos">
+                {configuracoes.telefone && <a href={`tel:${configuracoes.telefone.replace(/\D/g, "")}`}>Telefone: {configuracoes.telefone}</a>}
+                {configuracoes.whatsapp && <a href={linkWhatsapp(configuracoes.whatsapp)} target="_blank" rel="noreferrer">WhatsApp comercial</a>}
+                {configuracoes.email && <a href={`mailto:${configuracoes.email}`}>{configuracoes.email}</a>}
+              </div>
+              {linkMaps && <a className="site-mapa-link" href={linkMaps} target="_blank" rel="noopener noreferrer">Abrir localização no Google Maps</a>}
+            </div>
+          </section>
+        )}
+
+        <section className="site-localizacao" id="localizacao-antiga" style={{ display: "none" }}>
 
           <div className="site-localizacao-conteudo">
 
@@ -840,6 +926,15 @@ function HomePublica() {
        * ======================================================
        */}
       <footer className="site-footer">
+        <div>
+          <strong>{configuracoes.nome_comercial || "Amores Pet"}</strong>
+          <p>{configuracoes.texto_rodape || configuracoes.apresentacao || "Cuidado, carinho e atenção em cada detalhe."}</p>
+        </div>
+        <div><span>Navegação</span><a href="#servicos">Serviços</a>{(configuracoes.historia || configuracoes.missao || configuracoes.diferenciais) && <a href="#historia">Nossa História</a>}<Link to="/galeria">Galeria</Link></div>
+        <div><span>Atendimento</span>{configuracoes.telefone && <a href={`tel:${configuracoes.telefone.replace(/\D/g, "")}`}>{configuracoes.telefone}</a>}{configuracoes.email && <a href={`mailto:${configuracoes.email}`}>{configuracoes.email}</a>}<Link to="/agendar">Agendar</Link></div>
+      </footer>
+
+      <footer className="site-footer" style={{ display: "none" }}>
 
         <div>
 

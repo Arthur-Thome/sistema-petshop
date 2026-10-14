@@ -7,7 +7,6 @@ import {
 
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
-import PaginaEmConstrucao from "./pages/PaginaEmConstrucao";
 import Tutores from "./pages/Tutores";
 import Layout from "./components/Layout";
 import RotaProtegida from "./components/RotaProtegida";
@@ -54,6 +53,7 @@ import GerenciarUsuario from "./pages/GerenciarUsuario";
 import HistoricoEstoque from "./pages/HistoricoEstoque";
 import PagamentosPendentes from "./pages/PagamentosPendentes";
 import RotaAdministrativo from "./components/RotaAdministrativo";
+import ConteudoSite from "./pages/ConteudoSite";
 
 /*
  * Site público da Amores Pet.
@@ -387,6 +387,11 @@ function App() {
           <Route
             path="/agenda-publica"
             element={<AgendaPublica />}
+          />
+
+          <Route
+            path="/sistema/conteudo-site"
+            element={<RotaAdministrativo><ConteudoSite /></RotaAdministrativo>}
           />
 
 

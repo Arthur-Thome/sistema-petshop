@@ -17,8 +17,10 @@ Ordem fixa, sem migration runner na aplicação:
 7. `migrations/028_historico_atendimentos.sql`.
 8. `migrations/029_reutilizacao_segura_horarios.sql` (D5; indice ativo preserva historico).
 9. `migrations/030_verificacao_email_publico.sql` (D2).
+10. `migrations/031_porte_gigante_pet.sql` (D3).
+11. `migrations/032_conteudo_site_galeria.sql` (Bloco E).
 
-Resultado apos Etapa 21: estrutura funcional sem dados de clientes e sem administrador.
+Resultado apos Etapa 21: estrutura funcional sem dados de clientes e sem administrador. A 032 cria somente a linha singleton vazia de configuracao institucional; nao inclui conteudo comercial ou premiacoes.
 O bootstrap e as migrations 020–024 permanecem intactos. Não executar todas
 as migrations por wildcard: a base já incorpora 020–024, inclusive com alguns
 nomes de índices/constraints diferentes.
@@ -118,7 +120,7 @@ sem editar as migrations históricas.
 psql -X -h 127.0.0.1 -p 5432 -U postgres -d amores_pet_novo -v ON_ERROR_STOP=1 -f backend/src/database/verificar_estrutura.sql
 ```
 
-A verificação só lê catálogos: confere as 20 tabelas esperadas, tipos,
+A verificação só lê catálogos: confere as 23 tabelas esperadas, tipos,
 nulabilidade, defaults, sequências, PKs, FKs, CHECKs e índices únicos listados.
 As constraints esperadas precisam estar validadas e não ser adiáveis.
 Esse contrato descreve a instalação nova; não certifica equivalência com
@@ -210,6 +212,14 @@ Configure `CLIENTE_PUBLICO_PEPPER` (32 bytes aleatorios ou mais, igual em todas
 as instancias) e SMTP (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_SECURE`, `EMAIL_USER`,
 `EMAIL_PASSWORD`) antes de habilitar o fluxo. Ver [documentacao D2](../docs/etapa21-d2.md).
 
+## Conteudo institucional e galeria (Bloco E / 032)
+
+A migration 032 adiciona a configuracao singleton do site, conquistas e imagens da galeria com publicacao, ordenacao e autoria. O painel exige perfil administrador ou gerente, e as rotas repetem essa validacao no backend. Premiacoes e imagens sao removidas logicamente; o historico e os arquivos da galeria permanecem preservados.
+
+As imagens sao recebidas em memoria, limitadas a 8 MB e verificadas pela estrutura binaria JPEG/PNG/WebP, dimensoes ate 12.000 pixels por lado e 80 milhoes de pixels, alem da extensao e MIME declarados. O armazenamento padrao e `backend/storage/site-gallery`, fora de `uploads/pets` e do build do frontend. A API serve imagens por identificador somente quando publicadas; previews ocultos exigem autenticacao de gerente/administrador. Em producao, montar essa pasta em armazenamento persistente com backup e escrita restrita ao backend. Nenhum provedor externo e configurado.
+
+O upgrade deve aplicar `032_conteudo_site_galeria.sql` explicitamente apos revisar as migrations 027-031, usando o procedimento de transacao de upgrade descrito acima. A instalacao limpa aplica 032 apos 031. A aplicacao nao executa migrations ao iniciar. A migration e aditiva e nao altera tutores, pets, atendimentos, agenda, servicos ou pagamentos.
+A validação desta migration e do contrato estrutural executou a instalação limpa e os testes de rollback em PostgreSQL 17 temporário isolado, porta 55448. Como o bootstrap histórico gerado por `pg_dump` 18.6 contém `\restrict`/`\unrestrict` não reconhecidos pelo `psql` 17, a suíte foi executada sobre uma cópia temporária sem essas linhas; o bootstrap versionado não foi alterado. Consulte [documentação do Bloco E](../../docs/etapa21-e.md).
 A suite de instalacao agora exige porta diferente de 5432 e cluster temporario
 em `<diretorio temporario>/amores-pet-test-<32hex>/data`, sem banco
 `sistema_petshop` na instancia. Os exemplos anteriores precisam usar esse
