@@ -113,6 +113,11 @@ function Layout() {
             Atendimentos
           </NavLink>
 
+          <NavLink to="/atendimentos/solicitacoes">
+            <span>◷</span>
+            Solicitações públicas
+          </NavLink>
+
 
           {/* =================================================
               GESTÃO

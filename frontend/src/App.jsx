@@ -32,6 +32,7 @@ import CancelarReservaHotel from "./pages/CancelarReservaHotel";
 import HistoricoHotel from "./pages/HistoricoHotel";
 import DetalhesHotel from "./pages/DetalhesHotel";
 import BanhoTosa from "./pages/BanhoTosa";
+import SolicitacoesAtendimento from "./pages/SolicitacoesAtendimento";
 import NovoAgendamentoBanhoTosa from "./pages/NovoAgendamentoBanhoTosa";
 import DetalhesBanhoTosa from "./pages/DetalhesBanhoTosa";
 import ServicosBanhoTosa from "./pages/ServicosBanhoTosa";
@@ -271,6 +272,11 @@ function App() {
           <Route
             path="/atendimentos"
             element={<BanhoTosa />}
+          />
+
+          <Route
+            path="/atendimentos/solicitacoes"
+            element={<SolicitacoesAtendimento />}
           />
 
           <Route

@@ -422,6 +422,14 @@ function classeStatusPagamento(status) {
 
         <div className="banho-tosa-header-acoes">
 
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => navigate("/atendimentos/solicitacoes")}
+          >
+            Solicitações públicas
+          </button>
+
           {filtro === "hoje" && (
             <button
               type="button"

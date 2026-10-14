@@ -1,0 +1,68 @@
+.solicitacoes-page { max-width: 1180px; margin: 0 auto; padding: 30px 26px 48px; color: #29252b; }
+.solicitacoes-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+.solicitacoes-eyebrow { color: #b62c70; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.solicitacoes-header h1 { margin: 5px 0; font-size: clamp(26px, 3vw, 34px); }
+.solicitacoes-header p { margin: 0; color: #736b74; }
+.solicitacoes-atualizar, .solicitacao-detalhes-btn { border: 1px solid #ded7df; border-radius: 10px; background: #fff; color: #514852; padding: 10px 15px; font-weight: 700; cursor: pointer; }
+.solicitacoes-filtros { display: flex; align-items: end; gap: 14px; margin-bottom: 18px; padding: 16px; border: 1px solid #eee8ef; border-radius: 14px; background: #fff; }
+.solicitacoes-filtros label { display: grid; gap: 6px; color: #645b65; font-size: 13px; font-weight: 700; }
+.solicitacoes-filtros input, .solicitacoes-filtros select { min-width: 220px; border: 1px solid #dcd5dd; border-radius: 8px; padding: 10px 12px; color: #29252b; background: white; }
+.solicitacoes-filtros strong { margin-left: auto; padding: 10px 12px; color: #a31f60; background: #fff1f7; border-radius: 8px; }
+.solicitacoes-lista { display: grid; gap: 13px; }
+.solicitacao-card { padding: 19px; border: 1px solid #ebe5ec; border-radius: 15px; background: #fff; box-shadow: 0 5px 18px #3522390a; }
+.solicitacao-card-principal { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.solicitacao-data { color: #817783; font-size: 12px; }
+.solicitacao-card h2 { margin: 4px 0; font-size: 20px; }
+.solicitacao-card p { margin: 0; color: #6d636e; }
+.solicitacao-status { padding: 7px 10px; border-radius: 999px; color: #7b4b00; background: #fff5d7; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.solicitacao-card-dados { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 12px; margin: 18px 0; }
+.solicitacao-card-dados > div, .solicitacao-raca { display: grid; gap: 5px; align-content: start; }
+.solicitacao-card-dados span, .solicitacao-raca span { color: #817783; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.solicitacao-card-dados strong, .solicitacao-raca strong { color: #38313a; font-size: 14px; }
+.solicitacao-raca { padding: 10px 12px; border-left: 3px solid #bd3477; border-radius: 3px 8px 8px 3px; background: #fff5fa; }
+.solicitacao-raca small { color: #8a285a; font-weight: 700; }
+.solicitacoes-mensagem, .solicitacoes-vazio { padding: 20px; border-radius: 12px; background: #f7f4f8; color: #625966; }
+.solicitacoes-mensagem.erro { color: #9b2434; background: #fff0f1; }
+.solicitacoes-vazio { padding: 44px 20px; text-align: center; }
+.solicitacoes-vazio h2 { margin: 0 0 7px; }
+.solicitacoes-vazio p { margin: 0; color: #756c77; }
+.solicitacao-modal-backdrop { position: fixed; inset: 0; z-index: 1300; display: grid; place-items: center; padding: 20px; overflow-y: auto; background: #17121ab8; }
+.solicitacao-modal { width: min(760px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; padding: 22px; border-radius: 18px; background: #fff; box-shadow: 0 20px 60px #0003; }
+.solicitacao-modal > header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+.solicitacao-modal > header h2 { margin: 3px 0 0; }
+.solicitacao-modal > header button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f3eef4; color: #443b46; font-size: 24px; cursor: pointer; }
+.solicitacao-modal-dados { display: grid; gap: 10px; }
+.solicitacao-modal-dados p { margin: 0; color: #514953; line-height: 1.5; overflow-wrap: anywhere; }
+.solicitacao-modal-dados b { color: #2f2932; }
+.solicitacao-eventos { margin-top: 22px; padding-top: 16px; border-top: 1px solid #eee8ef; }
+.solicitacao-eventos h3 { margin: 0 0 12px; }
+.solicitacao-eventos > div { display: grid; gap: 3px; padding: 9px 0; border-bottom: 1px solid #f1edf2; }
+.solicitacao-eventos span, .solicitacao-eventos p { color: #766d78; font-size: 13px; margin: 0; }
+.solicitacao-modal-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.solicitacao-modal-acoes button { border: 0; border-radius: 9px; padding: 11px 15px; font-weight: 800; cursor: pointer; }
+.solicitacao-confirmar { color: white; background: #238451; }
+.solicitacao-recusar { color: #a22d3b; background: #fff0f1; }
+.solicitacao-modal-acoes button:disabled { opacity: .55; cursor: not-allowed; }
+.solicitacao-aviso-passado { padding: 10px; border-radius: 8px; color: #805400; background: #fff5dc; }
+.solicitacao-modal-secundario { z-index: 1310; background: #17121a80; }
+.solicitacao-modal-motivo { width: min(500px, 100%); }
+.solicitacao-modal-motivo label { display: grid; gap: 7px; font-weight: 700; }
+.solicitacao-modal-motivo textarea { min-height: 120px; resize: vertical; border: 1px solid #d9d1db; border-radius: 9px; padding: 11px; font: inherit; }
+.solicitacao-modal-motivo > p { color: #736b74; font-size: 13px; }
+@media (max-width: 760px) {
+  .solicitacoes-page { padding: 22px 15px 35px; }
+  .solicitacoes-header { align-items: flex-start; }
+  .solicitacoes-filtros { align-items: stretch; flex-direction: column; }
+  .solicitacoes-filtros input, .solicitacoes-filtros select { width: 100%; min-width: 0; }
+  .solicitacoes-filtros strong { margin-left: 0; align-self: flex-start; }
+  .solicitacao-card-dados { grid-template-columns: 1fr 1fr; }
+  .solicitacao-status { white-space: normal; text-align: center; }
+}
+@media (max-width: 480px) {
+  .solicitacoes-header { flex-direction: column; }
+  .solicitacao-card-principal { flex-direction: column; }
+  .solicitacao-card-dados { grid-template-columns: 1fr; }
+  .solicitacao-modal { padding: 17px; }
+  .solicitacao-modal-acoes { flex-direction: column-reverse; }
+  .solicitacao-modal-acoes button { width: 100%; }
+}

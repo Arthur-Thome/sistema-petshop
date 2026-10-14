@@ -35,8 +35,12 @@ const autenticar = require(
 const permitirPerfis = require(
   "../middleware/permissaoMiddleware"
 );
+const perfisEquipeAtendimento = permitirPerfis(
+  "administrador", "gerente", "funcionario"
+);
 
 const router = express.Router();
+const solicitacoes = require("../controllers/solicitacaoAtendimentoController");
 
 /*
  * Todo o módulo exige autenticação.
@@ -45,6 +49,12 @@ const router = express.Router();
  * pelos funcionários autenticados.
  */
 router.use(autenticar);
+
+// Operações da fila pública disponíveis aos três perfis autenticados.
+router.get("/solicitacoes", perfisEquipeAtendimento, solicitacoes.listarSolicitacoes);
+router.patch("/:id/confirmar", perfisEquipeAtendimento, solicitacoes.confirmarSolicitacao);
+router.patch("/:id/recusar", perfisEquipeAtendimento, solicitacoes.recusarSolicitacao);
+router.get("/:id/historico", perfisEquipeAtendimento, solicitacoes.listarHistoricoSolicitacao);
 
 /*
  * Informações financeiras consolidadas são restritas

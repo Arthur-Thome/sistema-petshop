@@ -43,6 +43,8 @@ function DetalhesBanhoTosa() {
   const [atendimento, setAtendimento] =
     useState(null);
 
+  const [historicoOperacional, setHistoricoOperacional] = useState([]);
+
   const [carregando, setCarregando] =
     useState(true);
 
@@ -119,9 +121,19 @@ function DetalhesBanhoTosa() {
     }
   }
 
+  async function carregarHistoricoOperacional() {
+    try {
+      const resposta = await api.get(`/atendimentos/${id}/historico`);
+      setHistoricoOperacional(resposta.data.eventos || []);
+    } catch (error) {
+      setHistoricoOperacional([]);
+    }
+  }
+
 
   useEffect(() => {
     carregarAtendimento();
+    carregarHistoricoOperacional();
   }, [id]);
 
 
@@ -152,6 +164,8 @@ function DetalhesBanhoTosa() {
   function formatarStatus(status) {
     const nomes = {
       AGENDADO: "Agendado",
+      AGUARDANDO_CONFIRMACAO: "Aguardando confirmação da equipe",
+      RECUSADO: "Solicitação recusada",
       EM_ATENDIMENTO:
         "Em atendimento",
       FINALIZADO: "Finalizado",
@@ -200,6 +214,12 @@ function DetalhesBanhoTosa() {
         "banho-tosa-status-finalizado",
 
       CANCELADO:
+        "banho-tosa-status-cancelado",
+
+      AGUARDANDO_CONFIRMACAO:
+        "banho-tosa-status-cancelado",
+
+      RECUSADO:
         "banho-tosa-status-cancelado",
     };
 
@@ -544,6 +564,15 @@ function DetalhesBanhoTosa() {
         </div>
       )}
 
+      {atendimento.status === "AGUARDANDO_CONFIRMACAO" && (
+        <div className="banho-tosa-estorno-aviso">
+          <div><strong>Solicitação aguardando confirmação</strong>
+            <p>Este pedido ainda não está confirmado e não possui cobrança. A equipe deve decidir pela fila de solicitações públicas.</p>
+            <button type="button" className="secondary-button" onClick={() => navigate("/atendimentos/solicitacoes")}>Abrir fila de solicitações</button>
+          </div>
+        </div>
+      )}
+
 
       <div className="banho-tosa-detalhes-card">
 
@@ -648,9 +677,9 @@ function DetalhesBanhoTosa() {
             <span>Pagamento</span>
 
             <strong>
-              {formatarStatusPagamento(
-                atendimento.pagamento_status
-              )}
+              {atendimento.status === "AGUARDANDO_CONFIRMACAO" && !atendimento.pagamento_status
+                ? "Ainda não criada"
+                : formatarStatusPagamento(atendimento.pagamento_status)}
             </strong>
           </div>
 
@@ -827,6 +856,23 @@ function DetalhesBanhoTosa() {
         </div>
 
       )}
+
+      <div className="banho-tosa-detalhes-card">
+        <h2>Histórico operacional</h2>
+        {historicoOperacional.length === 0 ? <p>Nenhum evento operacional registrado.</p> : (
+          <div className="banho-tosa-detalhes-servicos">
+            {historicoOperacional.map((evento) => (
+              <div className="banho-tosa-detalhes-servico" key={evento.id}>
+                <div>
+                  <strong>{evento.evento === "SOLICITACAO_CRIADA" ? "Solicitação recebida" : evento.evento === "SOLICITACAO_CONFIRMADA" ? "Solicitação confirmada" : evento.evento === "SOLICITACAO_RECUSADA" ? "Solicitação recusada" : evento.evento}</strong>
+                  <span>{evento.tutor_nome || evento.usuario_nome || "Equipe"}{evento.usuario_perfil ? ` · ${evento.usuario_perfil}` : ""} · {formatarDataHora(evento.criado_em)}</span>
+                  {evento.motivo && <span>Motivo: {evento.motivo}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
 
       <div className="banho-tosa-detalhes-acoes">

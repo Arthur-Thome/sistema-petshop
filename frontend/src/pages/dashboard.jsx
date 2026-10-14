@@ -36,6 +36,7 @@ function Dashboard() {
       na_creche: 0,
       no_hotel: 0,
       atendimentos_hoje: 0,
+      solicitacoes_pendentes: 0,
       proximos_atendimentos: [],
 
       estoque_baixo: 0,
@@ -460,6 +461,14 @@ function Dashboard() {
                 "/atendimentos?filtro=hoje"
               )
             }
+          />
+
+          <Card
+            titulo="Solicitações pendentes"
+            valor={carregando ? "..." : resumo.solicitacoes_pendentes}
+            icone="◷"
+            textoLink="Revisar solicitações →"
+            onClick={() => navigate("/atendimentos/solicitacoes")}
           />
 
         </div>

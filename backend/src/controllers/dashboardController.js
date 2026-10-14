@@ -74,8 +74,14 @@ async function buscarResumo(req, res) {
         SELECT COUNT(*)::INTEGER AS total
         FROM banho_tosa
         WHERE agendado_para::DATE = CURRENT_DATE
-          AND status <> 'CANCELADO'
+          AND status IN ('AGENDADO', 'EM_ATENDIMENTO', 'FINALIZADO')
       `);
+
+    const resultadoSolicitacoesPendentes = await pool.query(`
+      SELECT COUNT(*)::INTEGER AS total
+      FROM banho_tosa
+      WHERE status = 'AGUARDANDO_CONFIRMACAO'
+    `);
 
 
     /*
@@ -185,6 +191,9 @@ async function buscarResumo(req, res) {
     const atendimentosHoje =
       resultadoAtendimentosHoje.rows[0].total;
 
+    const solicitacoesPendentes =
+      resultadoSolicitacoesPendentes.rows[0].total;
+
     const entradasHotelHoje =
       resultadoEntradasHotelHoje.rows[0].total;
 
@@ -199,6 +208,19 @@ async function buscarResumo(req, res) {
      * decidir quando determinada situação merece atenção.
      */
     const alertas = [];
+
+    if (solicitacoesPendentes > 0) {
+      alertas.push({
+        id: "solicitacoes-publicas",
+        tipo: "atencao",
+        titulo: "Solicitações públicas aguardando confirmação",
+        mensagem: solicitacoesPendentes === 1
+          ? "Existe 1 solicitação aguardando análise da equipe."
+          : `Existem ${solicitacoesPendentes} solicitações aguardando análise da equipe.`,
+        quantidade: solicitacoesPendentes,
+        destino: "/atendimentos/solicitacoes",
+      });
+    }
 
 
     if (atendimentosHoje > 0) {
@@ -267,6 +289,9 @@ async function buscarResumo(req, res) {
 
       atendimentos_hoje:
         atendimentosHoje,
+
+      solicitacoes_pendentes:
+        solicitacoesPendentes,
 
       proximos_atendimentos:
         resultadoProximosAtendimentos.rows,

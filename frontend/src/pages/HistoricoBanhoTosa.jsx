@@ -106,6 +106,7 @@ function HistoricoBanhoTosa() {
     const nomes = {
       FINALIZADO: "Finalizado",
       CANCELADO: "Cancelado",
+      RECUSADO: "Solicitação recusada",
     };
 
     return nomes[status] || status;
@@ -118,6 +119,9 @@ function HistoricoBanhoTosa() {
         "banho-tosa-status-finalizado",
 
       CANCELADO:
+        "banho-tosa-status-cancelado",
+
+      RECUSADO:
         "banho-tosa-status-cancelado",
     };
 

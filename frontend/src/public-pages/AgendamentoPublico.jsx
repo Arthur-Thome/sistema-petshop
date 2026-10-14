@@ -3934,8 +3934,8 @@ function AgendamentoPublico() {
                 }
               >
                 {carregandoFluxo
-                  ? "Confirmando..."
-                  : "Confirmar agendamento"}
+                  ? "Enviando solicitação..."
+                  : "Enviar solicitação à equipe"}
               </button>
 
             </div>
@@ -3953,18 +3953,17 @@ function AgendamentoPublico() {
 
 
             <span className="agendamento-sucesso-etiqueta">
-              Agendamento confirmado
+              Solicitação recebida
             </span>
 
 
             <h2>
-              Esperamos vocês na Amores Pet!
+              Sua solicitação foi recebida
             </h2>
 
 
             <p>
-              O horário foi reservado com
-              sucesso para{" "}
+              Sua solicitação foi recebida e aguarda confirmação da equipe Amores Pet. O horário foi reservado provisoriamente para{" "}
               <strong>
                 {petSelecionado?.nome}
               </strong>.
@@ -4013,7 +4012,7 @@ function AgendamentoPublico() {
 
               <div>
                 <span>
-                  Valor previsto
+                  Valor previsto, sujeito à confirmação
                 </span>
 
                 <strong>

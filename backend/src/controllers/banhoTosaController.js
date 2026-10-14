@@ -744,7 +744,8 @@ async function listarHistorico(req, res) {
 
           WHERE bt.status IN (
             'FINALIZADO',
-            'CANCELADO'
+            'CANCELADO',
+            'RECUSADO'
           )
 
           ORDER BY
@@ -1634,6 +1635,19 @@ async function confirmarPagamento(
 
     const atendimento =
       resultadoAtendimento.rows[0];
+
+    if (
+      atendimento.status === "AGUARDANDO_CONFIRMACAO" ||
+      atendimento.status === "RECUSADO"
+    ) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+
+      return res.status(409).json({
+        mensagem:
+          "Solicitações pendentes ou recusadas não podem receber confirmação de pagamento.",
+      });
+    }
 
     if (
       atendimento.status === "CANCELADO"

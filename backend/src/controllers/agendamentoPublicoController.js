@@ -230,6 +230,25 @@ async function confirmarAgendamentoPublico(
 
     transacaoIniciada = true;
 
+    const diaHorario = await client.query(
+      "SELECT agenda_dia_id FROM agenda_publica_horarios WHERE id = $1",
+      [horarioId]
+    );
+    if (!diaHorario.rows.length) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(404).json({ mensagem: "Horário não encontrado." });
+    }
+    const diaTravado = await client.query(
+      "SELECT id FROM agenda_publica_dias WHERE id = $1 FOR UPDATE",
+      [diaHorario.rows[0].agenda_dia_id]
+    );
+    if (!diaTravado.rows.length) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(404).json({ mensagem: "Dia da agenda não encontrado." });
+    }
+
 
     /*
      * -----------------------------------------------------
@@ -312,11 +331,8 @@ async function confirmarAgendamentoPublico(
       await client.query(
         `
           SELECT
-            (
-              $1::date +
-              $2::time
-            ) > CURRENT_TIMESTAMP
-              AS futuro
+            (($1::date + $2::time) AT TIME ZONE 'America/Sao_Paulo')
+              > CURRENT_TIMESTAMP AS futuro
         `,
         [
           horario.data,
@@ -521,6 +537,7 @@ async function confirmarAgendamentoPublico(
           INSERT INTO banho_tosa
           (
             pet_id,
+            status,
             agendado_para,
             observacoes_agendamento,
             usuario_criacao_id,
@@ -531,6 +548,7 @@ async function confirmarAgendamentoPublico(
           VALUES
           (
             $1,
+            'AGUARDANDO_CONFIRMACAO',
             $2,
             $3,
             NULL,
@@ -627,57 +645,41 @@ async function confirmarAgendamentoPublico(
 
     /*
      * -----------------------------------------------------
-     * 7. CRIA PAGAMENTO PENDENTE
+     * A cobrança só será criada na confirmação pela equipe.
      * -----------------------------------------------------
      *
      * O valor é calculado exclusivamente pelo backend.
      */
-    const resultadoPagamento =
-      await client.query(
-        `
-          INSERT INTO pagamentos_banho_tosa
-          (
-            banho_tosa_id,
-            valor_total,
-            status
-          )
-
-          VALUES
-          (
-            $1,
-            $2,
-            'PENDENTE'
-          )
-
-          RETURNING *
-        `,
-        [
-          atendimento.id,
-          valorTotal,
-        ]
-      );
-
-
     /*
      * -----------------------------------------------------
-     * 8. OCUPA O SLOT
+     * 7. RESERVA PROVISORIAMENTE O SLOT
      * -----------------------------------------------------
      *
      * Esta alteração acontece na mesma transação da criação
      * do atendimento.
      */
-    await client.query(
+    const resultadoReserva = await client.query(
       `
         UPDATE agenda_publica_horarios
-
-        SET
-          status = 'OCUPADO',
-          atualizado_em =
-            CURRENT_TIMESTAMP
-
-        WHERE id = $1
+        SET status = 'RESERVADO', atualizado_em = CURRENT_TIMESTAMP
+        WHERE id = $1 AND status = 'DISPONIVEL'
+        RETURNING id
       `,
       [horarioId]
+    );
+    if (!resultadoReserva.rows.length) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(409).json({ mensagem: "Este horário acabou de ser reservado. Escolha outro horário." });
+    }
+
+    await client.query(
+      `
+        INSERT INTO historico_atendimentos
+          (banho_tosa_id, evento, estado_anterior, estado_novo, usuario_id, tutor_id)
+        VALUES ($1, 'SOLICITACAO_CRIADA', NULL, 'AGUARDANDO_CONFIRMACAO', NULL, $2)
+      `,
+      [atendimento.id, tutorId]
     );
 
 
@@ -691,10 +693,12 @@ async function confirmarAgendamentoPublico(
 
     return res.status(201).json({
       mensagem:
-        "Agendamento realizado com sucesso.",
+        "Sua solicitação foi recebida e aguarda confirmação da equipe Amores Pet.",
 
       atendimento: {
         id: atendimento.id,
+
+        status: atendimento.status,
 
         origem:
           atendimento.origem,
@@ -722,8 +726,7 @@ async function confirmarAgendamentoPublico(
         duracao_total_minutos:
           duracaoTotal,
 
-        pagamento:
-          resultadoPagamento.rows[0],
+        pagamento: null,
       },
     });
 
