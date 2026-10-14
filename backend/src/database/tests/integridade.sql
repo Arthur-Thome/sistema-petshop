@@ -18,8 +18,11 @@ DECLARE
     outro_servico integer;
     dia integer;
     horario_id_teste integer;
+    horario_pendente integer;
     atendimento integer;
+    atendimento_reutilizado integer;
     pagamento integer;
+    estado_ativo text;
 BEGIN
     INSERT INTO usuarios (nome, email, senha_hash, perfil)
     VALUES ('Teste instalacao', 'instalacao@example.invalid', 'hash-ficticio', 'administrador')
@@ -98,15 +101,39 @@ BEGIN
         RAISE EXCEPTION 'FALHOU: dois atendimentos no mesmo slot';
     EXCEPTION WHEN unique_violation THEN NULL;
     END;
+    UPDATE banho_tosa SET status = 'RECUSADO' WHERE id = atendimento;
+    UPDATE agenda_publica_horarios SET status = 'DISPONIVEL' WHERE id = horario_id_teste;
+    INSERT INTO banho_tosa (pet_id, agendado_para, origem, agenda_publica_horario_id)
+    VALUES (pet, '2099-01-01 09:15', 'PUBLICO', horario_id_teste) RETURNING id INTO atendimento_reutilizado;
+    IF (SELECT count(*) FROM banho_tosa WHERE agenda_publica_horario_id = horario_id_teste) <> 2 THEN
+        RAISE EXCEPTION 'FALHOU: reuso do slot apagou o historico anterior';
+    END IF;
+    BEGIN
+        INSERT INTO banho_tosa (pet_id, agendado_para, origem, agenda_publica_horario_id)
+        VALUES (pet, '2099-01-01 09:15', 'PUBLICO', horario_id_teste);
+        RAISE EXCEPTION 'FALHOU: duas ocupacoes ativas no mesmo slot';
+    EXCEPTION WHEN unique_violation THEN NULL;
+    END;
+    FOREACH estado_ativo IN ARRAY ARRAY['AGUARDANDO_CONFIRMACAO', 'AGENDADO', 'EM_ATENDIMENTO', 'FINALIZADO'] LOOP
+        UPDATE banho_tosa SET status = estado_ativo WHERE id = atendimento_reutilizado;
+        BEGIN
+            INSERT INTO banho_tosa (pet_id, agendado_para, origem, agenda_publica_horario_id)
+            VALUES (pet, '2099-01-01 09:15', 'PUBLICO', horario_id_teste);
+            RAISE EXCEPTION 'FALHOU: estado ativo % aceitou duplicidade', estado_ativo;
+        EXCEPTION WHEN unique_violation THEN NULL;
+        END;
+    END LOOP;
+    UPDATE banho_tosa SET status = 'AGENDADO' WHERE id = atendimento_reutilizado;
+    UPDATE agenda_publica_horarios SET status = 'OCUPADO' WHERE id = horario_id_teste;
     INSERT INTO pagamentos_banho_tosa (banho_tosa_id, valor_total, status, metodo, pago_em)
-    VALUES (atendimento, 30, 'PAGO', 'PIX', '2099-01-01 10:00') RETURNING id INTO pagamento;
+    VALUES (atendimento_reutilizado, 30, 'PAGO', 'PIX', '2099-01-01 10:00') RETURNING id INTO pagamento;
     UPDATE pagamentos_banho_tosa SET status = 'ESTORNADO', motivo_estorno = 'Teste',
         estornado_em = CURRENT_TIMESTAMP, usuario_estorno_id = usuario WHERE id = pagamento;
     IF NOT EXISTS (SELECT 1 FROM pagamentos_banho_tosa WHERE id = pagamento
         AND valor_total = 30 AND metodo = 'PIX' AND pago_em = '2099-01-01 10:00' AND status = 'ESTORNADO') THEN
         RAISE EXCEPTION 'FALHOU: pagamento original nao preservado';
     END IF;
-    RAISE NOTICE 'PASS: agenda, multiplos servicos e campos originais do pagamento';
+    RAISE NOTICE 'PASS: reuso preserva atendimento recusado, unica ocupacao ativa e dados financeiros originais';
 
     INSERT INTO sessoes_cliente_publico (tutor_id, token_hash, expira_em)
     VALUES (tutor, repeat('c', 64), CURRENT_TIMESTAMP + INTERVAL '2 hours');
@@ -130,10 +157,11 @@ BEGIN
     RAISE NOTICE 'PASS: sessoes publicas, verificacoes, creche, hotel e logs';
 
     -- D1: novos estados nao alteram o default dos atendimentos antigos.
-    INSERT INTO banho_tosa (pet_id, agendado_para, origem, status)
-    VALUES (pet, '2099-01-01 10:15', 'PUBLICO', 'AGUARDANDO_CONFIRMACAO')
+    INSERT INTO agenda_publica_horarios (agenda_dia_id, horario, status)
+    VALUES (dia, '10:15', 'RESERVADO') RETURNING id INTO horario_pendente;
+    INSERT INTO banho_tosa (pet_id, agendado_para, origem, status, agenda_publica_horario_id)
+    VALUES (pet, '2099-01-01 10:15', 'PUBLICO', 'AGUARDANDO_CONFIRMACAO', horario_pendente)
     RETURNING id INTO atendimento;
-    UPDATE agenda_publica_horarios SET status = 'RESERVADO' WHERE id = horario_id_teste;
     INSERT INTO historico_atendimentos
         (banho_tosa_id, evento, estado_novo, tutor_id)
     VALUES (atendimento, 'SOLICITACAO_CRIADA', 'AGUARDANDO_CONFIRMACAO', tutor);

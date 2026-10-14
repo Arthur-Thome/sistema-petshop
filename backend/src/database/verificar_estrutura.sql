@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + D1 027/028 + D2 030 + D3 031.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-031.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -340,7 +340,7 @@ BEGIN
         ('pets', 'CHECK (((idade_aproximada_anos IS NULL) OR ((idade_aproximada_anos >= 0) AND (idade_aproximada_anos <= 100))))'),
         ('pets', 'CHECK (((data_nascimento IS NULL) OR (idade_aproximada_anos IS NULL)))'),
         ('pets', 'CHECK (((peso IS NULL) OR (peso > (0)::numeric)))'),
-        ('pets', 'CHECK (((porte IS NULL) OR ((porte)::text = ANY (ARRAY[(''pequeno''::character varying)::text, (''medio''::character varying)::text, (''grande''::character varying)::text, (''gigante''::character varying)::text]))))'),
+        ('pets', 'CHECK (((porte IS NULL) OR ((porte)::text = ANY ((ARRAY[''pequeno''::character varying, ''medio''::character varying, ''grande''::character varying, ''gigante''::character varying])::text[]))))'),
         ('pets', 'CHECK (((sexo IS NULL) OR ((sexo)::text = ANY (ARRAY[(''macho''::character varying)::text, (''femea''::character varying)::text]))))'),
         ('pets', 'FOREIGN KEY (tutor_id) REFERENCES tutores(id) ON DELETE RESTRICT'),
         ('pets', 'PRIMARY KEY (id)'),
@@ -376,10 +376,9 @@ BEGIN
         END IF;
     END LOOP;
 
-    -- Indices unicos parciais: horario ocupado, tutor principal, CPF,
+    -- Indices unicos parciais: tutor principal, CPF,
     -- hospedagem/creche abertas; e email sem distincao de maiusculas.
     FOR item IN SELECT * FROM (VALUES
-        ('banho_tosa', '(agenda_publica_horario_id) WHERE (agenda_publica_horario_id IS NOT NULL)'),
         ('creche', '(pet_id) WHERE ((status)::text = ''NA_CRECHE''::text)'),
         ('hotel', '(pet_id) WHERE ((status)::text = ''HOSPEDADO''::text)'),
         ('pet_tutores', '(pet_id) WHERE (principal = true)'),
@@ -395,6 +394,19 @@ BEGIN
             RAISE EXCEPTION 'Indice unico essencial ausente/incompativel em %: %', item.tabela, item.definicao;
         END IF;
     END LOOP;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        WHERE i.indrelid = 'public.banho_tosa'::regclass
+          AND i.indisunique AND i.indisvalid AND i.indisready
+          AND i.indpred IS NOT NULL
+          AND pg_get_indexdef(i.indexrelid, 1, false) = 'agenda_publica_horario_id'
+          AND pg_get_expr(i.indpred, i.indrelid, false) ILIKE '%agenda_publica_horario_id IS NOT NULL%'
+          AND pg_get_expr(i.indpred, i.indrelid, false) ILIKE '%RECUSADO%'
+          AND pg_get_expr(i.indpred, i.indrelid, false) ILIKE '%CANCELADO%'
+    ) THEN
+        RAISE EXCEPTION 'Indice de ocupacao ativa dos horarios ausente/incompativel';
+    END IF;
     FOR item IN SELECT unnest(ARRAY['chk_historico_atendimento_ator',
         'chk_historico_atendimento_motivo', 'chk_historico_atendimento_transicao']) AS nome LOOP
         IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.historico_atendimentos'::regclass
@@ -428,4 +440,4 @@ BEGIN
         RAISE EXCEPTION 'Constraints D2 da tabela de limites ausentes';
     END IF;
 END $$;
-SELECT 'Contrato da instalacao nova validado: baseline, D1 e D2; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;
+SELECT 'Contrato da instalacao nova validado: baseline e Etapa 21 D1-D5; tipos, nulabilidade, defaults, sequencias, PKs, FKs, CHECKs e unicidades listadas. Nao certifica equivalencia com bancos historicos nem fluxos HTTP.' AS resultado;

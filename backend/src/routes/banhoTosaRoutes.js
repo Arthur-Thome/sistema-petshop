@@ -7,7 +7,6 @@ const {
   buscarAtendimentoPorId,
   iniciarAtendimento,
   finalizarAtendimento,
-  cancelarAgendamento,
   confirmarPagamento,
   gerarPixAtendimento,
 } = require(
@@ -41,6 +40,7 @@ const perfisEquipeAtendimento = permitirPerfis(
 
 const router = express.Router();
 const solicitacoes = require("../controllers/solicitacaoAtendimentoController");
+const cancelarAgendamento = require("../controllers/cancelamentoAtendimentoController");
 
 /*
  * Todo o módulo exige autenticação.
@@ -132,6 +132,7 @@ router.patch(
 
 router.patch(
   "/:id/cancelar",
+  perfisEquipeAtendimento,
   cancelarAgendamento
 );
 

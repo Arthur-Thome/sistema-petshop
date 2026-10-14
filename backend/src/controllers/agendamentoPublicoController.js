@@ -332,7 +332,7 @@ async function confirmarAgendamentoPublico(
         `
           SELECT
             (($1::date + $2::time) AT TIME ZONE 'America/Sao_Paulo')
-              > CURRENT_TIMESTAMP AS futuro
+              > clock_timestamp() AS futuro
         `,
         [
           horario.data,

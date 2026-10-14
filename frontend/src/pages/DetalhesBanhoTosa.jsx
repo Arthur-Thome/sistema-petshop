@@ -84,6 +84,11 @@ function DetalhesBanhoTosa() {
   const [erroEstorno, setErroEstorno] =
     useState("");
 
+  const [modalCancelamentoAberto, setModalCancelamentoAberto] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [confirmacaoCancelamento, setConfirmacaoCancelamento] = useState(false);
+  const [erroCancelamento, setErroCancelamento] = useState("");
+
 
   /*
    * Carrega todos os dados do atendimento.
@@ -127,6 +132,37 @@ function DetalhesBanhoTosa() {
       setHistoricoOperacional(resposta.data.eventos || []);
     } catch (error) {
       setHistoricoOperacional([]);
+    }
+  }
+
+  async function confirmarCancelamento(event) {
+    event.preventDefault();
+    if (!motivoCancelamento.trim()) {
+      setErroCancelamento("Informe o motivo do cancelamento.");
+      return;
+    }
+    if (!confirmacaoCancelamento) {
+      setErroCancelamento("Confirme que deseja cancelar este atendimento.");
+      return;
+    }
+    if (atendimento.pagamento_status === "PAGO") {
+      setErroCancelamento("Faça o estorno autorizado antes de cancelar o atendimento.");
+      return;
+    }
+    try {
+      setProcessando(true);
+      setErroCancelamento("");
+      await api.patch(`/atendimentos/${id}/cancelar`, {
+        motivo_cancelamento: motivoCancelamento.trim(),
+      });
+      setModalCancelamentoAberto(false);
+      setMotivoCancelamento("");
+      setConfirmacaoCancelamento(false);
+      await Promise.all([carregarAtendimento(), carregarHistoricoOperacional()]);
+    } catch (error) {
+      setErroCancelamento(error.response?.data?.mensagem || "Não foi possível cancelar o atendimento.");
+    } finally {
+      setProcessando(false);
     }
   }
 
@@ -898,22 +934,22 @@ function DetalhesBanhoTosa() {
         </button>
 
 
-        {atendimento.status === "AGENDADO" && (
+        {["AGUARDANDO_CONFIRMACAO", "AGENDADO"].includes(atendimento.status) && (
           <>
             <button
               type="button"
               className="secondary-button"
-              onClick={() =>
-                navigate(
-                  `/atendimentos/${id}/cancelar`
-                )
-              }
+              onClick={() => {
+                setErroCancelamento("");
+                setConfirmacaoCancelamento(false);
+                setModalCancelamentoAberto(true);
+              }}
               disabled={processando}
             >
-              Cancelar Agendamento
+              Cancelar agendamento
             </button>
 
-            <button
+            {atendimento.status === "AGENDADO" && <button
               type="button"
               className="primary-button"
               onClick={iniciarAtendimento}
@@ -922,7 +958,7 @@ function DetalhesBanhoTosa() {
               {processando
                 ? "Processando..."
                 : "Iniciar Atendimento"}
-            </button>
+            </button>}
           </>
         )}
 
@@ -982,6 +1018,60 @@ function DetalhesBanhoTosa() {
         )}
 
       </div>
+
+
+      {modalCancelamentoAberto && (
+        <div className="banho-tosa-cancelamento-overlay" role="presentation">
+          <form
+            className="banho-tosa-cancelamento-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-cancelamento-atendimento"
+            onSubmit={confirmarCancelamento}
+          >
+            <h2 id="titulo-cancelamento-atendimento">Cancelar agendamento</h2>
+            <p>O atendimento e seu histórico serão preservados. O horário só voltará à agenda se continuar aberto, publicado e futuro.</p>
+            {atendimento.pagamento_status === "PAGO" && (
+              <p className="banho-tosa-cancelamento-alerta">O pagamento está pago. Faça primeiro o estorno autorizado; os dados do pagamento original serão preservados.</p>
+            )}
+            <label>
+              <span>Motivo do cancelamento</span>
+              <textarea
+                value={motivoCancelamento}
+                onChange={(event) => setMotivoCancelamento(event.target.value)}
+                maxLength={2000}
+                rows={4}
+                required
+                disabled={processando}
+                autoFocus
+              />
+            </label>
+            <label className="banho-tosa-cancelamento-confirmacao">
+              <input
+                type="checkbox"
+                checked={confirmacaoCancelamento}
+                onChange={(event) => setConfirmacaoCancelamento(event.target.checked)}
+                disabled={processando}
+              />
+              <span>Confirmo o cancelamento deste agendamento.</span>
+            </label>
+            {erroCancelamento && <div className="banho-tosa-cancelamento-erro" role="alert">{erroCancelamento}</div>}
+            <div className="banho-tosa-cancelamento-acoes">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setModalCancelamentoAberto(false)}
+                disabled={processando}
+              >Fechar</button>
+              <button
+                type="submit"
+                className="banho-tosa-cancelamento-confirmar"
+                disabled={processando || !confirmacaoCancelamento || atendimento.pagamento_status === "PAGO"}
+              >{processando ? "Cancelando..." : "Confirmar cancelamento"}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
 
       {modalEstornoAberto && (

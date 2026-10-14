@@ -88,7 +88,7 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
-const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n';
+const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n';
 
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
 console.log(psql(guard + empty).trim());
@@ -229,6 +229,12 @@ SELECT jsonb_build_object(
    WHERE n.nspname='public') x)
 );`;
 const before = psql(snapshotSql);
+psql(guard + 'BEGIN;\n\\ir migrations/029_reutilizacao_segura_horarios.sql\nCOMMIT;\n');
+assert.equal(psql(snapshotSql), before);
+console.log('PASS: migration 029 pode ser repetida sem alterar a estrutura final');
+psql('\\ir tests/migration029.sql\n');
+assert.equal(psql(snapshotSql), before);
+console.log('PASS: migration 029 libera somente historicos seguros, preserva dados e permite uma nova ocupacao');
 psql('\\ir schema.sql\n', /banco deve estar vazio/);
 assert.equal(psql(snapshotSql), before);
 console.log('PASS: reinstalacao recusada sem alterar estrutura existente');
@@ -247,7 +253,7 @@ for (const [label, mutation, expected] of [
   ['FK de pet ausente', 'ALTER TABLE pets DROP CONSTRAINT fk_pets_tutor;', /Constraint essencial/],
   ['unicidade de dia-horario ausente', 'ALTER TABLE agenda_publica_horarios DROP CONSTRAINT uq_agenda_publica_horario;', /Constraint essencial/],
   ['CHECK D1 ausente', 'ALTER TABLE historico_atendimentos DROP CONSTRAINT chk_historico_atendimento_motivo;', /Constraint essencial/],
-  ['indice de slot ausente', 'DROP INDEX public.idx_banho_tosa_agenda_publica_horario;', /Indice unico essencial/],
+  ['indice de ocupacao ativa de slot ausente', 'DROP INDEX public.idx_banho_tosa_agenda_publica_horario_unique;', /Indice de ocupacao ativa/],
 ]) {
   console.log(`Destino confirmado para mutacao reversivel (${label}): ${options.host}:${options.port}/${options.database}`);
   psql(guard + 'BEGIN;\n' + mutation + '\n\\ir verificar_estrutura.sql\nCOMMIT;\n', expected);

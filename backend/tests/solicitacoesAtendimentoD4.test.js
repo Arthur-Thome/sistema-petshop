@@ -46,6 +46,7 @@ function makeClient({ future = true, dayOpen = true, slotStatus = "RESERVADO" } 
       if (q.startsWith("update banho_tosa set status = 'recusado'")) return { rows: [{ ...atendimento, status: "RECUSADO" }], rowCount: 1 };
       if (q.startsWith("update agenda_publica_horarios set status = 'ocupado'")) return { rows: [{ id: 6 }], rowCount: 1 };
       if (q.startsWith("update agenda_publica_horarios set status = 'reservado'")) return { rows: [{ id: 6 }], rowCount: 1 };
+      if (q.startsWith("update agenda_publica_horarios set status = $1")) return { rows: [{ id: 6 }], rowCount: 1 };
       return { rows: [], rowCount: 1 };
     }),
   };
@@ -105,9 +106,16 @@ test.each(["funcionario", "gerente", "administrador"])("%s pode recusar com moti
   expect(response.body.horario_liberado).toBe(false);
   const evento = client.query.mock.calls.find(([sql]) => /SOLICITACAO_RECUSADA/i.test(String(sql)));
   expect(evento[1]).toEqual([81, 17, "Pet precisa de avaliação prévia"]);
-  expect(client.query.mock.calls.some(([sql]) => /status = 'BLOQUEADO'/i.test(String(sql)))).toBe(true);
+  expect(client.query.mock.calls.some(([sql, params]) => /UPDATE agenda_publica_horarios/i.test(String(sql)) && params[0] === "BLOQUEADO")).toBe(true);
 });
 
+test("recusa libera somente slot aberto, publicado e futuro", async () => {
+  const { client } = makeClient({ dayOpen: true });
+  const response = await request(app).patch("/api/atendimentos/81/recusar").send({ motivo: "Tutor pediu outro horario" });
+  expect(response.status).toBe(200);
+  expect(response.body.horario_liberado).toBe(true);
+  expect(client.query.mock.calls.some(([sql, params]) => /UPDATE agenda_publica_horarios/i.test(String(sql)) && params[0] === "DISPONIVEL")).toBe(true);
+});
 test("solicitação pendente não pode iniciar atendimento nem confirmar pagamento", async () => {
   const { client } = makeClient();
   const iniciar = await request(app).patch("/api/atendimentos/81/iniciar");

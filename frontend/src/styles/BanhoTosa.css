@@ -2291,3 +2291,96 @@
   color: #795400;
   font-weight: 700;
 }
+
+.banho-tosa-cancelamento-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 58%);
+}
+
+.banho-tosa-cancelamento-modal {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 560px);
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+  padding: 28px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(15 23 42 / 24%);
+}
+
+.banho-tosa-cancelamento-modal h2,
+.banho-tosa-cancelamento-modal p {
+  margin: 0;
+}
+
+.banho-tosa-cancelamento-modal > label:first-of-type {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.banho-tosa-cancelamento-modal textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  resize: vertical;
+  font: inherit;
+}
+
+.banho-tosa-cancelamento-confirmacao {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.banho-tosa-cancelamento-alerta,
+.banho-tosa-cancelamento-erro {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #7a3e00;
+}
+
+.banho-tosa-cancelamento-erro {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.banho-tosa-cancelamento-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.banho-tosa-cancelamento-confirmar {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #b42318;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.banho-tosa-cancelamento-confirmar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .banho-tosa-cancelamento-modal {
+    padding: 20px;
+  }
+  .banho-tosa-cancelamento-acoes {
+    flex-direction: column-reverse;
+  }
+}

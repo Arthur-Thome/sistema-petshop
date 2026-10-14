@@ -116,7 +116,7 @@ async function confirmarSolicitacao(req, res) {
     }
 
     const futuro = await client.query(`
-      SELECT (($1::date + $2::time) AT TIME ZONE 'America/Sao_Paulo') > CURRENT_TIMESTAMP AS futuro
+      SELECT (($1::date + $2::time) AT TIME ZONE 'America/Sao_Paulo') > clock_timestamp() AS futuro
     `, [horario.data, horario.horario]);
     if (!futuro.rows[0]?.futuro) {
       await client.query("ROLLBACK"); tx = false;
@@ -253,6 +253,14 @@ async function recusarSolicitacao(req, res) {
       await client.query("ROLLBACK"); tx = false;
       return res.status(409).json({ codigo: "HORARIO_INDISPONIVEL", mensagem: "O horário não está reservado por esta solicitação." });
     }
+    const pagamentoExistente = await client.query(
+      "SELECT id, status FROM pagamentos_banho_tosa WHERE banho_tosa_id = $1 FOR UPDATE",
+      [id]
+    );
+    if (pagamentoExistente.rows.length) {
+      await client.query("ROLLBACK"); tx = false;
+      return res.status(409).json({ codigo: "FINANCEIRO_INCONSISTENTE", mensagem: "A solicitação pendente possui cobrança vinculada e precisa de conferência financeira." });
+    }
     const atualizado = await client.query(`
       UPDATE banho_tosa SET status = 'RECUSADO', atualizado_em = CURRENT_TIMESTAMP
       WHERE id = $1 AND status = 'AGUARDANDO_CONFIRMACAO' RETURNING *
@@ -262,14 +270,17 @@ async function recusarSolicitacao(req, res) {
       return res.status(409).json({ codigo: "ESTADO_INCOMPATIVEL", mensagem: "A solicitação foi alterada por outro usuário." });
     }
 
-    // O índice único absoluto dos slots impede reuso seguro até a migration 029/D5.
-    // Se a agenda já fechou, também não reabrimos o horário.
-    if (!horario.aberto || !horario.publicado) {
-      await client.query(`
-        UPDATE agenda_publica_horarios SET status = 'BLOQUEADO', atualizado_em = CURRENT_TIMESTAMP
-        WHERE id = $1 AND status = 'RESERVADO'
-      `, [horarioId]);
-    }
+    const futuro = await client.query(`
+      SELECT (($1::date + $2::time) AT TIME ZONE 'America/Sao_Paulo') > clock_timestamp() AS futuro
+    `, [horario.data, horario.horario]);
+    const horarioLiberado = Boolean(horario.aberto && horario.publicado && futuro.rows[0]?.futuro);
+    const slotAtualizado = await client.query(`
+      UPDATE agenda_publica_horarios
+      SET status = $1, atualizado_em = CURRENT_TIMESTAMP
+      WHERE id = $2 AND status = 'RESERVADO'
+      RETURNING id
+    `, [horarioLiberado ? "DISPONIVEL" : "BLOQUEADO", horarioId]);
+    if (!slotAtualizado.rows.length) throw Object.assign(new Error("HORARIO_INDISPONIVEL"), { code: "HORARIO_INDISPONIVEL" });
     await client.query(`
       INSERT INTO historico_atendimentos
         (banho_tosa_id, evento, estado_anterior, estado_novo, usuario_id, tutor_id, motivo)
@@ -277,13 +288,12 @@ async function recusarSolicitacao(req, res) {
     `, [id, usuarioId, motivo]);
 
     await client.query("COMMIT"); tx = false;
-    const slotPendenteReuso = Boolean(horario.aberto && horario.publicado);
     return res.status(200).json({
       atendimento: atualizado.rows[0],
-      horario_liberado: false,
-      aviso: slotPendenteReuso
-        ? "A solicitação foi recusada. O horário poderá ser reutilizado após a etapa D5 habilitar o reuso seguro dos slots."
-        : "A solicitação foi recusada e o horário permaneceu bloqueado conforme a agenda.",
+      horario_liberado: horarioLiberado,
+      aviso: horarioLiberado
+        ? undefined
+        : "A solicitação foi recusada e o horário permaneceu indisponível conforme a agenda.",
     });
   } catch (erro) {
     if (tx) await client.query("ROLLBACK").catch(() => {});

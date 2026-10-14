@@ -756,14 +756,17 @@ async function salvarDiaAgenda(
     const resultadoOcupados =
       await client.query(
         `
-          SELECT
-            horario
-
-          FROM agenda_publica_horarios
-
-          WHERE
-            agenda_dia_id = $1
-            AND status = 'OCUPADO'
+          SELECT DISTINCT h.horario
+          FROM agenda_publica_horarios h
+          WHERE h.agenda_dia_id = $1
+            AND (
+              h.status IN ('OCUPADO', 'RESERVADO')
+              OR EXISTS (
+                SELECT 1 FROM banho_tosa bt
+                WHERE bt.agenda_publica_horario_id = h.id
+                  AND bt.status NOT IN ('CANCELADO', 'RECUSADO')
+              )
+            )
         `,
         [dia.id]
       );
@@ -804,28 +807,39 @@ async function salvarDiaAgenda(
     if (horarios.length === 0) {
       await client.query(
         `
-          DELETE FROM agenda_publica_horarios
-
-          WHERE
-            agenda_dia_id = $1
-            AND status <> 'OCUPADO'
+          UPDATE agenda_publica_horarios h
+          SET status = 'BLOQUEADO', atualizado_por = $2, atualizado_em = CURRENT_TIMESTAMP
+          WHERE h.agenda_dia_id = $1
+            AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+            AND NOT EXISTS (SELECT 1 FROM unnest($3::time[]) AS desejado(horario) WHERE desejado.horario = h.horario)
+            AND EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id)
         `,
-        [dia.id]
+        [dia.id, req.usuario.id, horarios]
       );
+      await client.query(`
+        DELETE FROM agenda_publica_horarios h
+        WHERE h.agenda_dia_id = $1
+          AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+          AND NOT EXISTS (SELECT 1 FROM unnest($2::time[]) AS desejado(horario) WHERE desejado.horario = h.horario)
+          AND NOT EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id)
+      `, [dia.id, horarios]);
 
     } else {
+      await client.query(`
+        UPDATE agenda_publica_horarios h
+        SET status = 'BLOQUEADO', atualizado_por = $2, atualizado_em = CURRENT_TIMESTAMP
+        WHERE h.agenda_dia_id = $1
+          AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+          AND NOT (h.horario = ANY($3::time[]))
+          AND EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id)
+      `, [dia.id, req.usuario.id, horarios]);
       await client.query(
         `
-          DELETE FROM agenda_publica_horarios
-
-          WHERE
-            agenda_dia_id = $1
-            AND status <> 'OCUPADO'
-            AND NOT (
-              horario = ANY(
-                $2::time[]
-              )
-            )
+          DELETE FROM agenda_publica_horarios h
+          WHERE h.agenda_dia_id = $1
+            AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+            AND NOT (h.horario = ANY($2::time[]))
+            AND NOT EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id)
         `,
         [
           dia.id,
@@ -833,7 +847,6 @@ async function salvarDiaAgenda(
         ]
       );
     }
-
 
     for (const horario of horarios) {
       await client.query(
@@ -867,6 +880,21 @@ async function salvarDiaAgenda(
         ]
       );
     }
+
+    await client.query(`
+      UPDATE agenda_publica_horarios h
+      SET status = CASE
+            WHEN d.aberto AND d.publicado
+             AND ((d.data + h.horario) AT TIME ZONE 'America/Sao_Paulo') > clock_timestamp()
+            THEN 'DISPONIVEL' ELSE 'BLOQUEADO' END,
+          atualizado_por = $2, atualizado_em = CURRENT_TIMESTAMP
+      FROM agenda_publica_dias d
+      WHERE h.agenda_dia_id = d.id AND d.id = $1
+        AND h.horario = ANY($3::time[])
+        AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+        AND NOT EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id
+          AND bt.status NOT IN ('CANCELADO', 'RECUSADO'))
+    `, [dia.id, req.usuario.id, horarios]);
 
 
     const diaFinal =
@@ -1474,14 +1502,17 @@ async function aplicarAgendaEmMassa(
         const resultadoOcupados =
           await client.query(
             `
-              SELECT
-                horario
-
-              FROM agenda_publica_horarios
-
-              WHERE
-                agenda_dia_id = $1
-                AND status = 'OCUPADO'
+              SELECT DISTINCT h.horario
+              FROM agenda_publica_horarios h
+              WHERE h.agenda_dia_id = $1
+                AND (
+                  h.status IN ('OCUPADO', 'RESERVADO')
+                  OR EXISTS (
+                    SELECT 1 FROM banho_tosa bt
+                    WHERE bt.agenda_publica_horario_id = h.id
+                      AND bt.status NOT IN ('CANCELADO', 'RECUSADO')
+                  )
+                )
             `,
             [diaExistente.id]
           );
@@ -1554,22 +1585,25 @@ async function aplicarAgendaEmMassa(
         );
 
 
-        /*
-         * BLOQUEADOS também são substituídos.
-         *
-         * Somente OCUPADOS são preservados porque representam
-         * compromisso já assumido pela agenda.
-         */
+        // Slots com histórico nunca são apagados; históricos encerrados fora da oferta ficam bloqueados.
         await client.query(
           `
-            DELETE FROM agenda_publica_horarios
-
-            WHERE
-              agenda_dia_id = $1
-              AND status <> 'OCUPADO'
+            UPDATE agenda_publica_horarios h
+            SET status = 'BLOQUEADO', atualizado_por = $2, atualizado_em = CURRENT_TIMESTAMP
+            WHERE h.agenda_dia_id = $1
+              AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+              AND NOT (h.horario = ANY($3::time[]))
+              AND EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id)
           `,
-          [diaExistente.id]
+          [diaExistente.id, req.usuario.id, horarios]
         );
+        await client.query(`
+          DELETE FROM agenda_publica_horarios h
+          WHERE h.agenda_dia_id = $1
+            AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+            AND NOT (h.horario = ANY($2::time[]))
+            AND NOT EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id)
+        `, [diaExistente.id, horarios]);
 
 
         let adicionadosNestaData = 0;
@@ -1622,6 +1656,21 @@ async function aplicarAgendaEmMassa(
             resumo.horarios_adicionados++;
           }
         }
+
+        await client.query(`
+          UPDATE agenda_publica_horarios h
+          SET status = CASE
+                WHEN d.aberto AND d.publicado
+                 AND ((d.data + h.horario) AT TIME ZONE 'America/Sao_Paulo') > clock_timestamp()
+                THEN 'DISPONIVEL' ELSE 'BLOQUEADO' END,
+              atualizado_por = $2, atualizado_em = CURRENT_TIMESTAMP
+          FROM agenda_publica_dias d
+          WHERE h.agenda_dia_id = d.id AND d.id = $1
+            AND h.horario = ANY($3::time[])
+            AND h.status NOT IN ('OCUPADO', 'RESERVADO')
+            AND NOT EXISTS (SELECT 1 FROM banho_tosa bt WHERE bt.agenda_publica_horario_id = h.id
+              AND bt.status NOT IN ('CANCELADO', 'RECUSADO'))
+        `, [diaExistente.id, req.usuario.id, horarios]);
 
 
         resumo.datas_alteradas++;
