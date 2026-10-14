@@ -74,7 +74,11 @@ function GerenciarUsuario() {
 
 
   useEffect(() => {
-    carregarUsuario();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarUsuario();
+    });
+    return () => { ativo = false; };
   }, [carregarUsuario]);
 
 

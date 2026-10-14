@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   useNavigate,
   useParams,
@@ -111,7 +111,7 @@ async function confirmarAlteracaoStatus(senha) {
   }
 }
 
-  async function carregarDados() {
+  const carregarDados = useCallback(async () => {
     try {
       setCarregando(true);
       setErro("");
@@ -154,12 +154,16 @@ async function confirmarAlteracaoStatus(senha) {
     } finally {
       setCarregando(false);
     }
-  }
+  }, [id]);
 
 
   useEffect(() => {
-    carregarDados();
-  }, [id]);
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarDados();
+    });
+    return () => { ativo = false; };
+  }, [carregarDados]);
 
 
   function formatarValor(valor) {
@@ -191,69 +195,6 @@ async function confirmarAlteracaoStatus(senha) {
     );
   }
 
-  async function alterarStatus(senha) {
-    try {
-
-      setAlterandoStatus(true);
-      setErro("");
-
-
-      /*
-      * Se está ativo, envia false.
-      * Se está inativo, envia true.
-      */
-      const novoStatus =
-        !produto.ativo;
-
-
-      const resposta =
-        await api.patch(
-          `/produtos/${id}/status`,
-
-          {
-            ativo: novoStatus,
-          },
-
-          {
-            headers: {
-              "X-Confirm-Password":
-                senha,
-            },
-          }
-        );
-
-
-      /*
-      * Atualiza a ficha sem precisar
-      * recarregar toda a página.
-      */
-      setProduto(
-        resposta.data.produto
-      );
-
-
-      setModalStatusAberto(false);
-
-    } catch (error) {
-
-      console.error(
-        "Erro ao alterar status do produto:",
-        error
-      );
-
-
-      /*
-      * O modal que já utilizamos no sistema
-      * poderá tratar a senha incorreta.
-      */
-      throw error;
-
-    } finally {
-
-      setAlterandoStatus(false);
-
-    }
-  }
 
   if (carregando) {
     return (

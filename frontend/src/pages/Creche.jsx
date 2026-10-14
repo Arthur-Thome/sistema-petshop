@@ -57,7 +57,11 @@ function Creche() {
 
 
   useEffect(() => {
-    carregarPetsNaCreche();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarPetsNaCreche();
+    });
+    return () => { ativo = false; };
   }, []);
 
 

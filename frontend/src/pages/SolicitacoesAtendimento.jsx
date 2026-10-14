@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import "../styles/SolicitacoesAtendimento.css";
 
@@ -25,8 +25,9 @@ function SolicitacoesAtendimento() {
   const [modalRecusa, setModalRecusa] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [agora, setAgora] = useState(0);
 
-  async function carregar() {
+  const carregar = useCallback(async () => {
     try {
       setCarregando(true);
       setErro("");
@@ -37,9 +38,21 @@ function SolicitacoesAtendimento() {
     } finally {
       setCarregando(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    let ativo = true;
+    queueMicrotask(() => { if (ativo) void carregar(); });
+    return () => { ativo = false; };
+  }, [carregar]);
+
+  useEffect(() => {
+    let ativo = true;
+    const atualizarRelogio = () => { if (ativo) setAgora(Date.now()); };
+    queueMicrotask(atualizarRelogio);
+    const timer = window.setInterval(atualizarRelogio, 30_000);
+    return () => { ativo = false; window.clearInterval(timer); };
+  }, []);
 
   async function abrirDetalhes(item) {
     setSelecionada(item);
@@ -55,8 +68,9 @@ function SolicitacoesAtendimento() {
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
-    const agora = Date.now();
-    const inicioHoje = new Date(new Date().toLocaleDateString("en-US", { timeZone: "America/Sao_Paulo" })).getTime();
+    const inicioHoje = agora
+      ? new Date(new Date(agora).toLocaleDateString("en-US", { timeZone: "America/Sao_Paulo" })).getTime()
+      : 0;
     return solicitacoes.filter((item) => {
       const texto = [item.pet_nome, item.tutor_nome, item.pet_raca, item.pet_especie,
         ...(Array.isArray(item.servicos) ? item.servicos.map((s) => s.nome) : [])]
@@ -68,7 +82,7 @@ function SolicitacoesAtendimento() {
       if (filtroData === "passadas" && data >= agora) return false;
       return true;
     });
-  }, [solicitacoes, busca, filtroData]);
+  }, [solicitacoes, busca, filtroData, agora]);
 
   async function confirmar() {
     if (!selecionada) return;
@@ -104,7 +118,7 @@ function SolicitacoesAtendimento() {
   }
 
   const temStatusPendente = selecionada?.status === "AGUARDANDO_CONFIRMACAO";
-  const horarioPassado = selecionada && new Date(selecionada.agendado_para).getTime() <= Date.now();
+  const horarioPassado = selecionada && agora > 0 && new Date(selecionada.agendado_para).getTime() <= agora;
 
   return (
     <div className="solicitacoes-page">

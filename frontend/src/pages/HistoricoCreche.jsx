@@ -63,7 +63,11 @@ function HistoricoCreche() {
 
 
   useEffect(() => {
-    carregarHistorico();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarHistorico();
+    });
+    return () => { ativo = false; };
   }, []);
 
 

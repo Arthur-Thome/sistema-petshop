@@ -89,7 +89,11 @@ function Produtos() {
 
 
   useEffect(() => {
-    carregarProdutos();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarProdutos();
+    });
+    return () => { ativo = false; };
   }, []);
 
 

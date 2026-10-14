@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fotoStorage = require("../services/petPhotoStorage");
 const path = require("path");
 const pool = require("../database/connection");
 const verificacao = require("../services/verificacaoClientePublicoService");
@@ -77,7 +77,7 @@ function caminhoFoto(req) {
 }
 
 function apagarUpload(req) {
-  if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+  if (req.file?._objetoPersistido) fotoStorage.removerFoto(req.file.filename).catch(() => {});
 }
 
 async function criarPetCliente(req, res) {
@@ -93,6 +93,10 @@ async function criarPetCliente(req, res) {
     await verificacao.consumirLimite(client, verificacao.hmac(`pets:${tutorId}`), 5);
     const tutor = await client.query("SELECT id FROM tutores WHERE id = $1 AND ativo = TRUE FOR SHARE", [tutorId]);
     if (!tutor.rows.length) { await client.query("ROLLBACK"); tx = false; apagarUpload(req); return res.status(401).json({ codigo: "SESSAO_INVALIDA", mensagem: "Identifique-se novamente para continuar." }); }
+    if (req.file) {
+      await fotoStorage.salvarFoto(req.file.buffer, req.file.mimetype, req.file.filename);
+      req.file._objetoPersistido = true;
+    }
     const result = await client.query(
       `INSERT INTO pets (tutor_id, nome, especie, raca, sexo, data_nascimento, peso, cor, foto, observacoes,
          porte, castrado, alergias, necessidades_especiais, comportamento, idade_aproximada_anos)

@@ -53,3 +53,7 @@ preferência exclusiva e perfis. `backend/src/database/tests/integridade.sql`
 valida trigger transacional e a restrição de preferência; `verificar_estrutura.sql`
 confere estrutura e gatilhos. Há teste HTTP focado para duplicidade de produto
 em `backend/tests/produtoDuplicidade.test.js`.
+
+Estado historico da Etapa 23. Na Etapa 24 foi adicionado transporte opcional
+de texto e PDF para Meta WhatsApp Cloud API, desativado por padrao; consulte
+`etapa24-preparacao.md` para requisitos de credenciais e homologacao.

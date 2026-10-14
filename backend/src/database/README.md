@@ -20,8 +20,10 @@ Ordem fixa, sem migration runner na aplicação:
 10. `migrations/031_porte_gigante_pet.sql` (D3).
 11. `migrations/032_conteudo_site_galeria.sql` (Bloco E).
 12. `migrations/033_notificacoes_internas.sql` (Etapa 23).
+13. `migrations/034_rate_limit_upload_cleanup.sql` (limites compartilhados e inventário de uploads temporários).
+14. migrations/035_renomear_tabelas_atendimentos.sql (tabelas canonicas e views atualizaveis legadas).
 
-Resultado apos Etapa 23: estrutura funcional sem dados de clientes e sem administrador. A 032 cria somente a linha singleton vazia de configuracao institucional; nao inclui conteudo comercial ou premiacoes. A 033 cria notificacoes operacionais persistentes e preferencias por usuario.
+Resultado após Etapa 24: inclui contadores compartilhados de rate limit e intents de limpeza, sem dados de clientes ou administrador. A 032 cria somente a configuração institucional vazia; a 033 cria notificações operacionais e preferências.
 O bootstrap e as migrations 020–024 permanecem intactos. Não executar todas
 as migrations por wildcard: a base já incorpora 020–024, inclusive com alguns
 nomes de índices/constraints diferentes.
@@ -121,7 +123,7 @@ sem editar as migrations históricas.
 psql -X -h 127.0.0.1 -p 5432 -U postgres -d amores_pet_novo -v ON_ERROR_STOP=1 -f backend/src/database/verificar_estrutura.sql
 ```
 
-A verificação só lê catálogos: confere as 25 tabelas esperadas, tipos,
+A verificação só lê catálogos: confere 25 relacoes esperadas (22 tabelas e 3 views de compatibilidade), tipos,
 nulabilidade, defaults, sequências, PKs, FKs, CHECKs e índices únicos listados.
 As constraints esperadas precisam estar validadas e não ser adiáveis.
 Esse contrato descreve a instalação nova; não certifica equivalência com
@@ -236,3 +238,39 @@ negocio. A API filtra pelo usuario autenticado. Atendimentos previstos nas
 proximas 24 horas sao materializados de forma idempotente ao consultar a
 central. Em atualizacoes existentes, aplique 033 somente apos revisar 027-032;
 a aplicacao nao executa migrations na inicializacao.
+
+## Pool PostgreSQL e armazenamento de arquivos (Etapa 24)
+
+`connection.js` aceita `DATABASE_URL` ou os campos `DB_*`. Em host remoto,
+`DB_SSL=auto` exige TLS com validacao de certificado; nao desligar validacao
+para contornar erro de certificado. `DB_POOL_MAX` limita conexoes por processo
+(default 3 em Vercel e 10 local); multiplique pelo maximo de instancias e use a
+URL pooled do Neon conforme a topologia. Controllers transacionais devem
+continuar fazendo `const client = await pool.connect()` e manter `BEGIN`/locks/
+`COMMIT`/`ROLLBACK` no mesmo cliente.
+
+Fotos de pets sao servidas por endpoint que valida JWT interno ou sessao
+publica e vinculo tutor-pet; nao use `express.static` para fotos privadas. O
+upload usa buffer limitado e pode gravar em `FILE_STORAGE_MODE=local` (padrao)
+ou `FILE_STORAGE_MODE=s3`. O modo S3 usa SigV4 path-style e as variaveis
+`AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` (opcional `AWS_SESSION_TOKEN`), com buckets separados
+`PET_PHOTO_BUCKET` e `SITE_GALLERY_BUCKET`. Mantenha ambos privados: a API
+autoriza fotos de pets por sessao/vinculo e publica somente imagens de galeria
+marcadas como publicadas. ACLs nao sao controladas pelo cliente S3 em Neon.
+Nenhum bucket foi criado/configurado.
+
+Fotos de pets enviadas a partir da Vercel usam PUT direto autorizado no S3 para
+suportar ate 5 MB. Cada autorização usa prefixo temporário exclusivo e JWT curto;
+a migration 034 persiste intent por usuário e chave. O coletor manual/cron
+autenticado por `CRON_SECRET` seleciona no maximo 2 intents vencidos e não
+finalizados, com FOR UPDATE SKIP LOCKED e timeout S3 de 8 segundos, removendo apenas chave exata sob
+`tmp/`; falhas são retentadas até 10 execuções e chaves inválidas nunca são
+enviadas ao provedor. A documentação Neon confirma endpoints de configuração
+S3 Lifecycle, mas declara que as regras de expiração/transição não são executadas;
+por isso a limpeza depende do coletor da aplicação. `S3_TEMP_UPLOAD_CLEANUP_CONFIRMED`
+continua falso e as rotas diretas bloqueadas até verificar endpoint, permissões,
+CORS, assinatura e limpeza em homologação. Nenhuma regra/rotina pode abranger
+chaves permanentes nem arquivos de outros módulos.
+
+Migration 035 validada em PostgreSQL 17 temporario: os nomes fisicos das tabelas-base passam a `atendimentos`, `atendimento_servicos` e `pagamentos_atendimentos`. Os nomes antigos `banho_tosa`, `banho_tosa_servicos` e `pagamentos_banho_tosa` permanecem como views simples atualizaveis; o codigo legado ainda usa esses aliases. Colunas como `banho_tosa_id`, sequences, nomes de indices, constraints e triggers continuam historicos e nao foram renomeados. FKs e triggers permanecem ligados aos objetos-base pelos OIDs. A migration transfere o ownership das views para acompanhar o owner de cada tabela-base e reaplica grants DML. Isso padroniza os nomes das tres tabelas fisicas, nao todos os identificadores internos nem as consultas do codigo. Em banco existente, aplicar somente em janela de manutencao, com backup verificado e apos validar owners/grants; nunca executar automaticamente.

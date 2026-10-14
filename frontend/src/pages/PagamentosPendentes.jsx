@@ -121,7 +121,11 @@ function PagamentosPendentes() {
 
 
   useEffect(() => {
-    carregarPagamentos();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarPagamentos();
+    });
+    return () => { ativo = false; };
   }, [carregarPagamentos]);
 
 

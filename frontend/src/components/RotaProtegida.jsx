@@ -28,7 +28,7 @@ function RotaProtegida({ children }) {
         );
 
         setAutenticado(true);
-      } catch (erro) {
+      } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("usuario");
 

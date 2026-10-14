@@ -1,16 +1,16 @@
 const pool = require("../database/connection");
 const { registrarLog } = require("../services/logService");
-const fs = require("fs");
 const path = require("path");
+const fotoStorage = require("../services/petPhotoStorage");
 
 /*
- * Remove somente arquivos localizados dentro da pasta
- * destinada às fotos dos pets.
+ * Remove somente o objeto privado identificado pela chave
+ * da foto do pet.
  *
  * path.basename impede que um caminho armazenado no banco
  * seja utilizado para acessar diretórios externos.
  */
-function removerArquivoFoto(caminhoFoto) {
+async function removerArquivoFoto(caminhoFoto) {
   if (!caminhoFoto) {
     return;
   }
@@ -19,16 +19,7 @@ function removerArquivoFoto(caminhoFoto) {
     const nomeArquivo =
       path.basename(caminhoFoto);
 
-    const caminhoCompleto =
-      path.resolve(
-        __dirname,
-        "../uploads/pets",
-        nomeArquivo
-      );
-
-    if (fs.existsSync(caminhoCompleto)) {
-      fs.unlinkSync(caminhoCompleto);
-    }
+    return fotoStorage.removerFoto(nomeArquivo);
   } catch (error) {
     console.error(
       "Não foi possível remover arquivo de foto:",
@@ -1154,6 +1145,7 @@ async function atualizarFotoPet(req, res) {
     });
   }
 
+  const nomeNovaFoto = req.file.filename;
   const novaFoto =
     `/uploads/pets/${req.file.filename}`;
 
@@ -1165,8 +1157,6 @@ async function atualizarFotoPet(req, res) {
     !Number.isInteger(petId) ||
     petId <= 0
   ) {
-    removerArquivoFoto(novaFoto);
-
     return res.status(400).json({
       mensagem:
         "ID de pet inválido.",
@@ -1174,8 +1164,11 @@ async function atualizarFotoPet(req, res) {
   }
 
   let bancoAtualizado = false;
+  let arquivoPersistido = false;
 
   try {
+    await fotoStorage.salvarFoto(req.file.buffer, req.file.mimetype, nomeNovaFoto);
+    arquivoPersistido = true;
     const resultadoAnterior =
       await pool.query(
         `SELECT *
@@ -1188,7 +1181,7 @@ async function atualizarFotoPet(req, res) {
       resultadoAnterior.rows.length ===
       0
     ) {
-      removerArquivoFoto(
+      await removerArquivoFoto(
         novaFoto
       );
 
@@ -1225,19 +1218,7 @@ async function atualizarFotoPet(req, res) {
      */
     bancoAtualizado = true;
 
-    /*
-     * A foto antiga somente é apagada depois que a nova
-     * referência foi salva com sucesso no banco.
-     */
-    if (
-      petAnterior.foto &&
-      petAnterior.foto !==
-        novaFoto
-    ) {
-      removerArquivoFoto(
-        petAnterior.foto
-      );
-    }
+    // A foto anterior permanece no storage para permitir recuperação e migração auditável.
 
     /*
      * Uma falha exclusivamente na auditoria não deve
@@ -1281,10 +1262,8 @@ async function atualizarFotoPet(req, res) {
      * removemos o arquivo recebido para não deixar
      * arquivos órfãos no servidor.
      */
-    if (!bancoAtualizado) {
-      removerArquivoFoto(
-        novaFoto
-      );
+    if (!bancoAtualizado && arquivoPersistido) {
+      await removerArquivoFoto(novaFoto).catch(() => {});
     }
 
     console.error(

@@ -347,9 +347,10 @@ function FormularioTutor() {
      * ainda não existe um nome completo correspondente.
      */
     if (!nomeDigitado) {
-      setTutorDuplicado(null);
-
-      setNomeDuplicadoIgnorado("");
+      queueMicrotask(() => {
+        setTutorDuplicado(null);
+        setNomeDuplicadoIgnorado("");
+      });
 
       return;
     }
@@ -365,7 +366,7 @@ function FormularioTutor() {
       nomeDigitado !==
         nomeDuplicadoIgnorado
     ) {
-      setNomeDuplicadoIgnorado("");
+      queueMicrotask(() => setNomeDuplicadoIgnorado(""));
     }
 
 
@@ -384,7 +385,7 @@ function FormularioTutor() {
 
 
     if (!tutorEncontrado) {
-      setTutorDuplicado(null);
+      queueMicrotask(() => setTutorDuplicado(null));
 
       return;
     }
@@ -402,9 +403,7 @@ function FormularioTutor() {
     }
 
 
-    setTutorDuplicado(
-      tutorEncontrado
-    );
+    queueMicrotask(() => setTutorDuplicado(tutorEncontrado));
 
   }, [
     form.nome,
@@ -454,7 +453,7 @@ function FormularioTutor() {
       modoEdicao ||
       !petOrigemId
     ) {
-      setPetOrigem(null);
+      queueMicrotask(() => setPetOrigem(null));
 
       return;
     }
@@ -630,7 +629,7 @@ function FormularioTutor() {
         numeroRef.current?.focus();
       }, 0);
 
-    } catch (error) {
+    } catch {
       setErroCep(
         "Não foi possível consultar o CEP. Preencha o endereço manualmente."
       );

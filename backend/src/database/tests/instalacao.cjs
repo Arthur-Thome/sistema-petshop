@@ -88,7 +88,8 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
-const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n\\ir migrations/033_notificacoes_internas.sql\n';
+const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n\\ir migrations/033_notificacoes_internas.sql\n\\ir migrations/034_rate_limit_upload_cleanup.sql\n\\ir migrations/035_renomear_tabelas_atendimentos.sql\n';
+const preparacaoAntesRenomeacao = preparacaoEtapa21.replace('\\ir migrations/035_renomear_tabelas_atendimentos.sql\n', '');
 
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
 console.log(psql(guard + empty).trim());
@@ -200,6 +201,12 @@ ROLLBACK;
 psql(guard + empty);
 console.log('PASS: 027/028 preservam atendimento interno legado AGENDADO e default');
 
+// D5 usa LOCK/CREATE INDEX nos nomes legados, portanto roda antes da 035.
+// A transacao externa e revertida pelo ROLLBACK do proprio teste D5.
+psql(guard + 'BEGIN;\n' + baseline + corrections + preparacaoAntesRenomeacao + '\\ir tests/migration029.sql\n');
+psql(guard + empty);
+console.log('PASS: migration 029 e reutilizacao dos horarios antes da renomeacao 035');
+
 psql('\\ir schema.sql\n');
 console.log('PASS: instalacao nova completa');
 // Snapshot de definicoes, nao de OIDs nem do valor corrente das sequencias.
@@ -229,12 +236,10 @@ SELECT jsonb_build_object(
    WHERE n.nspname='public') x)
 );`;
 const before = psql(snapshotSql);
-psql(guard + 'BEGIN;\n\\ir migrations/029_reutilizacao_segura_horarios.sql\nCOMMIT;\n');
+// A migration 029 opera antes da 035, quando os nomes antigos ainda sao tabelas.
+// Apos a renomeacao, seus aliases sao views e nao podem ser usados para LOCK TABLE.
 assert.equal(psql(snapshotSql), before);
-console.log('PASS: migration 029 pode ser repetida sem alterar a estrutura final');
-psql('\\ir tests/migration029.sql\n');
-assert.equal(psql(snapshotSql), before);
-console.log('PASS: migration 029 libera somente historicos seguros, preserva dados e permite uma nova ocupacao');
+console.log('PASS: 035 mantem a estrutura da 029 e os aliases apos a instalacao limpa');
 psql('\\ir schema.sql\n', /banco deve estar vazio/);
 assert.equal(psql(snapshotSql), before);
 console.log('PASS: reinstalacao recusada sem alterar estrutura existente');

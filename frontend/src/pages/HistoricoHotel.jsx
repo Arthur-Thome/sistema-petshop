@@ -64,7 +64,11 @@ function HistoricoHotel() {
   }
 
   useEffect(() => {
-    carregarHistorico();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarHistorico();
+    });
+    return () => { ativo = false; };
   }, []);
 
   function pesquisar(event) {

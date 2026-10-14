@@ -1,60 +1,63 @@
+import { lazy, Suspense } from "react";
+
 import {
   BrowserRouter,
   Navigate,
   Route,
   Routes,
+  useLocation,
 } from "react-router-dom";
 
-import Login from "./pages/login";
-import Dashboard from "./pages/dashboard";
-import Tutores from "./pages/Tutores";
+const Login = lazy(() => import("./pages/login"));
+const Dashboard = lazy(() => import("./pages/dashboard"));
+const Tutores = lazy(() => import("./pages/Tutores"));
 import Layout from "./components/Layout";
 import RotaProtegida from "./components/RotaProtegida";
-import FormularioTutor from "./pages/FormularioTutor";
-import DetalhesTutor from "./pages/DetalhesTutor";
-import FormularioPet from "./pages/FormularioPet";
-import Pets from "./pages/Pets";
-import DetalhesPet from "./pages/DetalhesPet";
-import Produtos from "./pages/Produtos";
-import FormularioProduto from "./pages/FormularioProduto";
-import DetalhesProduto from "./pages/DetalhesProduto";
-import MovimentarEstoque from "./pages/MovimentarEstoque";
-import Creche from "./pages/Creche";
-import EntradaCreche from "./pages/EntradaCreche";
-import SaidaCreche from "./pages/SaidaCreche";
-import HistoricoCreche from "./pages/HistoricoCreche";
-import Hotel from "./pages/Hotel";
-import NovaReservaHotel from "./pages/NovaReservaHotel";
-import CheckinHotel from "./pages/CheckinHotel";
-import CheckoutHotel from "./pages/CheckoutHotel";
-import CancelarReservaHotel from "./pages/CancelarReservaHotel";
-import HistoricoHotel from "./pages/HistoricoHotel";
-import DetalhesHotel from "./pages/DetalhesHotel";
-import BanhoTosa from "./pages/BanhoTosa";
-import SolicitacoesAtendimento from "./pages/SolicitacoesAtendimento";
-import NovoAgendamentoBanhoTosa from "./pages/NovoAgendamentoBanhoTosa";
-import DetalhesBanhoTosa from "./pages/DetalhesBanhoTosa";
-import ServicosBanhoTosa from "./pages/ServicosBanhoTosa";
-import FormularioServicoBanhoTosa from "./pages/FormularioServicoBanhoTosa";
-import HistoricoBanhoTosa from "./pages/HistoricoBanhoTosa";
-import CancelarBanhoTosa from "./pages/CancelarBanhoTosa";
-import FinalizarBanhoTosa from "./pages/FinalizarBanhoTosa";
-import PagamentoBanhoTosa from "./pages/PagamentoBanhoTosa";
-import ComprovanteBanhoTosa from "./pages/ComprovanteBanhoTosa";
-import Administracao from "./pages/Administracao";
+const FormularioTutor = lazy(() => import("./pages/FormularioTutor"));
+const DetalhesTutor = lazy(() => import("./pages/DetalhesTutor"));
+const FormularioPet = lazy(() => import("./pages/FormularioPet"));
+const Pets = lazy(() => import("./pages/Pets"));
+const DetalhesPet = lazy(() => import("./pages/DetalhesPet"));
+const Produtos = lazy(() => import("./pages/Produtos"));
+const FormularioProduto = lazy(() => import("./pages/FormularioProduto"));
+const DetalhesProduto = lazy(() => import("./pages/DetalhesProduto"));
+const MovimentarEstoque = lazy(() => import("./pages/MovimentarEstoque"));
+const Creche = lazy(() => import("./pages/Creche"));
+const EntradaCreche = lazy(() => import("./pages/EntradaCreche"));
+const SaidaCreche = lazy(() => import("./pages/SaidaCreche"));
+const HistoricoCreche = lazy(() => import("./pages/HistoricoCreche"));
+const Hotel = lazy(() => import("./pages/Hotel"));
+const NovaReservaHotel = lazy(() => import("./pages/NovaReservaHotel"));
+const CheckinHotel = lazy(() => import("./pages/CheckinHotel"));
+const CheckoutHotel = lazy(() => import("./pages/CheckoutHotel"));
+const CancelarReservaHotel = lazy(() => import("./pages/CancelarReservaHotel"));
+const HistoricoHotel = lazy(() => import("./pages/HistoricoHotel"));
+const DetalhesHotel = lazy(() => import("./pages/DetalhesHotel"));
+const Atendimentos = lazy(() => import("./pages/Atendimentos"));
+const SolicitacoesAtendimento = lazy(() => import("./pages/SolicitacoesAtendimento"));
+const NovoAgendamentoAtendimento = lazy(() => import("./pages/NovoAgendamentoAtendimento"));
+const DetalhesAtendimento = lazy(() => import("./pages/DetalhesAtendimento"));
+const ServicosAtendimento = lazy(() => import("./pages/ServicosAtendimento"));
+const FormularioServicoAtendimento = lazy(() => import("./pages/FormularioServicoAtendimento"));
+const HistoricoAtendimento = lazy(() => import("./pages/HistoricoAtendimento"));
+const CancelarAtendimento = lazy(() => import("./pages/CancelarAtendimento"));
+const FinalizarAtendimento = lazy(() => import("./pages/FinalizarAtendimento"));
+const PagamentoAtendimento = lazy(() => import("./pages/PagamentoAtendimento"));
+const ComprovanteAtendimento = lazy(() => import("./pages/ComprovanteAtendimento"));
+const Administracao = lazy(() => import("./pages/Administracao"));
 import RotaAdministrador from "./components/RotaAdministrador";
-import Auditoria from "./pages/Auditoria";
-import DetalhesAuditoria from "./pages/DetalhesAuditoria";
-import EsqueciSenha from "./pages/EsqueciSenha";
-import RedefinirSenha from "./pages/RedefinirSenha";
-import Usuarios from "./pages/Usuarios";
-import FormularioUsuario from "./pages/FormularioUsuario";
-import GerenciarUsuario from "./pages/GerenciarUsuario";
-import HistoricoEstoque from "./pages/HistoricoEstoque";
-import PagamentosPendentes from "./pages/PagamentosPendentes";
+const Auditoria = lazy(() => import("./pages/Auditoria"));
+const DetalhesAuditoria = lazy(() => import("./pages/DetalhesAuditoria"));
+const EsqueciSenha = lazy(() => import("./pages/EsqueciSenha"));
+const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
+const Usuarios = lazy(() => import("./pages/Usuarios"));
+const FormularioUsuario = lazy(() => import("./pages/FormularioUsuario"));
+const GerenciarUsuario = lazy(() => import("./pages/GerenciarUsuario"));
+const HistoricoEstoque = lazy(() => import("./pages/HistoricoEstoque"));
+const PagamentosPendentes = lazy(() => import("./pages/PagamentosPendentes"));
 import RotaAdministrativo from "./components/RotaAdministrativo";
-import ConteudoSite from "./pages/ConteudoSite";
-import Relatorios from "./pages/Relatorios";
+const ConteudoSite = lazy(() => import("./pages/ConteudoSite"));
+const Relatorios = lazy(() => import("./pages/Relatorios"));
 
 /*
  * Site público da Amores Pet.
@@ -62,9 +65,9 @@ import Relatorios from "./pages/Relatorios";
  * Estas páginas não exigem autenticação porque fazem
  * parte da área acessível aos clientes.
  */
-import HomePublica from "./public-pages/HomePublica";
-import AgendamentoPublico from "./public-pages/AgendamentoPublico";
-import GaleriaPublica from "./public-pages/GaleriaPublica";
+const HomePublica = lazy(() => import("./public-pages/HomePublica"));
+const AgendamentoPublico = lazy(() => import("./public-pages/AgendamentoPublico"));
+const GaleriaPublica = lazy(() => import("./public-pages/GaleriaPublica"));
 
 /*
  * Administração da Agenda Pública.
@@ -77,12 +80,19 @@ import GaleriaPublica from "./public-pages/GaleriaPublica";
  * no momento de alterar a agenda e é validada novamente
  * pelo backend.
  */
-import AgendaPublica from "./pages/AgendaPublica";
+const AgendaPublica = lazy(() => import("./pages/AgendaPublica"));
+
+function RedirecionarAtendimentosLegados() {
+  const location = useLocation();
+  const destino = location.pathname.replace(/^\/banho-tosa(?=\/|$)/, "/atendimentos");
+  return <Navigate to={`${destino}${location.search}${location.hash}`} replace />;
+}
 
 
 function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<div role="status" className="app-loading">Carregando...</div>}>
       <Routes>
 
         {/* ===================================================
@@ -267,17 +277,15 @@ function App() {
               ATENDIMENTOS
               =================================================
 
-              "Atendimentos" é o novo endereço público do
-              antigo módulo Banho e Tosa.
-
-              Os nomes internos dos componentes permanecem
-              temporariamente como BanhoTosa enquanto a
-              migração é realizada de forma gradual.
+              A área e seus componentes usam o nome Atendimentos.
+              Os caminhos antigos continuam como aliases para
+              compatibilidade com links e integrações existentes.
           */}
 
+          <Route path="/banho-tosa/*" element={<RedirecionarAtendimentosLegados />} />
           <Route
             path="/atendimentos"
-            element={<BanhoTosa />}
+            element={<Atendimentos />}
           />
 
           <Route
@@ -288,57 +296,57 @@ function App() {
           <Route
             path="/atendimentos/novo"
             element={
-              <NovoAgendamentoBanhoTosa />
+              <NovoAgendamentoAtendimento />
             }
           />
 
           <Route
             path="/atendimentos/:id"
-            element={<DetalhesBanhoTosa />}
+            element={<DetalhesAtendimento />}
           />
 
           <Route
             path="/atendimentos/servicos"
-            element={<ServicosBanhoTosa />}
+            element={<ServicosAtendimento />}
           />
 
           <Route
             path="/atendimentos/servicos/novo"
             element={
-              <FormularioServicoBanhoTosa />
+              <FormularioServicoAtendimento />
             }
           />
 
           <Route
             path="/atendimentos/servicos/:id/editar"
             element={
-              <FormularioServicoBanhoTosa />
+              <FormularioServicoAtendimento />
             }
           />
 
           <Route
             path="/atendimentos/historico"
-            element={<HistoricoBanhoTosa />}
+            element={<HistoricoAtendimento />}
           />
 
           <Route
             path="/atendimentos/:id/cancelar"
-            element={<CancelarBanhoTosa />}
+            element={<CancelarAtendimento />}
           />
 
           <Route
             path="/atendimentos/:id/finalizar"
-            element={<FinalizarBanhoTosa />}
+            element={<FinalizarAtendimento />}
           />
 
           <Route
             path="/atendimentos/:id/pagamento"
-            element={<PagamentoBanhoTosa />}
+            element={<PagamentoAtendimento />}
           />
 
           <Route
             path="/atendimentos/:id/comprovante"
-            element={<ComprovanteBanhoTosa />}
+            element={<ComprovanteAtendimento />}
           />
 
 
@@ -507,6 +515,7 @@ function App() {
         />
 
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

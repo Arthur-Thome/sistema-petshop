@@ -179,10 +179,29 @@ function ConteudoSite() {
     if (!arquivo) { setErro("Escolha uma imagem JPEG, PNG ou WebP."); return; }
     try {
       setSalvando(true); setErro(""); setSucesso("");
-      const dados = new FormData();
-      dados.append("imagem", arquivo);
-      Object.entries(foto).forEach(([chave, valor]) => dados.append(chave, String(valor)));
-      await api.post("/site-conteudo/admin/galeria", dados);
+      const intencao = await api.post("/site-conteudo/admin/galeria/upload-direto", {
+        mime_type: arquivo.type,
+        tamanho_bytes: arquivo.size,
+      });
+      if (intencao.data.modo === "s3") {
+        const envio = await fetch(intencao.data.url, {
+          method: "PUT",
+          headers: intencao.data.headers,
+          body: arquivo,
+        });
+        if (!envio.ok) throw new Error("O armazenamento recusou o arquivo. Verifique a conexao e tente novamente.");
+        await api.post("/site-conteudo/admin/galeria/finalizar-upload-direto", {
+          uploadToken: intencao.data.uploadToken,
+          ...foto,
+          ordem: Number(foto.ordem || 0),
+          publicado: Boolean(foto.publicado),
+        });
+      } else {
+        const dados = new FormData();
+        dados.append("imagem", arquivo);
+        Object.entries(foto).forEach(([chave, valor]) => dados.append(chave, String(valor)));
+        await api.post("/site-conteudo/admin/galeria", dados);
+      }
       setFoto(FOTO_VAZIA); setArquivo(null); evento.currentTarget.reset();
       await carregar(); setSucesso("Imagem enviada. Edite a ordem ou publicação quando desejar.");
     } catch (error) { setErro(error.response?.data?.mensagem || "Não foi possível enviar a imagem."); }

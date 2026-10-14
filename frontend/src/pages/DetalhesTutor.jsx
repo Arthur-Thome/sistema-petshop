@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -119,7 +120,7 @@ const [
   /*
    * Busca os dados cadastrais atuais do tutor.
    */
-  async function carregarTutor() {
+  const carregarTutor = useCallback(async () => {
     try {
       setCarregando(true);
       setErro("");
@@ -140,7 +141,7 @@ const [
     } finally {
       setCarregando(false);
     }
-  }
+  }, [id]);
 
 
   /*
@@ -149,7 +150,7 @@ const [
    * O endpoint já utiliza pet_tutores, portanto também
    * retorna pets em que este tutor não é o principal.
    */
-  async function carregarPetsTutor() {
+  const carregarPetsTutor = useCallback(async () => {
     try {
       setCarregandoPets(true);
 
@@ -173,13 +174,19 @@ const [
     } finally {
       setCarregandoPets(false);
     }
-  }
+  }, [id]);
 
 
   useEffect(() => {
-    carregarTutor();
-    carregarPetsTutor();
-  }, [id]);
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) {
+        void carregarTutor();
+        void carregarPetsTutor();
+      }
+    });
+    return () => { ativo = false; };
+  }, [carregarPetsTutor, carregarTutor]);
 
 
   /*

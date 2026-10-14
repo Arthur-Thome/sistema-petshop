@@ -84,7 +84,11 @@ function Hotel() {
 
 
   useEffect(() => {
-    carregarReservas();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarReservas();
+    });
+    return () => { ativo = false; };
   }, []);
 
 

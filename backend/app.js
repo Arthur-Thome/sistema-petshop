@@ -11,7 +11,7 @@ const produtoRoutes = require("./src/routes/produtoRoutes");
 const estoqueRoutes = require("./src/routes/estoqueRoutes");
 const crecheRoutes = require("./src/routes/crecheRoutes");
 const hotelRoutes = require("./src/routes/hotelRoutes");
-const banhoTosaRoutes = require("./src/routes/banhoTosaRoutes");
+const atendimentoRoutes = require("./src/routes/atendimentoRoutes");
 const servicoRoutes = require("./src/routes/servicoRoutes");
 const auditoriaRoutes = require("./src/routes/auditoriaRoutes");
 const agendaPublicaRoutes = require("./src/routes/agendaPublicaRoutes");
@@ -19,7 +19,7 @@ const agendamentoPublicoRoutes = require("./src/routes/agendamentoPublicoRoutes"
 const siteConteudoRoutes = require("./src/routes/siteConteudoRoutes");
 const relatorioRoutes = require("./src/routes/relatorioRoutes");
 const notificacaoRoutes = require("./src/routes/notificacaoRoutes");
-const path = require("path");
+const comunicacaoRoutes = require("./src/routes/comunicacaoRoutes");
 
 const app = express();
 
@@ -58,33 +58,33 @@ app.disable("x-powered-by");
  */
 const frontendUrl =
   process.env.FRONTEND_URL ||
-  "http://localhost:5173";
+  [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL]
+    .filter(Boolean)
+    .map((host) => (/^https?:\/\//i.test(host) ? host : `https://${host}`))
+    .join(",") || "http://localhost:5173";
 
-let frontendUrlValidada;
-
-try {
-  frontendUrlValidada =
-    new URL(frontendUrl);
-
-  if (
-    frontendUrlValidada.protocol !== "http:" &&
-    frontendUrlValidada.protocol !== "https:"
-  ) {
-    throw new Error(
-      "Protocolo inválido."
-    );
-  }
-} catch (erro) {
+const origensFrontend = frontendUrl.split(",").map((origem) => origem.trim()).filter(Boolean);
+const origensValidadas = origensFrontend.map((origem) => {
+  try {
+    const url = new URL(origem);
+    if (!["http:", "https:"].includes(url.protocol) || url.origin !== origem.replace(/\/$/, "")) throw new Error();
+    return url.origin;
+  } catch (_) {
   console.error(
-    "FRONTEND_URL inválida. Utilize uma URL HTTP ou HTTPS válida."
+      "FRONTEND_URL invalida. Informe uma ou mais origens HTTP/HTTPS separadas por virgula."
   );
-
   process.exit(1);
-}
+  }
+});
 
 app.use(
   cors({
-    origin: frontendUrl,
+    origin(origem, callback) {
+      if (!origem || origensValidadas.includes(origem)) return callback(null, true);
+      const erro = new Error("Origem nao permitida.");
+      erro.code = "ORIGEM_NAO_PERMITIDA";
+      return callback(erro);
+    },
     methods: [
       "GET",
       "POST",
@@ -113,15 +113,25 @@ app.use(
   })
 );
 
-// Disponibiliza publicamente somente os arquivos da pasta uploads.
-// Exemplo:
-// /uploads/pets/nome-da-imagem.jpg
-app.use(
-  "/uploads",
-  express.static(
-    path.resolve(__dirname, "src/uploads")
-  )
+// Rotina stateless acionada diariamente pelo cron da plataforma ou manualmente.
+app.get(
+  "/api/maintenance/temporary-upload-cleanup",
+  require("./src/middleware/cronSecretMiddleware"),
+  require("./src/controllers/temporaryUploadCleanupController").executar
 );
+
+// Fotos de pets são privadas: a rota verifica sessão e vínculo com tutor.
+app.get("/uploads/pets/:filename", require("./src/controllers/fotoPetController").servirFotoPet);
+
+app.get("/health/live", (_req, res) => res.status(200).json({ status: "ok" }));
+app.get("/health/ready", async (_req, res) => {
+  try {
+    await require("./src/database/connection").query("SELECT 1");
+    return res.status(200).json({ status: "ready" });
+  } catch (_) {
+    return res.status(503).json({ status: "unavailable" });
+  }
+});
 
 
 // Rotas principais da API.
@@ -135,8 +145,8 @@ app.use("/api/produtos", produtoRoutes);
 app.use("/api/estoque", estoqueRoutes);
 app.use("/api/creche", crecheRoutes);
 app.use("/api/hotel", hotelRoutes);
-app.use("/api/atendimentos", banhoTosaRoutes);
-app.use("/api/banho-tosa", banhoTosaRoutes);
+app.use("/api/atendimentos", atendimentoRoutes);
+app.use("/api/banho-tosa", atendimentoRoutes); // alias historico para clientes antigos
 app.use("/api/servicos", servicoRoutes);
 app.use("/api/auditoria", auditoriaRoutes);
 /*
@@ -154,6 +164,7 @@ app.use("/api/agendamento-publico", agendamentoPublicoRoutes);
 app.use("/api/site-conteudo", siteConteudoRoutes);
 app.use("/api/relatorios", relatorioRoutes);
 app.use("/api/notificacoes", notificacaoRoutes);
+app.use("/api/comunicacao", comunicacaoRoutes);
 
 
 
@@ -193,11 +204,11 @@ app.use((erro, req, res, next) => {
     * JSON malformado é um erro da requisição e não uma
     * falha interna do servidor.
     */
-    if (
+  if (
       erro instanceof SyntaxError &&
       erro.status === 400 &&
       "body" in erro
-    ) {
+  ) {
       return res.status(400).json({
         mensagem:
           "O corpo JSON da requisição é inválido.",
@@ -206,6 +217,10 @@ app.use((erro, req, res, next) => {
 
   if (res.headersSent) {
     return next(erro);
+  }
+
+  if (erro.code === "ORIGEM_NAO_PERMITIDA") {
+    return res.status(403).json({ mensagem: "Origem nao permitida." });
   }
 
   return res.status(500).json({

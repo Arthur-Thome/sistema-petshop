@@ -1,0 +1,2386 @@
+/*
+ * Telas do módulo Banho e Tosa.
+ *
+ * O layout segue o mesmo padrão visual utilizado
+ * na Creche para manter consistência no sistema.
+ *
+ * Os estilos dos botões são fornecidos pelas classes
+ * globais primary-button e secondary-button.
+ */
+
+.atendimento-page {
+  width: 100%;
+}
+
+
+/*
+ * Cabeçalho.
+ */
+.atendimento-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 25px;
+}
+
+.atendimento-header h1 {
+  margin: 0;
+
+  color: #1f2937;
+}
+
+.atendimento-header p {
+  margin: 6px 0 0;
+
+  color: #6b7280;
+}
+
+.atendimento-header-acoes {
+  display: flex;
+
+  gap: 10px;
+
+  flex-wrap: wrap;
+}
+
+
+/*
+ * Resumo operacional.
+ *
+ * Mantemos dois indicadores separados para que
+ * seja possível visualizar rapidamente quantos
+ * pets estão aguardando e quantos estão sendo
+ * atendidos.
+ */
+.atendimento-resumos {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+
+  margin-bottom: 20px;
+}
+
+.atendimento-resumo {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 18px 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.atendimento-resumo span {
+  color: #6b7280;
+
+  font-weight: 500;
+}
+
+.atendimento-resumo strong {
+  font-size: 28px;
+
+  color: #1f2937;
+}
+
+
+/*
+ * Busca rápida.
+ */
+.atendimento-busca {
+  margin-bottom: 20px;
+}
+
+.atendimento-busca input {
+  width: 100%;
+  max-width: 500px;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  font-size: 14px;
+}
+
+.atendimento-busca input:focus {
+  outline: none;
+
+  border-color: #6b7280;
+}
+
+
+/*
+ * Grid dos atendimentos.
+ */
+.atendimento-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(320px, 1fr)
+    );
+
+  gap: 18px;
+}
+
+
+/*
+ * Card individual do atendimento.
+ */
+.atendimento-card {
+  background: #ffffff;
+
+  padding: 20px;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/*
+ * Cabeçalho do card.
+ */
+.atendimento-card-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+.atendimento-card-topo h3 {
+  margin: 0 0 5px;
+
+  color: #1f2937;
+}
+
+.atendimento-card-topo div > span {
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+/*
+ * Indicador de status.
+ */
+.atendimento-status {
+  padding: 5px 9px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.atendimento-status-agendado {
+  background: #f3f4f6;
+
+  color: #374151;
+}
+
+.atendimento-status-atendimento {
+  background: #fef3c7;
+
+  color: #92400e;
+}
+
+.atendimento-status-finalizado {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+.atendimento-status-cancelado {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+/*
+ * Informações principais do atendimento.
+ */
+.atendimento-card-info {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 15px;
+
+  margin-top: 17px;
+}
+
+.atendimento-card-info div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.atendimento-card-info span,
+.atendimento-observacao span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.atendimento-card-info strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Observações do agendamento.
+ */
+.atendimento-observacao {
+  margin-top: 17px;
+
+  padding: 12px;
+
+  background: #f9fafb;
+
+  border-radius: 7px;
+}
+
+.atendimento-observacao p {
+  margin: 5px 0 0;
+
+  color: #374151;
+
+  font-size: 14px;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+ * Ações do card.
+ *
+ * Os botões mantêm as classes globais do sistema.
+ */
+.atendimento-card-acoes {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+
+/*
+ * Estados da página.
+ */
+.atendimento-mensagem,
+.atendimento-vazio,
+.atendimento-erro {
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.atendimento-vazio {
+  text-align: center;
+}
+
+.atendimento-vazio h3 {
+  margin-top: 0;
+
+  color: #374151;
+}
+
+.atendimento-vazio p {
+  margin-bottom: 0;
+
+  color: #6b7280;
+}
+
+.atendimento-erro {
+  margin-bottom: 20px;
+
+  color: #991b1b;
+}
+
+
+/*
+ * Card utilizado no formulário de novo agendamento.
+ */
+.atendimento-form-card {
+  width: 100%;
+  max-width: 750px;
+
+  box-sizing: border-box;
+
+  padding: 22px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/*
+ * Campos do formulário.
+ */
+.atendimento-form-campo {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  margin-bottom: 18px;
+}
+
+.atendimento-form-campo label {
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.atendimento-form-campo input,
+.atendimento-form-campo select,
+.atendimento-form-campo textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #374151;
+
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.atendimento-form-campo input:focus,
+.atendimento-form-campo select:focus,
+.atendimento-form-campo textarea:focus {
+  outline: none;
+
+  border-color: #6b7280;
+}
+
+.atendimento-form-campo textarea {
+  min-height: 110px;
+
+  resize: vertical;
+}
+
+
+/*
+ * Ações do formulário.
+ */
+.atendimento-form-acoes {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 22px;
+}
+
+/*
+ * Lista de serviços disponíveis no novo agendamento.
+ *
+ * Cada serviço funciona como uma área clicável,
+ * facilitando o uso dos checkboxes.
+ */
+.atendimento-servicos-lista {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+
+/*
+ * O label envolve todo o serviço para que o usuário
+ * possa clicar em qualquer ponto do card.
+ */
+.atendimento-servico-item {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 12px;
+
+  padding: 14px;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+
+.atendimento-servico-item:hover {
+  background: #f9fafb;
+}
+
+
+/*
+ * Destaca visualmente os serviços selecionados
+ * sem alterar o padrão geral do sistema.
+ */
+.atendimento-servico-item.selecionado {
+  border-color: #6b7280;
+
+  background: #f9fafb;
+}
+
+
+.atendimento-servico-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+
+  margin-top: 2px;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+}
+
+
+.atendimento-servico-conteudo {
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+.atendimento-servico-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+
+.atendimento-servico-topo strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+.atendimento-servico-conteudo p {
+  margin:
+    6px 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.atendimento-servico-conteudo > span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+/*
+ * Resumo financeiro antes da confirmação.
+ */
+.atendimento-resumo-agendamento {
+  margin-bottom: 22px;
+
+  padding: 18px;
+
+  background: #f9fafb;
+
+  border-radius: 8px;
+}
+
+
+.atendimento-resumo-agendamento h3 {
+  margin:
+    0 0 15px;
+
+  color: #374151;
+
+  font-size: 16px;
+}
+
+
+.atendimento-resumo-servicos {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+
+.atendimento-resumo-linha,
+.atendimento-resumo-duracao,
+.atendimento-resumo-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+
+.atendimento-resumo-linha {
+  color: #4b5563;
+
+  font-size: 14px;
+}
+
+
+.atendimento-resumo-duracao {
+  padding-top: 12px;
+  margin-top: 12px;
+
+  border-top:
+    1px solid #e5e7eb;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.atendimento-resumo-total {
+  padding-top: 14px;
+  margin-top: 14px;
+
+  border-top:
+    1px solid #d1d5db;
+
+  color: #1f2937;
+}
+
+
+.atendimento-resumo-total strong {
+  font-size: 20px;
+}
+
+
+/*
+ * Utilizado quando ainda não existem serviços
+ * disponíveis para o atendimento.
+ */
+.atendimento-sem-servicos {
+  padding: 18px;
+
+  background: #f9fafb;
+
+  border-radius: 8px;
+
+  text-align: center;
+}
+
+
+.atendimento-sem-servicos p {
+  margin:
+    0 0 12px;
+
+  color: #6b7280;
+}
+
+/*
+ * Cards utilizados na visualização completa
+ * de um atendimento de Banho e Tosa.
+ */
+.atendimento-detalhes-card {
+  padding: 20px;
+  margin-bottom: 18px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+.atendimento-detalhes-card h2 {
+  margin: 0 0 18px;
+
+  color: #1f2937;
+
+  font-size: 18px;
+}
+
+
+/*
+ * Cabeçalho do atendimento.
+ */
+.atendimento-detalhes-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-detalhes-topo h2 {
+  margin: 0 0 5px;
+}
+
+
+.atendimento-detalhes-topo p {
+  margin: 0;
+
+  color: #6b7280;
+}
+
+
+/*
+ * Informações do pet, tutor e atendimento.
+ */
+.atendimento-detalhes-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 20px;
+}
+
+
+.atendimento-detalhes-grid div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.atendimento-detalhes-grid span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-detalhes-grid strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Serviços contratados.
+ */
+.atendimento-detalhes-servicos {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.atendimento-detalhes-servico {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 13px 0;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-detalhes-servico > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.atendimento-detalhes-servico span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-detalhes-servico strong {
+  color: #374151;
+}
+
+
+/*
+ * Valor total do atendimento.
+ */
+.atendimento-detalhes-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-top: 18px;
+  margin-top: 5px;
+
+  color: #1f2937;
+}
+
+
+.atendimento-detalhes-total strong {
+  font-size: 22px;
+}
+
+
+/*
+ * Observações preservam as quebras de linha
+ * digitadas pelo funcionário.
+ */
+.atendimento-detalhes-observacao {
+  margin: 0;
+
+  color: #374151;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+ * Ações operacionais do atendimento.
+ *
+ * O visual dos botões continua vindo
+ * das classes globais.
+ */
+.atendimento-detalhes-acoes {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+/*
+ * Catálogo de serviços do Banho e Tosa.
+ */
+.atendimento-servicos-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(320px, 1fr));
+
+  gap: 18px;
+}
+
+
+.atendimento-servico-card {
+  padding: 20px;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+.atendimento-servico-card-topo {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-servico-card-topo h3 {
+  margin: 0 0 7px;
+
+  color: #1f2937;
+}
+
+
+.atendimento-servico-valor {
+  color: #1f2937;
+
+  font-size: 18px;
+
+  white-space: nowrap;
+}
+
+
+.atendimento-servico-status {
+  display: inline-block;
+
+  padding: 4px 8px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.atendimento-servico-status.ativo {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+
+.atendimento-servico-status.inativo {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+
+.atendimento-servico-descricao {
+  margin: 15px 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+  white-space: pre-wrap;
+}
+
+
+.atendimento-servico-dados {
+  margin-top: 15px;
+}
+
+
+.atendimento-servico-dados div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.atendimento-servico-dados span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-servico-dados strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/*
+ * Permite posicionar campos relacionados lado a lado,
+ * como valor e duração.
+ */
+.atendimento-form-linha {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+/*
+ * Resumos exibidos antes de operações importantes,
+ * como cancelamento e finalização.
+ */
+.atendimento-cancelamento-resumo,
+.atendimento-finalizacao-resumo {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 18px;
+
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-finalizacao-resumo {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+
+.atendimento-cancelamento-resumo div,
+.atendimento-finalizacao-resumo div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.atendimento-cancelamento-resumo span,
+.atendimento-finalizacao-resumo span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-cancelamento-resumo strong,
+.atendimento-finalizacao-resumo strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+/*
+ * Resumo apresentado antes da confirmação
+ * manual de um pagamento.
+ */
+.atendimento-pagamento-resumo {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 20px;
+
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-pagamento-resumo > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.atendimento-pagamento-resumo span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-pagamento-resumo strong {
+  color: #374151;
+}
+
+
+.atendimento-pagamento-valor {
+  font-size: 22px;
+}
+
+/*
+ * Comprovante interno do atendimento.
+ *
+ * O conteúdo desta área será reutilizado posteriormente
+ * para gerar a versão em PDF e imagem.
+ */
+.atendimento-comprovante {
+  max-width: 850px;
+
+  margin: 0 auto;
+
+  background: #ffffff;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.06);
+
+  overflow: hidden;
+}
+
+
+.atendimento-comprovante-cabecalho {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  padding: 25px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-comprovante-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 50px;
+  height: 50px;
+
+  background: #f3f4f6;
+
+  border-radius: 50%;
+
+  font-size: 25px;
+}
+
+
+.atendimento-comprovante-cabecalho h2 {
+  margin: 0 0 4px;
+
+  color: #1f2937;
+}
+
+
+.atendimento-comprovante-cabecalho span {
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.atendimento-comprovante-numero {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  margin-left: auto;
+
+  text-align: right;
+}
+
+
+.atendimento-comprovante-numero strong {
+  color: #1f2937;
+
+  font-size: 20px;
+}
+
+
+.atendimento-comprovante-secao {
+  padding: 22px 25px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-comprovante-secao h3 {
+  margin: 0 0 17px;
+
+  color: #374151;
+
+  font-size: 15px;
+}
+
+
+.atendimento-comprovante-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+
+.atendimento-comprovante-grid > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.atendimento-comprovante-grid span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-comprovante-grid strong {
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+.atendimento-comprovante-tabela-cabecalho,
+.atendimento-comprovante-tabela-linha {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr) 120px 120px;
+
+  gap: 15px;
+
+  align-items: center;
+}
+
+
+.atendimento-comprovante-tabela-cabecalho {
+  padding-bottom: 9px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-comprovante-tabela-cabecalho span:last-child,
+.atendimento-comprovante-tabela-linha > :last-child {
+  text-align: right;
+}
+
+
+.atendimento-comprovante-tabela-linha {
+  padding: 12px 0;
+
+  border-top:
+    1px solid #f3f4f6;
+
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+.atendimento-comprovante-total {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 30px;
+
+  padding-top: 18px;
+  margin-top: 5px;
+
+  border-top:
+    1px solid #d1d5db;
+}
+
+
+.atendimento-comprovante-total span {
+  color: #6b7280;
+}
+
+
+.atendimento-comprovante-total strong {
+  color: #1f2937;
+
+  font-size: 24px;
+}
+
+
+.atendimento-comprovante-observacao {
+  margin: 0;
+
+  color: #374151;
+
+  white-space: pre-wrap;
+}
+
+
+.atendimento-comprovante-rodape {
+  padding: 20px 25px;
+
+  text-align: center;
+
+  background: #f9fafb;
+}
+
+
+.atendimento-comprovante-rodape p {
+  margin: 0 0 5px;
+
+  color: #4b5563;
+
+  font-size: 12px;
+}
+
+
+.atendimento-comprovante-rodape span {
+  color: #9ca3af;
+
+  font-size: 11px;
+}
+
+/*
+ * Área de cobrança Pix exibida no comprovante
+ * enquanto o pagamento estiver pendente.
+ */
+.atendimento-pix {
+  margin-top: 25px;
+
+  padding-top: 22px;
+
+  border-top:
+    1px solid #e5e7eb;
+}
+
+
+.atendimento-pix-titulo {
+  text-align: center;
+
+  margin-bottom: 20px;
+}
+
+
+.atendimento-pix-titulo h4 {
+  margin: 0 0 6px;
+
+  color: #1f2937;
+
+  font-size: 16px;
+}
+
+
+.atendimento-pix-titulo p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+
+.atendimento-pix-conteudo {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 35px;
+
+  margin-bottom: 22px;
+}
+
+
+.atendimento-pix-qrcode {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px;
+
+  background: #ffffff;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius: 10px;
+}
+
+
+.atendimento-pix-qrcode img {
+  display: block;
+
+  width: 220px;
+  height: 220px;
+}
+
+
+.atendimento-pix-informacoes {
+  display: flex;
+  flex-direction: column;
+
+  gap: 18px;
+}
+
+
+.atendimento-pix-informacoes > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.atendimento-pix-informacoes span {
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+.atendimento-pix-informacoes strong {
+  color: #374151;
+}
+
+
+.atendimento-pix-valor {
+  font-size: 24px;
+
+  color: #1f2937 !important;
+}
+
+
+.atendimento-pix-copia-cola {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+
+.atendimento-pix-copia-cola label {
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+.atendimento-pix-copia-cola textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 12px;
+
+  resize: none;
+
+  border:
+    1px solid #d1d5db;
+
+  border-radius: 7px;
+
+  background: #f9fafb;
+
+  color: #4b5563;
+
+  font-family: monospace;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+
+.atendimento-pix-copia-cola button {
+  align-self: flex-end;
+}
+
+
+
+
+/*
+ * Adaptação para telas menores.
+ */
+@media (max-width: 700px) {
+
+  .atendimento-header {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .atendimento-header-acoes {
+    width: 100%;
+  }
+
+  .atendimento-header-acoes button {
+    flex: 1;
+  }
+
+  .atendimento-resumos {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-card-info {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-card-acoes {
+    flex-direction: column;
+  }
+
+  .atendimento-form-card {
+    max-width: 100%;
+  }
+
+  .atendimento-form-acoes {
+    flex-direction: column;
+  }
+
+    .atendimento-servico-topo {
+    align-items: flex-start;
+    flex-direction: column;
+
+    gap: 4px;
+  }
+
+  .atendimento-resumo-linha,
+  .atendimento-resumo-duracao,
+  .atendimento-resumo-total {
+    align-items: flex-start;
+  }
+
+    .atendimento-detalhes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-detalhes-topo {
+    flex-direction: column;
+  }
+
+  .atendimento-detalhes-acoes {
+    flex-direction: column;
+  }
+
+    .atendimento-servicos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-servico-card-topo {
+    flex-direction: column;
+  }
+
+  .atendimento-form-linha {
+    grid-template-columns: 1fr;
+  }
+
+    .atendimento-cancelamento-resumo,
+  .atendimento-finalizacao-resumo {
+    grid-template-columns: 1fr;
+  }
+
+    .atendimento-pagamento-resumo {
+    grid-template-columns: 1fr;
+  }
+
+    .atendimento-comprovante-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-comprovante-cabecalho {
+    align-items: flex-start;
+  }
+
+  .atendimento-comprovante-numero {
+    margin-left: 0;
+  }
+
+  .atendimento-comprovante-tabela-cabecalho,
+  .atendimento-comprovante-tabela-linha {
+    grid-template-columns:
+      minmax(0, 1fr) 70px 90px;
+  }
+
+    .atendimento-pix-conteudo {
+    flex-direction: column;
+
+    gap: 18px;
+  }
+
+
+  .atendimento-pix-informacoes {
+    width: 100%;
+
+    text-align: center;
+  }
+
+
+  .atendimento-pix-qrcode img {
+    width: 190px;
+    height: 190px;
+  }
+
+
+  .atendimento-pix-copia-cola button {
+    align-self: stretch;
+  }
+
+}
+
+/*
+ * Versão compacta do comprovante para impressão/PDF.
+ *
+ * O objetivo é manter o comprovante completo,
+ * inclusive o QR Code Pix, em uma única página A4.
+ */
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 7mm;
+  }
+
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: #ffffff !important;
+  }
+
+
+  /*
+   * Elementos do sistema que não pertencem
+   * ao comprovante.
+   */
+  .sidebar,
+  .atendimento-header {
+    display: none !important;
+  }
+
+
+  .app-layout {
+    display: block !important;
+  }
+
+
+  .main-content {
+    width: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+
+  .atendimento-page {
+    width: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+
+  /*
+   * Remove efeitos visuais desnecessários
+   * no documento impresso.
+   */
+  .atendimento-comprovante {
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+
+    box-shadow: none !important;
+
+    font-size: 15px;
+  }
+
+
+  /* Cabeçalho mais compacto. */
+  .atendimento-comprovante-cabecalho {
+    gap: 10px;
+
+    padding: 10px 14px;
+  }
+
+
+  .atendimento-comprovante-logo {
+    width: 36px;
+    height: 36px;
+
+    font-size: 18px;
+  }
+
+
+  .atendimento-comprovante-cabecalho h2 {
+    margin: 0 0 2px;
+
+    font-size: 19px;
+  }
+
+
+  .atendimento-comprovante-cabecalho span {
+    font-size: 11px;
+  }
+
+
+  .atendimento-comprovante-numero strong {
+    font-size: 18px;
+  }
+
+
+  /*
+   * Reduzimos principalmente os espaçamentos
+   * verticais das seções.
+   */
+  .atendimento-comprovante-secao {
+    padding: 9px 14px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+  .atendimento-comprovante-secao h3 {
+    margin: 0 0 7px;
+
+    font-size: 14px;
+  }
+
+
+  .atendimento-comprovante-grid {
+    gap: 7px 16px;
+  }
+
+
+  .atendimento-comprovante-grid span {
+    font-size: 10px;
+  }
+
+
+  .atendimento-comprovante-grid strong {
+    font-size: 13px;
+  }
+
+
+  /* Tabela dos serviços. */
+  .atendimento-comprovante-tabela-cabecalho {
+    padding-bottom: 4px;
+
+    font-size: 10px;
+  }
+
+
+  .atendimento-comprovante-tabela-linha {
+    padding: 5px 0;
+
+    font-size: 12px;
+  }
+
+
+  .atendimento-comprovante-total {
+    gap: 20px;
+
+    padding-top: 7px;
+    margin-top: 2px;
+  }
+
+
+  .atendimento-comprovante-total strong {
+    font-size: 19px;
+  }
+
+
+  /*
+   * Pix fica propositalmente mais compacto
+   * para evitar a criação de uma segunda página.
+   */
+  .atendimento-pix {
+    margin-top: 9px;
+
+    padding-top: 8px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+  .atendimento-pix-titulo {
+    margin-bottom: 7px;
+  }
+
+
+  .atendimento-pix-titulo h4 {
+    margin-bottom: 2px;
+
+    font-size: 14px;
+  }
+
+
+  .atendimento-pix-titulo p {
+    font-size: 10px;
+  }
+
+
+  .atendimento-pix-conteudo {
+    gap: 18px;
+
+    margin-bottom: 7px;
+  }
+
+
+  /*
+   * 125px continua sendo suficiente para o QR
+   * permanecer legível, mas ocupa bem menos altura.
+   */
+  .atendimento-pix-qrcode {
+    padding: 5px;
+  }
+
+
+  .atendimento-pix-qrcode img {
+    width: 145px !important;
+    height: 145px !important;
+  }
+
+
+  .atendimento-pix-informacoes {
+    gap: 8px;
+  }
+
+
+  .atendimento-pix-informacoes span {
+    font-size: 10px;
+  }
+
+
+  .atendimento-pix-informacoes strong {
+    font-size: 13px;
+  }
+
+
+  .atendimento-pix-valor {
+    font-size: 20px !important;
+  }
+
+
+  /*
+   * Mantemos o Copia e Cola no PDF,
+   * porém em uma caixa menor.
+   */
+  .atendimento-pix-copia-cola {
+    gap: 4px;
+  }
+
+
+  .atendimento-pix-copia-cola label {
+    font-size: 9px;
+  }
+
+
+  .atendimento-pix-copia-cola textarea {
+    height: 42px !important;
+
+    padding: 5px;
+
+    overflow: hidden;
+
+    resize: none;
+
+    font-size: 7px;
+
+    line-height: 1.15;
+  }
+
+
+  /*
+   * O botão não deve fazer parte do PDF.
+   */
+  .atendimento-pix-copia-cola button {
+    display: none !important;
+  }
+
+
+  /* Observações também ficam compactas. */
+  .atendimento-comprovante-observacao {
+    font-size: 11px;
+
+    line-height: 1.25;
+  }
+
+
+  /* Rodapé menor. */
+  .atendimento-comprovante-rodape {
+    padding: 7px 14px;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+
+  .atendimento-comprovante-rodape p {
+    margin-bottom: 2px;
+
+    font-size: 9px;
+  }
+
+
+  .atendimento-comprovante-rodape span {
+    font-size: 8px;
+  }
+}
+
+/*
+ * Indica quando a página foi aberta pelo atalho
+ * "Banho e Tosa hoje" do Dashboard.
+ */
+.atendimento-filtro-ativo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.atendimento-filtro-ativo div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.atendimento-filtro-ativo strong {
+  color: #344054;
+}
+
+.atendimento-filtro-ativo span {
+  font-size: 13px;
+  color: #667085;
+}
+
+.atendimento-filtro-ativo button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 22px;
+  color: #667085;
+}
+
+/* =========================================================
+   ESTORNO DE PAGAMENTO
+   ========================================================= */
+
+/*
+ * O estorno possui identidade visual própria para deixar
+ * claro que se trata de uma ação financeira diferente das
+ * operações comuns do atendimento.
+ */
+.atendimento-estorno-button {
+  border: 1px solid #b42318;
+  background: transparent;
+  color: #b42318;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.atendimento-estorno-button:hover:not(:disabled) {
+  background: #b42318;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.atendimento-estorno-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* Aviso exibido depois que o pagamento foi estornado. */
+.atendimento-estorno-aviso {
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border: 1px solid #f0b8b3;
+  border-radius: 12px;
+  background: #fff8f7;
+}
+
+.atendimento-estorno-aviso strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #9f1c13;
+}
+
+.atendimento-estorno-aviso p {
+  margin: 0;
+  line-height: 1.5;
+  color: #69413d;
+}
+
+.atendimento-estorno-motivo-resumo {
+  grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.atendimento-estorno-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.atendimento-estorno-modal {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 24px 70px rgba(15, 23, 42, 0.3);
+}
+
+.atendimento-estorno-modal-header {
+  padding: 26px 28px 20px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.atendimento-estorno-modal-header h2 {
+  margin: 6px 0 8px;
+}
+
+.atendimento-estorno-modal-header p {
+  margin: 0;
+  line-height: 1.5;
+  color: #667085;
+}
+
+.atendimento-estorno-etiqueta {
+  display: inline-block;
+  color: #b42318;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+
+/* =========================================================
+   FORMULÁRIO DO ESTORNO
+   ========================================================= */
+
+.atendimento-estorno-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px 28px;
+}
+
+.atendimento-estorno-resumo {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.atendimento-estorno-resumo > div {
+  padding: 14px;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.atendimento-estorno-resumo span,
+.atendimento-estorno-resumo strong {
+  display: block;
+}
+
+.atendimento-estorno-resumo span {
+  margin-bottom: 5px;
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.atendimento-estorno-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.atendimento-estorno-campo > span {
+  font-weight: 600;
+}
+
+.atendimento-estorno-campo textarea,
+.atendimento-estorno-campo select,
+.atendimento-estorno-campo input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+}
+
+.atendimento-estorno-campo textarea {
+  resize: vertical;
+  min-height: 105px;
+}
+
+.atendimento-estorno-campo textarea:focus,
+.atendimento-estorno-campo select:focus,
+.atendimento-estorno-campo input:focus {
+  outline: none;
+  border-color: #667085;
+  box-shadow:
+    0 0 0 3px rgba(102, 112, 133, 0.12);
+}
+
+.atendimento-estorno-campo small {
+  align-self: flex-end;
+  color: #667085;
+}
+
+
+/* Área mostrada somente ao Funcionário. */
+.atendimento-estorno-autorizacao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #d8dee8;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.atendimento-estorno-autorizacao-titulo p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  color: #667085;
+}
+
+
+/* Informação mostrada para Admin/Gerente. */
+.atendimento-estorno-permissao-direta {
+  padding: 13px 15px;
+  border: 1px solid #d7e6dc;
+  border-radius: 9px;
+  background: #f6fbf7;
+  color: #365b40;
+  line-height: 1.5;
+}
+
+
+/* Erros ficam dentro do modal para não misturar com
+ * mensagens gerais da página do atendimento.
+ */
+.atendimento-estorno-erro {
+  padding: 12px 14px;
+  border: 1px solid #f1b7b2;
+  border-radius: 9px;
+  background: #fff5f4;
+  color: #9f1c13;
+}
+
+
+/* =========================================================
+   AÇÕES DO MODAL
+   ========================================================= */
+
+.atendimento-estorno-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.atendimento-estorno-confirmar {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #b42318;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.atendimento-estorno-confirmar:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.atendimento-estorno-confirmar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/*
+ * Situação financeira exibida nos cards de resumo.
+ * A cor complementa o texto, mas o status continua
+ * escrito explicitamente para não depender apenas dela.
+ */
+.atendimento-pagamento-situacao {
+  font-weight: 700;
+}
+
+.atendimento-pagamento-pago {
+  color: #237a3b;
+}
+
+.atendimento-pagamento-pendente {
+  color: #9a6700;
+}
+
+.atendimento-pagamento-cancelado,
+.atendimento-pagamento-estornado {
+  color: #b42318;
+}
+
+/* =========================================================
+   SITUAÇÃO DO PAGAMENTO NOS CARDS
+   ========================================================= */
+
+.atendimento-pagamento-card {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.atendimento-pagamento-card.atendimento-pagamento-pago {
+  background: #ecfdf3;
+  color: #16733b;
+}
+
+.atendimento-pagamento-card.atendimento-pagamento-pendente {
+  background: #fff8e6;
+  color: #946200;
+}
+
+.atendimento-pagamento-card.atendimento-pagamento-estornado {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.atendimento-pagamento-card.atendimento-pagamento-cancelado {
+  background: #f2f4f7;
+  color: #667085;
+}
+
+
+/*
+ * Com quatro informações financeiras, utilizamos duas
+ * colunas para evitar cards excessivamente estreitos.
+ */
+.atendimento-estorno-resumo {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 650px) {
+  .atendimento-estorno-resumo {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 650px) {
+  .atendimento-estorno-overlay {
+    padding: 12px;
+  }
+
+  .atendimento-estorno-modal-header,
+  .atendimento-estorno-form {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .atendimento-estorno-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .atendimento-estorno-acoes {
+    flex-direction: column-reverse;
+  }
+
+  .atendimento-estorno-acoes button {
+    width: 100%;
+  }
+}
+.atendimento-raca-pendente,
+.atendimento-dados-pet {
+  display: block;
+  margin-top: 0.35rem;
+  color: #795400;
+  font-weight: 700;
+}
+
+.atendimento-cancelamento-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 58%);
+}
+
+.atendimento-cancelamento-modal {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 560px);
+  max-height: min(90vh, 760px);
+  overflow-y: auto;
+  padding: 28px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(15 23 42 / 24%);
+}
+
+.atendimento-cancelamento-modal h2,
+.atendimento-cancelamento-modal p {
+  margin: 0;
+}
+
+.atendimento-cancelamento-modal > label:first-of-type {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.atendimento-cancelamento-modal textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  resize: vertical;
+  font: inherit;
+}
+
+.atendimento-cancelamento-confirmacao {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.atendimento-cancelamento-alerta,
+.atendimento-cancelamento-erro {
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #7a3e00;
+}
+
+.atendimento-cancelamento-erro {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.atendimento-cancelamento-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.atendimento-cancelamento-confirmar {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #b42318;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.atendimento-cancelamento-confirmar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .atendimento-cancelamento-modal {
+    padding: 20px;
+  }
+  .atendimento-cancelamento-acoes {
+    flex-direction: column-reverse;
+  }
+}

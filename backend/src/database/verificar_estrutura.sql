@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-033.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-035.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -46,30 +46,30 @@ BEGIN
         ('agenda_publica_operacoes', 'executado_por', 'integer', true, NULL),
         ('agenda_publica_operacoes', 'autorizado_por', 'integer', false, NULL),
         ('agenda_publica_operacoes', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
-        ('banho_tosa', 'id', 'integer', true, NULL),
-        ('banho_tosa', 'pet_id', 'integer', true, NULL),
-        ('banho_tosa', 'status', 'character varying(30)', true, '''AGENDADO''::character varying'),
-        ('banho_tosa', 'agendado_para', 'timestamp without time zone', true, NULL),
-        ('banho_tosa', 'iniciado_em', 'timestamp without time zone', false, NULL),
-        ('banho_tosa', 'finalizado_em', 'timestamp without time zone', false, NULL),
-        ('banho_tosa', 'observacoes_agendamento', 'text', false, NULL),
-        ('banho_tosa', 'observacoes_atendimento', 'text', false, NULL),
-        ('banho_tosa', 'motivo_cancelamento', 'text', false, NULL),
-        ('banho_tosa', 'cancelado_em', 'timestamp without time zone', false, NULL),
-        ('banho_tosa', 'usuario_criacao_id', 'integer', false, NULL),
-        ('banho_tosa', 'usuario_inicio_id', 'integer', false, NULL),
-        ('banho_tosa', 'usuario_finalizacao_id', 'integer', false, NULL),
-        ('banho_tosa', 'usuario_cancelamento_id', 'integer', false, NULL),
-        ('banho_tosa', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
-        ('banho_tosa', 'atualizado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
-        ('banho_tosa', 'origem', 'character varying(30)', true, '''INTERNO''::character varying'),
-        ('banho_tosa', 'agenda_publica_horario_id', 'integer', false, NULL),
-        ('banho_tosa_servicos', 'id', 'integer', true, NULL),
-        ('banho_tosa_servicos', 'banho_tosa_id', 'integer', true, NULL),
-        ('banho_tosa_servicos', 'servico_id', 'integer', true, NULL),
-        ('banho_tosa_servicos', 'valor_unitario', 'numeric(10,2)', true, NULL),
-        ('banho_tosa_servicos', 'duracao_minutos', 'integer', true, NULL),
-        ('banho_tosa_servicos', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
+        ('atendimentos', 'id', 'integer', true, NULL),
+        ('atendimentos', 'pet_id', 'integer', true, NULL),
+        ('atendimentos', 'status', 'character varying(30)', true, '''AGENDADO''::character varying'),
+        ('atendimentos', 'agendado_para', 'timestamp without time zone', true, NULL),
+        ('atendimentos', 'iniciado_em', 'timestamp without time zone', false, NULL),
+        ('atendimentos', 'finalizado_em', 'timestamp without time zone', false, NULL),
+        ('atendimentos', 'observacoes_agendamento', 'text', false, NULL),
+        ('atendimentos', 'observacoes_atendimento', 'text', false, NULL),
+        ('atendimentos', 'motivo_cancelamento', 'text', false, NULL),
+        ('atendimentos', 'cancelado_em', 'timestamp without time zone', false, NULL),
+        ('atendimentos', 'usuario_criacao_id', 'integer', false, NULL),
+        ('atendimentos', 'usuario_inicio_id', 'integer', false, NULL),
+        ('atendimentos', 'usuario_finalizacao_id', 'integer', false, NULL),
+        ('atendimentos', 'usuario_cancelamento_id', 'integer', false, NULL),
+        ('atendimentos', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
+        ('atendimentos', 'atualizado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
+        ('atendimentos', 'origem', 'character varying(30)', true, '''INTERNO''::character varying'),
+        ('atendimentos', 'agenda_publica_horario_id', 'integer', false, NULL),
+        ('atendimento_servicos', 'id', 'integer', true, NULL),
+        ('atendimento_servicos', 'banho_tosa_id', 'integer', true, NULL),
+        ('atendimento_servicos', 'servico_id', 'integer', true, NULL),
+        ('atendimento_servicos', 'valor_unitario', 'numeric(10,2)', true, NULL),
+        ('atendimento_servicos', 'duracao_minutos', 'integer', true, NULL),
+        ('atendimento_servicos', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
         ('creche', 'id', 'integer', true, NULL),
         ('creche', 'pet_id', 'integer', true, NULL),
         ('creche', 'entrada_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
@@ -116,19 +116,19 @@ BEGIN
         ('movimentacoes_estoque', 'motivo', 'character varying(255)', false, NULL),
         ('movimentacoes_estoque', 'usuario_id', 'integer', true, NULL),
         ('movimentacoes_estoque', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
-        ('pagamentos_banho_tosa', 'id', 'integer', true, NULL),
-        ('pagamentos_banho_tosa', 'banho_tosa_id', 'integer', true, NULL),
-        ('pagamentos_banho_tosa', 'valor_total', 'numeric(10,2)', true, '0'),
-        ('pagamentos_banho_tosa', 'status', 'character varying(30)', true, '''PENDENTE''::character varying'),
-        ('pagamentos_banho_tosa', 'metodo', 'character varying(30)', false, NULL),
-        ('pagamentos_banho_tosa', 'codigo_pagamento', 'character varying(255)', false, NULL),
-        ('pagamentos_banho_tosa', 'pago_em', 'timestamp without time zone', false, NULL),
-        ('pagamentos_banho_tosa', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
-        ('pagamentos_banho_tosa', 'atualizado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
-        ('pagamentos_banho_tosa', 'motivo_estorno', 'text', false, NULL),
-        ('pagamentos_banho_tosa', 'estornado_em', 'timestamp without time zone', false, NULL),
-        ('pagamentos_banho_tosa', 'usuario_estorno_id', 'integer', false, NULL),
-        ('pagamentos_banho_tosa', 'usuario_autorizacao_estorno_id', 'integer', false, NULL),
+        ('pagamentos_atendimentos', 'id', 'integer', true, NULL),
+        ('pagamentos_atendimentos', 'banho_tosa_id', 'integer', true, NULL),
+        ('pagamentos_atendimentos', 'valor_total', 'numeric(10,2)', true, '0'),
+        ('pagamentos_atendimentos', 'status', 'character varying(30)', true, '''PENDENTE''::character varying'),
+        ('pagamentos_atendimentos', 'metodo', 'character varying(30)', false, NULL),
+        ('pagamentos_atendimentos', 'codigo_pagamento', 'character varying(255)', false, NULL),
+        ('pagamentos_atendimentos', 'pago_em', 'timestamp without time zone', false, NULL),
+        ('pagamentos_atendimentos', 'criado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
+        ('pagamentos_atendimentos', 'atualizado_em', 'timestamp without time zone', true, 'CURRENT_TIMESTAMP'),
+        ('pagamentos_atendimentos', 'motivo_estorno', 'text', false, NULL),
+        ('pagamentos_atendimentos', 'estornado_em', 'timestamp without time zone', false, NULL),
+        ('pagamentos_atendimentos', 'usuario_estorno_id', 'integer', false, NULL),
+        ('pagamentos_atendimentos', 'usuario_autorizacao_estorno_id', 'integer', false, NULL),
         ('pet_tutores', 'pet_id', 'integer', true, NULL),
         ('pet_tutores', 'tutor_id', 'integer', true, NULL),
         ('pet_tutores', 'principal', 'boolean', true, 'false'),
@@ -269,7 +269,7 @@ BEGIN
     -- mas a definicao, inclusive ON DELETE, precisa coincidir. Nunca a altera.
     FOR item IN SELECT * FROM (VALUES
         ('historico_atendimentos', 'PRIMARY KEY (id)'),
-        ('historico_atendimentos', 'FOREIGN KEY (banho_tosa_id) REFERENCES banho_tosa(id) ON DELETE RESTRICT'),
+        ('historico_atendimentos', 'FOREIGN KEY (banho_tosa_id) REFERENCES atendimentos(id) ON DELETE RESTRICT'),
         ('historico_atendimentos', 'FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT'),
         ('historico_atendimentos', 'FOREIGN KEY (tutor_id) REFERENCES tutores(id) ON DELETE RESTRICT'),
         ('agenda_publica_dias', 'UNIQUE (data)'),
@@ -288,21 +288,21 @@ BEGIN
         ('agenda_publica_operacoes', 'CHECK (((tratamento_existentes IS NULL) OR ((tratamento_existentes)::text = ANY (ARRAY[(''MANTER''::character varying)::text, (''ADICIONAR''::character varying)::text, (''SUBSTITUIR''::character varying)::text]))))'),
         ('agenda_publica_operacoes', 'FOREIGN KEY (autorizado_por) REFERENCES usuarios(id) ON DELETE SET NULL'),
         ('agenda_publica_operacoes', 'FOREIGN KEY (executado_por) REFERENCES usuarios(id)'),
-        ('banho_tosa', 'PRIMARY KEY (id)'),
-        ('banho_tosa', 'CHECK (((origem)::text = ANY (ARRAY[(''INTERNO''::character varying)::text, (''PUBLICO''::character varying)::text])))'),
-        ('banho_tosa', 'CHECK (((status)::text = ANY (ARRAY[(''AGENDADO''::character varying)::text, (''EM_ATENDIMENTO''::character varying)::text, (''FINALIZADO''::character varying)::text, (''CANCELADO''::character varying)::text, (''AGUARDANDO_CONFIRMACAO''::character varying)::text, (''RECUSADO''::character varying)::text])))'),
-        ('banho_tosa', 'FOREIGN KEY (agenda_publica_horario_id) REFERENCES agenda_publica_horarios(id) ON DELETE RESTRICT'),
-        ('banho_tosa', 'FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE RESTRICT'),
-        ('banho_tosa', 'FOREIGN KEY (usuario_cancelamento_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
-        ('banho_tosa', 'FOREIGN KEY (usuario_criacao_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
-        ('banho_tosa', 'FOREIGN KEY (usuario_finalizacao_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
-        ('banho_tosa', 'FOREIGN KEY (usuario_inicio_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
-        ('banho_tosa_servicos', 'PRIMARY KEY (id)'),
-        ('banho_tosa_servicos', 'CHECK ((duracao_minutos > 0))'),
-        ('banho_tosa_servicos', 'CHECK ((valor_unitario >= (0)::numeric))'),
-        ('banho_tosa_servicos', 'FOREIGN KEY (banho_tosa_id) REFERENCES banho_tosa(id) ON DELETE CASCADE'),
-        ('banho_tosa_servicos', 'FOREIGN KEY (servico_id) REFERENCES servicos(id) ON DELETE RESTRICT'),
-        ('banho_tosa_servicos', 'UNIQUE (banho_tosa_id, servico_id)'),
+        ('atendimentos', 'PRIMARY KEY (id)'),
+        ('atendimentos', 'CHECK (((origem)::text = ANY (ARRAY[(''INTERNO''::character varying)::text, (''PUBLICO''::character varying)::text])))'),
+        ('atendimentos', 'CHECK (((status)::text = ANY (ARRAY[(''AGENDADO''::character varying)::text, (''EM_ATENDIMENTO''::character varying)::text, (''FINALIZADO''::character varying)::text, (''CANCELADO''::character varying)::text, (''AGUARDANDO_CONFIRMACAO''::character varying)::text, (''RECUSADO''::character varying)::text])))'),
+        ('atendimentos', 'FOREIGN KEY (agenda_publica_horario_id) REFERENCES agenda_publica_horarios(id) ON DELETE RESTRICT'),
+        ('atendimentos', 'FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE RESTRICT'),
+        ('atendimentos', 'FOREIGN KEY (usuario_cancelamento_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
+        ('atendimentos', 'FOREIGN KEY (usuario_criacao_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
+        ('atendimentos', 'FOREIGN KEY (usuario_finalizacao_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
+        ('atendimentos', 'FOREIGN KEY (usuario_inicio_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
+        ('atendimento_servicos', 'PRIMARY KEY (id)'),
+        ('atendimento_servicos', 'CHECK ((duracao_minutos > 0))'),
+        ('atendimento_servicos', 'CHECK ((valor_unitario >= (0)::numeric))'),
+        ('atendimento_servicos', 'FOREIGN KEY (banho_tosa_id) REFERENCES atendimentos(id) ON DELETE CASCADE'),
+        ('atendimento_servicos', 'FOREIGN KEY (servico_id) REFERENCES servicos(id) ON DELETE RESTRICT'),
+        ('atendimento_servicos', 'UNIQUE (banho_tosa_id, servico_id)'),
         ('creche', 'CHECK (((saida_em IS NULL) OR (saida_em >= entrada_em)))'),
         ('creche', 'CHECK (((status)::text = ANY (ARRAY[(''NA_CRECHE''::character varying)::text, (''FINALIZADO''::character varying)::text])))'),
         ('creche', 'PRIMARY KEY (id)'),
@@ -327,13 +327,13 @@ BEGIN
         ('movimentacoes_estoque', 'FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE RESTRICT'),
         ('movimentacoes_estoque', 'FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT'),
         ('movimentacoes_estoque', 'PRIMARY KEY (id)'),
-        ('pagamentos_banho_tosa', 'CHECK (((status)::text = ANY (ARRAY[(''PENDENTE''::character varying)::text, (''PAGO''::character varying)::text, (''CANCELADO''::character varying)::text, (''ESTORNADO''::character varying)::text])))'),
-        ('pagamentos_banho_tosa', 'CHECK ((valor_total >= (0)::numeric))'),
-        ('pagamentos_banho_tosa', 'FOREIGN KEY (banho_tosa_id) REFERENCES banho_tosa(id) ON DELETE CASCADE'),
-        ('pagamentos_banho_tosa', 'FOREIGN KEY (usuario_autorizacao_estorno_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
-        ('pagamentos_banho_tosa', 'FOREIGN KEY (usuario_estorno_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
-        ('pagamentos_banho_tosa', 'PRIMARY KEY (id)'),
-        ('pagamentos_banho_tosa', 'UNIQUE (banho_tosa_id)'),
+        ('pagamentos_atendimentos', 'CHECK (((status)::text = ANY (ARRAY[(''PENDENTE''::character varying)::text, (''PAGO''::character varying)::text, (''CANCELADO''::character varying)::text, (''ESTORNADO''::character varying)::text])))'),
+        ('pagamentos_atendimentos', 'CHECK ((valor_total >= (0)::numeric))'),
+        ('pagamentos_atendimentos', 'FOREIGN KEY (banho_tosa_id) REFERENCES atendimentos(id) ON DELETE CASCADE'),
+        ('pagamentos_atendimentos', 'FOREIGN KEY (usuario_autorizacao_estorno_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
+        ('pagamentos_atendimentos', 'FOREIGN KEY (usuario_estorno_id) REFERENCES usuarios(id) ON DELETE SET NULL'),
+        ('pagamentos_atendimentos', 'PRIMARY KEY (id)'),
+        ('pagamentos_atendimentos', 'UNIQUE (banho_tosa_id)'),
         ('pet_tutores', 'FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE'),
         ('pet_tutores', 'FOREIGN KEY (tutor_id) REFERENCES tutores(id) ON DELETE CASCADE'),
         ('pet_tutores', 'PRIMARY KEY (pet_id, tutor_id)'),
@@ -397,7 +397,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1
         FROM pg_index i
-        WHERE i.indrelid = 'public.banho_tosa'::regclass
+        WHERE i.indrelid = 'public.atendimentos'::regclass
           AND i.indisunique AND i.indisvalid AND i.indisready
           AND i.indpred IS NOT NULL
           AND pg_get_indexdef(i.indexrelid, 1, false) = 'agenda_publica_horario_id'
@@ -564,3 +564,72 @@ BEGIN
     END IF;
 END $$;
 SELECT 'Contrato estrutural de notificacoes 033 validado: persistencia, preferencia exclusiva, deduplicacao, indices e triggers.' AS resultado;
+
+DO $$
+DECLARE item record; atual record;
+BEGIN
+    FOR item IN SELECT * FROM (VALUES
+        ('rate_limit_buckets', 'limiter_key', 'character(64)', true),
+        ('rate_limit_buckets', 'window_start', 'timestamp with time zone', true),
+        ('rate_limit_buckets', 'expires_at', 'timestamp with time zone', true),
+        ('rate_limit_buckets', 'request_count', 'integer', true),
+        ('object_upload_intents', 'upload_id', 'uuid', true),
+        ('object_upload_intents', 'resource_kind', 'character varying(20)', true),
+        ('object_upload_intents', 'owner_user_id', 'integer', false),
+        ('object_upload_intents', 'object_key', 'character varying(240)', true),
+        ('object_upload_intents', 'cleanup_after', 'timestamp with time zone', true),
+        ('object_upload_intents', 'finalized_at', 'timestamp with time zone', false),
+        ('object_upload_intents', 'cleanup_attempts', 'smallint', true),
+        ('object_upload_intents', 'cleanup_claimed_at', 'timestamp with time zone', false),
+        ('object_upload_intents', 'cleaned_at', 'timestamp with time zone', false)
+    ) AS expected(table_name, column_name, type_name, required)
+    LOOP
+        SELECT format_type(a.atttypid, a.atttypmod) AS type_name, a.attnotnull AS required
+          INTO atual FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+          JOIN pg_attribute a ON a.attrelid=c.oid
+         WHERE n.nspname='public' AND c.relname=item.table_name AND a.attname=item.column_name
+           AND a.attnum>0 AND NOT a.attisdropped;
+        IF NOT FOUND OR atual.type_name <> item.type_name OR atual.required <> item.required THEN
+            RAISE EXCEPTION 'Estrutura da migration 034 ausente/incompativel: %.%', item.table_name, item.column_name;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.rate_limit_buckets'::regclass AND conname='pk_rate_limit_buckets' AND contype='p' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.object_upload_intents'::regclass AND conname='object_upload_intents_pkey' AND contype='p' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.object_upload_intents'::regclass AND conname='chk_object_upload_intents_key' AND contype='c' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.object_upload_intents'::regclass AND conname='chk_object_upload_intents_kind' AND contype='c' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.object_upload_intents'::regclass AND contype='f' AND pg_get_constraintdef(oid,false)='FOREIGN KEY (owner_user_id) REFERENCES usuarios(id) ON DELETE SET NULL') THEN
+        RAISE EXCEPTION 'Constraints essenciais da migration 034 ausentes ou incompativeis';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid='public.idx_rate_limit_buckets_expiry'::regclass AND indisvalid AND indisready)
+       OR NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid='public.idx_object_upload_intents_cleanup'::regclass AND indisvalid AND indisready AND indpred IS NOT NULL) THEN
+        RAISE EXCEPTION 'Indices de expiracao/limpeza da migration 034 ausentes ou invalidos';
+    END IF;
+END $$;
+SELECT 'Contrato estrutural da migration 034 validado: contadores compartilhados e intents de limpeza limitados.' AS resultado;
+
+DO $$
+DECLARE item record; view_oid oid; table_oid oid;
+BEGIN
+  FOR item IN SELECT * FROM (VALUES
+    ('banho_tosa','atendimentos'),
+    ('banho_tosa_servicos','atendimento_servicos'),
+    ('pagamentos_banho_tosa','pagamentos_atendimentos')
+  ) AS nomes(alias_antigo,nome_canonico) LOOP
+    view_oid := to_regclass(format('public.%I',item.alias_antigo));
+    table_oid := to_regclass(format('public.%I',item.nome_canonico));
+    IF view_oid IS NULL OR table_oid IS NULL
+       OR (SELECT relkind FROM pg_class WHERE oid=view_oid) <> 'v'
+       OR (SELECT relkind FROM pg_class WHERE oid=table_oid) <> 'r' THEN
+      RAISE EXCEPTION 'Migration 035: alias/view ou tabela canonica ausente: % / %',item.alias_antigo,item.nome_canonico;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.views
+       WHERE table_schema='public' AND table_name=item.alias_antigo AND is_updatable='YES') THEN
+      RAISE EXCEPTION 'Migration 035: view legada nao atualizavel: %',item.alias_antigo;
+    END IF;
+    IF pg_get_userbyid((SELECT relowner FROM pg_class WHERE oid=view_oid))
+       <> pg_get_userbyid((SELECT relowner FROM pg_class WHERE oid=table_oid)) THEN
+      RAISE EXCEPTION 'Migration 035: owner da view diverge da tabela: %',item.alias_antigo;
+    END IF;
+  END LOOP;
+END $$;
+SELECT 'Contrato 035 validado: tabelas canonicas e aliases legados atualizaveis.' AS resultado;

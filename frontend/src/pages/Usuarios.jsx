@@ -60,7 +60,11 @@ function Usuarios() {
 
 
   useEffect(() => {
-    carregarUsuarios();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarUsuarios();
+    });
+    return () => { ativo = false; };
   }, [carregarUsuarios]);
 
 

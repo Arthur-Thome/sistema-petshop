@@ -10,7 +10,7 @@ function receberPetPublico(req, res, next) {
   uploadPet.single("foto")(req, res, (erro) => {
     if (erro) {
       const mensagem = erro instanceof multer.MulterError && erro.code === "LIMIT_FILE_SIZE"
-        ? "A imagem deve ter no máximo 5 MB."
+        ? `A imagem deve ter no maximo ${Math.floor(uploadPet.LIMITE_FOTO_BYTES / 1024 / 1024)} MB.`
         : erro.message || "Não foi possível enviar a imagem.";
       return res.status(400).json({ codigo: "FOTO_INVALIDA", mensagem });
     }

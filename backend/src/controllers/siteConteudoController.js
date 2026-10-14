@@ -1,6 +1,8 @@
 const pool = require("../database/connection");
 const { registrarLog } = require("../services/logService");
 const storage = require("../services/siteGalleryStorage");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const CAMPOS_TEXTO = {
   titulo_principal: 180,
@@ -340,6 +342,118 @@ async function enviarImagem(req, res) {
   }
 }
 
+async function criarUploadDireto(req, res) {
+  const { mime_type: mimeType, tamanho_bytes: tamanhoBytes } = req.body || {};
+  const extensoes = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" };
+  if (!extensoes[mimeType] || !Number.isInteger(tamanhoBytes) || tamanhoBytes < 1 || tamanhoBytes > storage.MAX_BYTES) {
+    return res.status(400).json({ mensagem: "Imagem invalida ou acima do limite permitido de 8 MB." });
+  }
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    return res.status(503).json({ mensagem: "Upload direto temporariamente indisponivel." });
+  }
+  if (process.env.FILE_STORAGE_MODE === "s3" && process.env.S3_TEMP_UPLOAD_CLEANUP_CONFIRMED !== "true") {
+    return res.status(503).json({ mensagem: "Upload direto indisponivel ate validar a expiracao segura de arquivos temporarios." });
+  }
+  try {
+    const uploadId = crypto.randomUUID();
+    const arquivoNome = `${crypto.randomUUID()}${extensoes[mimeType]}`;
+    const upload = storage.prepararUploadDireto(uploadId, arquivoNome, mimeType);
+    if (!upload) return res.status(200).json({ modo: "local" });
+    await pool.query(`
+      INSERT INTO object_upload_intents (upload_id, resource_kind, owner_user_id, object_key, cleanup_after)
+      VALUES ($1, 'SITE_GALLERY', $2, $3, CURRENT_TIMESTAMP + INTERVAL '24 hours')
+    `, [uploadId, req.usuario.id, upload.key]);
+    const uploadToken = jwt.sign({
+      finalidade: "SITE_GALERIA_UPLOAD",
+      usuario_id: req.usuario.id,
+      upload_id: uploadId,
+      arquivo_nome: arquivoNome,
+      chave_temporaria: upload.key,
+      mime_type: mimeType,
+      tamanho_bytes: tamanhoBytes,
+    }, process.env.JWT_SECRET, { algorithm: "HS256", expiresIn: "5m" });
+    return res.status(200).json({ modo: "s3", ...upload, uploadToken, expira_segundos: 300 });
+  } catch (_) {
+    return res.status(503).json({ mensagem: "Nao foi possivel autorizar o upload direto." });
+  }
+}
+
+async function finalizarUploadDireto(req, res) {
+  let token;
+  try {
+    token = jwt.verify(req.body?.uploadToken, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+  } catch (_) {
+    return res.status(401).json({ mensagem: "A autorizacao do upload expirou. Inicie o envio novamente." });
+  }
+  if (token.finalidade !== "SITE_GALERIA_UPLOAD" || Number(token.usuario_id) !== Number(req.usuario.id)) {
+    return res.status(403).json({ mensagem: "Autorizacao de upload invalida." });
+  }
+  const jaFinalizado = await pool.query("SELECT * FROM site_galeria WHERE arquivo_nome=$1 AND criado_por=$2", [token.arquivo_nome, req.usuario.id]);
+  if (jaFinalizado.rows.length) {
+    await pool.query("UPDATE object_upload_intents SET finalized_at=COALESCE(finalized_at,CURRENT_TIMESTAMP) WHERE upload_id=$1 AND owner_user_id=$2 AND resource_kind='SITE_GALLERY'", [token.upload_id, req.usuario.id]);
+    return res.status(200).json({ imagem: imagemAdmin(jaFinalizado.rows[0]), repetido: true });
+  }
+  const intent = await pool.query(`SELECT upload_id FROM object_upload_intents
+    WHERE upload_id=$1 AND owner_user_id=$2 AND resource_kind='SITE_GALLERY' AND object_key=$3
+      AND finalized_at IS NULL AND cleaned_at IS NULL AND cleanup_claimed_at IS NULL AND cleanup_after > CURRENT_TIMESTAMP`,
+  [token.upload_id, req.usuario.id, token.chave_temporaria]);
+  if (!intent.rows.length) return res.status(410).json({ mensagem: "Este upload expirou. Inicie o envio novamente." });
+  let meta;
+  try { meta = validarGaleria(req.body); }
+  catch (erro) { return res.status(400).json({ mensagem: erro.message }); }
+  let arquivoPermanenteCriado = false;
+  try {
+    const objeto = await storage.examinarUploadDireto(token.chave_temporaria);
+    if (!objeto || objeto.tamanhoBytes !== token.tamanho_bytes || objeto.tamanhoBytes > storage.MAX_BYTES) {
+      await storage.removerUploadDireto(token.chave_temporaria).catch(() => {});
+      return res.status(400).json({ mensagem: "O arquivo enviado nao corresponde ao tamanho autorizado." });
+    }
+    const bytes = await storage.lerUploadDireto(token.chave_temporaria);
+    if (bytes.length !== token.tamanho_bytes || storage.detectarMimeImagem(bytes) !== token.mime_type) {
+      await storage.removerUploadDireto(token.chave_temporaria).catch(() => {});
+      return res.status(400).json({ mensagem: "O conteudo enviado nao e uma imagem valida." });
+    }
+    const permanente = await storage.salvarImagem(bytes, token.mime_type, token.arquivo_nome);
+    arquivoPermanenteCriado = true;
+    const client = await pool.connect();
+    let result;
+    try {
+      await client.query("BEGIN");
+      const atualizado = await client.query(`UPDATE object_upload_intents SET finalized_at=CURRENT_TIMESTAMP
+        WHERE upload_id=$1 AND owner_user_id=$2 AND resource_kind='SITE_GALLERY' AND object_key=$3
+          AND finalized_at IS NULL AND cleaned_at IS NULL AND cleanup_claimed_at IS NULL`, [token.upload_id, req.usuario.id, token.chave_temporaria]);
+      if (atualizado.rowCount !== 1) throw new Error("Autorizacao de upload nao esta mais ativa.");
+      result = await client.query(`
+        INSERT INTO site_galeria (arquivo_nome, mime_type, tamanho_bytes, titulo, legenda,
+          texto_alternativo, categoria, ordem, publicado, criado_por, atualizado_por)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10) RETURNING *
+      `, [permanente.arquivoNome, token.mime_type, bytes.length, meta.titulo, meta.legenda, meta.texto_alternativo,
+        meta.categoria, meta.ordem, meta.publicado, req.usuario.id]);
+      await client.query("COMMIT");
+    } catch (erro) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw erro;
+    } finally {
+      client.release();
+    }
+    const row = result.rows[0];
+    await registrarAuditoria(req, "IMAGEM_GALERIA_CRIADA", "site_galeria", row.id, null,
+      { id: row.id, titulo: meta.titulo, categoria: meta.categoria, publicado: meta.publicado, origem: "upload_direto" });
+    await storage.removerUploadDireto(token.chave_temporaria).catch(() => {});
+    return res.status(201).json({ imagem: imagemAdmin(row) });
+  } catch (erro) {
+    if (erro.code === "23505") {
+      const repetido = await pool.query("SELECT * FROM site_galeria WHERE arquivo_nome=$1 AND criado_por=$2", [token.arquivo_nome, req.usuario.id]);
+      if (repetido.rows.length) {
+        await storage.removerUploadDireto(token.chave_temporaria).catch(() => {});
+        return res.status(200).json({ imagem: imagemAdmin(repetido.rows[0]), repetido: true });
+      }
+    }
+    if (arquivoPermanenteCriado) await storage.removerImagem(token.arquivo_nome).catch(() => {});
+    return res.status(502).json({ mensagem: "Nao foi possivel validar e registrar a imagem enviada." });
+  }
+}
+
 function imagemAdmin(row) {
   return { ...row, imagem_url: `/site-conteudo/admin/galeria/${row.id}/imagem` };
 }
@@ -390,9 +504,8 @@ async function servirImagem(req, res, exigirPublicacao) {
     const result = await pool.query(`SELECT arquivo_nome, mime_type FROM site_galeria
       WHERE id=$1 AND removido_em IS NULL ${exigirPublicacao ? "AND publicado=TRUE" : ""}`, [id]);
     if (!result.rows.length) return res.status(404).json({ mensagem: "Imagem não encontrada." });
-    const caminho = storage.resolverCaminho(result.rows[0].arquivo_nome);
-    if (!caminho) return res.status(404).json({ mensagem: "Imagem não encontrada." });
-    const bytes = await require("fs/promises").readFile(caminho);
+    const bytes = await storage.lerImagem(result.rows[0].arquivo_nome);
+    if (!bytes) return res.status(404).json({ mensagem: "Imagem não encontrada." });
     if (storage.detectarMimeImagem(bytes) !== result.rows[0].mime_type) return res.status(404).json({ mensagem: "Imagem não encontrada." });
     res.set("Content-Type", result.rows[0].mime_type);
     res.set("Content-Length", String(bytes.length));
@@ -421,6 +534,8 @@ module.exports = {
   removerPremiacao,
   executarUpload,
   enviarImagem,
+  criarUploadDireto,
+  finalizarUploadDireto,
   atualizarImagem,
   removerImagem,
   servirImagemPublica,

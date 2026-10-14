@@ -9,55 +9,23 @@ import {
 } from "react-router-dom";
 
 import axios from "axios";
+import { useFotoPet } from "../utils/useFotoPet";
 
 import "../public-styles/AgendamentoPublico.css";
 
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "http://localhost:3001/api";
-
-  /*
- * URL base do backend sem o sufixo /api.
- *
- * As fotos dos Pets são arquivos estáticos servidos pelo
- * backend e não pelas rotas da API.
- */
-const BACKEND_URL =
-  API_URL.replace(/\/api\/?$/, "");
+  "/api";
 
 function ehRacaDesconhecida(valor) {
   return String(valor || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === "nao sei informar";
 }
 
 
-function obterFotoPet(foto) {
-  if (!foto) {
-    return null;
-  }
-
-  /*
-   * Caso o banco já possua uma URL completa, ela pode ser
-   * utilizada diretamente.
-   */
-  if (
-    foto.startsWith("http://") ||
-    foto.startsWith("https://") ||
-    foto.startsWith("data:")
-  ) {
-    return foto;
-  }
-
-  /*
-   * Garante somente uma barra entre o endereço do backend
-   * e o caminho salvo no banco.
-   */
-  const caminho =
-    foto.startsWith("/")
-      ? foto
-      : `/${foto}`;
-
-  return `${BACKEND_URL}${caminho}`;
+function FotoPetPrivada({ foto, nome }) {
+  const src = useFotoPet(foto);
+  return src ? <img src={src} alt={nome} /> : <span aria-label="Foto indisponível">{String(nome || "P").charAt(0).toUpperCase()}</span>;
 }
 
 const MESES = [
@@ -3112,16 +3080,7 @@ function AgendamentoPublico() {
                       >
                         <div className="agendamento-pet-avatar">
                           {pet.foto ? (
-                            <img
-                              src={
-                                obterFotoPet(
-                                  pet.foto
-                                )
-                              }
-                              alt={
-                                pet.nome
-                              }
-                            />
+                            <FotoPetPrivada foto={pet.foto} nome={pet.nome} />
                           ) : (
                             <span>
                               {String(

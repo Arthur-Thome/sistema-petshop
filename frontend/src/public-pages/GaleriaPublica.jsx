@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "../public-styles/GaleriaPublica.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 const FORMATOS_GRID = ["galeria-item-grande", "", "galeria-item-alto", "", "galeria-item-largo", ""];
 
 function GaleriaPublica() {

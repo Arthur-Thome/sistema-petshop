@@ -102,8 +102,7 @@ function Layout() {
           </NavLink>
 
           {/*
-           * O antigo módulo "Banho e Tosa" passa a ser
-           * apresentado como "Atendimentos".
+           * O módulo passa a ser apresentado como "Atendimentos".
            *
            * Dessa forma o módulo poderá receber diferentes
            * tipos de serviços sem ficar limitado ao nome

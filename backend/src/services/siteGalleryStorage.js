@@ -1,6 +1,6 @@
 const crypto = require("crypto");
-const fs = require("fs/promises");
 const path = require("path");
+const objectStorage = require("./objectStorageService");
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_DIMENSION = 12000;
@@ -126,15 +126,21 @@ function detectarMimeImagem(buffer) {
   return null;
 }
 
-async function salvarImagem(buffer, mimeType) {
+async function salvarImagem(buffer, mimeType, nomeFinal) {
   if (!EXTENSIONS[mimeType] || detectarMimeImagem(buffer) !== mimeType || buffer.length < 1 || buffer.length > MAX_BYTES) {
     throw new Error("Imagem invalida.");
   }
-  const arquivoNome = `${crypto.randomUUID()}${EXTENSIONS[mimeType]}`;
-  await fs.mkdir(STORAGE_ROOT, { recursive: true });
+  const arquivoNome = nomeFinal || `${crypto.randomUUID()}${EXTENSIONS[mimeType]}`;
+  if (!new RegExp(`^[a-f0-9-]{36}\\${EXTENSIONS[mimeType]}$`).test(arquivoNome)) throw new Error("Identificador de imagem invalido.");
   const caminho = path.join(STORAGE_ROOT, arquivoNome);
-  await fs.writeFile(caminho, buffer, { flag: "wx", mode: 0o640 });
+  await objectStorage.gravar({ bucket: process.env.SITE_GALLERY_BUCKET, key: arquivoNome, buffer, contentType: mimeType, localPath: caminho });
   return { arquivoNome, caminho, tamanhoBytes: buffer.length };
+}
+
+async function lerImagem(arquivoNome) {
+  const caminho = resolverCaminho(arquivoNome);
+  if (!caminho) return null;
+  return objectStorage.ler({ bucket: process.env.SITE_GALLERY_BUCKET, key: arquivoNome, localPath: caminho });
 }
 
 function resolverCaminho(arquivoNome) {
@@ -144,16 +150,41 @@ function resolverCaminho(arquivoNome) {
   return caminho;
 }
 
+function prepararUploadDireto(uploadId, arquivoNome, mimeType) {
+  if (objectStorage.modoArmazenamento() !== "s3") return null;
+  if (process.env.S3_TEMP_UPLOAD_CLEANUP_CONFIRMED !== "true") {
+    const erro = new Error("O coletor de uploads temporarios S3 ainda nao foi validado."); erro.code = "LIMPEZA_TEMPORARIA_NAO_CONFIRMADA"; throw erro;
+  }
+  const caminho = resolverCaminho(arquivoNome);
+  if (!/^[a-f0-9-]{36}$/.test(uploadId) || !caminho || !EXTENSIONS[mimeType]) throw new Error("Upload de imagem invalido.");
+  const key = `tmp/site-gallery/${uploadId}/${arquivoNome}`;
+  return {
+    key,
+    url: objectStorage.presignPut({ bucket: process.env.SITE_GALLERY_BUCKET, key, contentType: mimeType, expiresSeconds: 300 }),
+    headers: { "Content-Type": mimeType },
+  };
+}
+
+async function examinarUploadDireto(key) {
+  if (objectStorage.modoArmazenamento() !== "s3") return null;
+  if (typeof key !== "string" || !/^tmp\/site-gallery\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(key)) return null;
+  return objectStorage.examinarObjeto({ bucket: process.env.SITE_GALLERY_BUCKET, key });
+}
+
+async function lerUploadDireto(key) {
+  if (typeof key !== "string" || !/^tmp\/site-gallery\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(key)) return null;
+  return objectStorage.ler({ bucket: process.env.SITE_GALLERY_BUCKET, key });
+}
+
+async function removerUploadDireto(key) {
+  if (typeof key !== "string" || !/^tmp\/site-gallery\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(key)) return false;
+  return objectStorage.remover({ bucket: process.env.SITE_GALLERY_BUCKET, key });
+}
+
 async function removerImagem(arquivoNome) {
   const caminho = resolverCaminho(arquivoNome);
   if (!caminho) return false;
-  try {
-    await fs.unlink(caminho);
-    return true;
-  } catch (erro) {
-    if (erro.code === "ENOENT") return false;
-    throw erro;
-  }
+  return objectStorage.remover({ bucket: process.env.SITE_GALLERY_BUCKET, key: arquivoNome, localPath: caminho });
 }
 
-module.exports = { MAX_BYTES, MAX_DIMENSION, MAX_PIXELS, STORAGE_ROOT, detectarMimeImagem, validarRaizArmazenamento, salvarImagem, resolverCaminho, removerImagem };
+module.exports = { MAX_BYTES, MAX_DIMENSION, MAX_PIXELS, STORAGE_ROOT, detectarMimeImagem, validarRaizArmazenamento, salvarImagem, lerImagem, resolverCaminho, prepararUploadDireto, examinarUploadDireto, lerUploadDireto, removerUploadDireto, removerImagem };

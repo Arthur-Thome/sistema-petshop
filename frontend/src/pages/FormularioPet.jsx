@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api";
+import { useFotoPet } from "../utils/useFotoPet";
 import "../styles/FormularioPet.css";
 
 import SeletorTutor
@@ -195,7 +196,7 @@ function FormularioPet() {
    */
   useEffect(() => {
     if (modoEdicao) {
-      setCarregandoTutores(false);
+      queueMicrotask(() => setCarregandoTutores(false));
 
       return;
     }
@@ -283,9 +284,11 @@ function FormularioPet() {
       modoEdicao ||
       !form.tutor_id
     ) {
-      setPetsDoTutor([]);
-      setPetDuplicado(null);
-      setDuplicidadeIgnorada("");
+      queueMicrotask(() => {
+        setPetsDoTutor([]);
+        setPetDuplicado(null);
+        setDuplicidadeIgnorada("");
+      });
 
       return;
     }
@@ -353,8 +356,10 @@ function FormularioPet() {
 
 
     if (!nomeDigitado) {
-      setPetDuplicado(null);
-      setDuplicidadeIgnorada("");
+      queueMicrotask(() => {
+        setPetDuplicado(null);
+        setDuplicidadeIgnorada("");
+      });
 
       return;
     }
@@ -369,7 +374,7 @@ function FormularioPet() {
       duplicidadeIgnorada !==
         chaveAtual
     ) {
-      setDuplicidadeIgnorada("");
+      queueMicrotask(() => setDuplicidadeIgnorada(""));
     }
 
 
@@ -383,7 +388,7 @@ function FormularioPet() {
 
 
     if (!encontrado) {
-      setPetDuplicado(null);
+      queueMicrotask(() => setPetDuplicado(null));
 
       return;
     }
@@ -397,9 +402,7 @@ function FormularioPet() {
     }
 
 
-    setPetDuplicado(
-      encontrado
-    );
+    queueMicrotask(() => setPetDuplicado(encontrado));
   }, [
     form.nome,
     form.tutor_id,
@@ -1077,6 +1080,21 @@ function FormularioPet() {
       return;
     }
 
+
+    const autorizacao = await api.post(`/pets/${petId}/foto/upload-direto`, {
+      mime_type: arquivoFoto.type,
+      tamanho_bytes: arquivoFoto.size,
+    });
+    if (autorizacao.data?.modo === "s3") {
+      const envio = await fetch(autorizacao.data.url, {
+        method: "PUT",
+        headers: autorizacao.data.headers,
+        body: arquivoFoto,
+      });
+      if (!envio.ok) throw new Error("O armazenamento recusou a foto.");
+      await api.post(`/pets/${petId}/foto/finalizar-upload-direto`, { uploadToken: autorizacao.data.uploadToken });
+      return;
+    }
 
     const formData =
       new FormData();
@@ -2021,6 +2039,7 @@ function PreviewFoto({
   fotoAtual,
   nome,
 }) {
+  const fotoProtegida = useFotoPet(fotoAtual);
   let imagem =
     preview;
 
@@ -2029,10 +2048,7 @@ function PreviewFoto({
     !imagem &&
     fotoAtual
   ) {
-    imagem =
-      fotoAtual.startsWith("http")
-        ? fotoAtual
-        : `http://localhost:3001${fotoAtual}`;
+    imagem = fotoProtegida;
   }
 
 

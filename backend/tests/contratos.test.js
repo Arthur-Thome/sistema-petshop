@@ -27,9 +27,26 @@ describe('Contrato D1 (sem persistencia operacional)', () => {
   test.each([[true, true, 'DISPONIVEL'], [true, false, 'BLOQUEADO'], [false, true, 'BLOQUEADO'], [false, false, 'BLOQUEADO']])('liberacao %s/%s', (aberto, publicado, esperado) => {
     expect(c.estadoAposLiberacao({ aberto, publicado })).toBe(esperado);
   });
-  test.todo('HTTP operacional: solicitar sem cobranca, confirmar e reservar atomicamente');
-  test.todo('PostgreSQL isolado: duas confirmacoes/reservas concorrentes');
-  test.todo('HTTP operacional: recusa/cancelamento, estorno e reutilizacao (029)');
-  test.todo('HTTP operacional: complementar raca somente de pet vinculado');
-  test.todo('HTTP operacional: dashboard, PIX e pagamentos rejeitam pendentes/recusados');
+  const pgIntegrationEnabled = process.env.AMORES_PG_CONCURRENCY_TEST === '1';
+  const pgIntegration = pgIntegrationEnabled ? test : test.skip;
+  pgIntegration('PostgreSQL isolado: duas confirmacoes/reservas concorrentes e rollback transacional', () => {
+    const path = require('node:path');
+    const { spawnSync } = require('node:child_process');
+    const args = ['src/database/tests/concorrencia_publica.cjs',
+      '--host', process.env.AMORES_PG_HOST,
+      '--port', process.env.AMORES_PG_PORT,
+      '--user', process.env.AMORES_PG_USER,
+      '--database', process.env.AMORES_PG_DATABASE,
+      '--data-directory', process.env.AMORES_PG_DATA_DIRECTORY,
+      '--pg-ctl', process.env.AMORES_PG_CTL];
+    const childEnv = { ...process.env, NODE_ENV: 'development', AMORES_TEST_DB_PASSWORD: process.env.AMORES_PG_PASSWORD };
+    delete childEnv.JEST_WORKER_ID;
+    const result = spawnSync(process.execPath, args, {
+      cwd: path.resolve(__dirname, '..'), encoding: 'utf8', windowsHide: true, timeout: 90000,
+      env: childEnv,
+    });
+    expect(result.error).toBeUndefined();
+    if (result.status !== 0) throw new Error(result.stdout + result.stderr);
+    expect(result.stdout + result.stderr).toContain('PASS: concorrencia HTTP');
+  }, 100000);
 });

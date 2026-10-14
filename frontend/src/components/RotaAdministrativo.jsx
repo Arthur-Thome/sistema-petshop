@@ -9,16 +9,13 @@ function RotaAdministrativo({
   const usuarioSalvo =
     localStorage.getItem("usuario");
 
-  let usuario = null;
-
-  try {
-    usuario =
-      usuarioSalvo
-        ? JSON.parse(usuarioSalvo)
-        : null;
-  } catch {
-    usuario = null;
-  }
+  const usuario = (() => {
+    try {
+      return usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
+    } catch {
+      return null;
+    }
+  })();
 
 
   /*

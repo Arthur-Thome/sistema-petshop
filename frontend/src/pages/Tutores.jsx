@@ -39,7 +39,11 @@ function Tutores() {
 
 
   useEffect(() => {
-    carregarTutores();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarTutores();
+    });
+    return () => { ativo = false; };
   }, []);
 
 

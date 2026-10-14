@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -9,6 +10,7 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api";
+import { useFotoPet } from "../utils/useFotoPet";
 
 import ModalConfirmacaoSenha from "../components/ModalConfirmacaoSenha";
 
@@ -106,7 +108,7 @@ function DetalhesPet() {
    * utilizada depois de vincular, desvincular ou
    * alterar o tutor principal.
    */
-  async function carregarPet() {
+  const carregarPet = useCallback(async () => {
     try {
       setCarregando(true);
       setErro("");
@@ -127,12 +129,16 @@ function DetalhesPet() {
     } finally {
       setCarregando(false);
     }
-  }
+  }, [id]);
 
 
   useEffect(() => {
-    carregarPet();
-  }, [id]);
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarPet();
+    });
+    return () => { ativo = false; };
+  }, [carregarPet]);
 
 
   /*
@@ -1033,7 +1039,8 @@ function DetalhesPet() {
 // Apresenta a foto armazenada no backend.
 // Quando não existir foto, utilizamos a inicial do nome.
 function FotoPet({ pet }) {
-  if (!pet.foto) {
+  const fotoSrc = useFotoPet(pet.foto);
+  if (!pet.foto || !fotoSrc) {
     return (
       <div className="pet-details-photo-placeholder">
         {pet.nome
@@ -1044,20 +1051,10 @@ function FotoPet({ pet }) {
     );
   }
 
-  const apiUrl =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:3001/api";
-
-  const servidorUrl =
-    apiUrl.replace(
-      /\/api\/?$/,
-      ""
-    );
-
   return (
     <img
       className="pet-details-photo"
-      src={`${servidorUrl}${pet.foto}`}
+      src={fotoSrc}
       alt={`Foto de ${pet.nome}`}
     />
   );

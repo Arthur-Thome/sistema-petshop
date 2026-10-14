@@ -422,8 +422,13 @@ frontend/.env
 Durante o desenvolvimento local:
 
 ```env
+# Opcional: sem esta variavel, o Vite usa proxy para localhost:3001
 VITE_API_URL=http://localhost:3001/api
 ```
+
+Em uma origem unica (por exemplo, frontend e API no mesmo projeto Vercel),
+configure `VITE_API_URL=/api` no build. Nunca coloque segredos em variaveis
+`VITE_*`.
 
 ---
 
@@ -526,7 +531,11 @@ Durante a migração do sistema, o campo legado `pets.tutor_id` pode continuar p
 
 # Upload de fotos
 
-As fotos dos pets são armazenadas pelo backend.
+As fotos dos pets sao armazenadas pelo backend e servidas somente apos validar
+uma sessao interna ou uma sessao publica vinculada ao tutor do pet. O modo de
+armazenamento local e padrao; o modo S3 compativel exige buckets privados
+separados e credenciais fornecidas pelo operador. A galeria institucional
+permanece separada das fotos dos pets.
 
 A aplicação possui validações de:
 
@@ -536,7 +545,33 @@ A aplicação possui validações de:
 
 Os arquivos enviados durante o uso do sistema não devem ser versionados no Git.
 
+No modo S3, uploads de pets e da galeria usam URL pre-assinada curta e prefixo
+`tmp/` exclusivo. Fotos de pets de ate 5 MB podem ser enviadas diretamente do
+navegador, sem atravessar o limite de payload da Vercel Function; localmente o
+upload multipart tambem aceita ate 5 MB. A finalizacao autenticada confere dono,
+pet, tamanho e conteudo binario antes de promover para chave permanente. Fotos
+privadas seguem servidas por endpoint autenticado; galeria publica depende da
+flag de publicacao. A migration 034 registra intents; coletor autenticado por
+`CRON_SECRET` remove somente objetos temporarios vencidos e nao finalizados, em
+lotes limitados. Neon documenta que configura lifecycle mas nao executa expiração;
+por isso o fallback da aplicação é necessário. Buckets, CORS, credenciais e
+armazenamento remoto nao foram configurados nem testados. Upload direto fica
+bloqueado até `S3_TEMP_UPLOAD_CLEANUP_CONFIRMED=true` após homologação; o
+filesystem da Function nao e persistente.
+
+## WhatsApp Business
+
+O padrao permanece manual. Transporte opcional de texto e PDF para Meta Cloud API
+exige credenciais e versao Graph configuradas no servidor; nenhum segredo vai ao
+navegador. Cada envio exige confirmacao expressa de consentimento e fica registrado
+sem armazenar o telefone completo. O backend serializa tentativas por usuario,
+atendimento e tipo, e bloqueia repeticoes, inclusive quando a resposta do provedor
+for incerta. PDF aceita ate 4 MB e tem validacao de assinatura. Conta, permissoes,
+templates/janela aplicaveis e consentimento real dependem de configuracao externa;
+nenhuma mensagem real foi enviada.
+
 ---
+
 
 # Recuperação de senha
 

@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const fotoPetController = require("../controllers/fotoPetController");
 
 const {
   cadastrarPet,
@@ -47,7 +48,7 @@ function receberFotoPet(req, res, next) {
         ) {
           return res.status(400).json({
             mensagem:
-              "A imagem deve ter no máximo 5 MB.",
+              `A imagem deve ter no maximo ${Math.floor(uploadPet.LIMITE_FOTO_BYTES / 1024 / 1024)} MB.`,
           });
         }
 
@@ -149,6 +150,8 @@ router.post(
   receberFotoPet,
   atualizarFotoPet
 );
+router.post("/:id/foto/upload-direto", fotoPetController.criarUploadDireto);
+router.post("/:id/foto/finalizar-upload-direto", fotoPetController.finalizarUploadDireto);
 
 
 // Alterar o status é uma operação crítica.

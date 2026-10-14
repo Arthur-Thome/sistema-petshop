@@ -1,7 +1,4 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useState } from "react";
 
 import {
   useNavigate,
@@ -19,8 +16,7 @@ function RedefinirSenha() {
   const [searchParams] =
     useSearchParams();
 
-  const [token, setToken] =
-    useState("");
+  const token = searchParams.get("token") || "";
 
   const [novaSenha, setNovaSenha] =
     useState("");
@@ -47,16 +43,6 @@ function RedefinirSenha() {
    * Ele permanece somente no estado desta página e será
    * enviado ao backend quando a nova senha for confirmada.
    */
-  useEffect(() => {
-    const tokenUrl =
-      searchParams.get("token");
-
-    if (tokenUrl) {
-      setToken(tokenUrl);
-    }
-  }, [searchParams]);
-
-
   async function redefinirSenha(event) {
     event.preventDefault();
 

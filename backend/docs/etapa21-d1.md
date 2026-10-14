@@ -113,10 +113,12 @@ em massa, alem de revalidacao financeira. Mudar so o indice seria incompleto.
 
 ## Executar testes com seguranca
 
-`cd backend` e `npm.cmd test` (Windows) executa Jest/Supertest sem banco,
-sem SMTP e sem dotenv. Connection padrao recusa NODE_ENV=test/JEST_WORKER_ID.
-Suite atual usa middleware real, JWT ficticio e pool simulado. `test.todo`
-marca endpoints operacionais/concorrencia ainda nao implementados.
+`cd backend` e `npm.cmd test` (Windows) executa Jest/Supertest sem carregar
+dotenv. A conexao padrao recusa NODE_ENV=test/JEST_WORKER_ID. Os testes comuns
+usam pools simulados; os testes reais de rate limit e concorrencia sao opt-in
+(`AMORES_PG_RATE_LIMIT_TEST=1` e `AMORES_PG_CONCURRENCY_TEST=1`) e iniciam um
+processo Node separado com parametros explicitos para PostgreSQL temporario.
+Ambos os cenarios foram executados em PostgreSQL 17 isolado em 2026-10-14.
 
 `tests/support/bancoIsolado.js` e opt-in para suites futuras, nao utilizado
 pelo npm test para conexao real. Antes de abrir socket SQL exige `pg_ctl status`

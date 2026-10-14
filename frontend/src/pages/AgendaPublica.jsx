@@ -12,7 +12,7 @@ import "../styles/AgendaPublica.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
-  "http://localhost:3001/api";
+  "/api";
 
 
 const NOMES_MESES = [
@@ -553,7 +553,11 @@ function AgendaPublica() {
 
 
   useEffect(() => {
-    carregarAgenda();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarAgenda();
+    });
+    return () => { ativo = false; };
   }, [carregarAgenda]);
 
 

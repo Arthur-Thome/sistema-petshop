@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../services/api";
+import { useFotoPet } from "../utils/useFotoPet";
 
 import "../styles/Pets.css";
 
@@ -41,7 +42,11 @@ function Pets() {
 
 
   useEffect(() => {
-    carregarPets();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void carregarPets();
+    });
+    return () => { ativo = false; };
   }, []);
 
 
@@ -228,7 +233,8 @@ function Pets() {
 // Exibe a foto cadastrada ou uma identificação visual
 // simples quando o pet ainda não possui imagem.
 function FotoPet({ pet }) {
-  if (!pet.foto) {
+  const fotoSrc = useFotoPet(pet.foto);
+  if (!pet.foto || !fotoSrc) {
     return (
       <div className="pet-avatar-placeholder">
         {pet.nome?.charAt(0)?.toUpperCase() || "P"}
@@ -238,17 +244,10 @@ function FotoPet({ pet }) {
 
   // A API guarda somente o caminho relativo da imagem.
   // Removemos /api da URL configurada para chegar ao servidor.
-  const apiUrl =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:3001/api";
-
-  const servidorUrl =
-    apiUrl.replace(/\/api\/?$/, "");
-
   return (
     <img
       className="pet-avatar"
-      src={`${servidorUrl}${pet.foto}`}
+      src={fotoSrc}
       alt={`Foto de ${pet.nome}`}
     />
   );
