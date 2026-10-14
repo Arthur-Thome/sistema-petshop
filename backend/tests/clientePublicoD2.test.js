@@ -70,11 +70,21 @@ test('email novo recebe desafio neutro sem emitir sessao antes da verificacao', 
   clientFor();
   const started = await request(app).post('/api/agendamento-publico/cadastro/solicitar').send({
     tutor: { nome: 'Tutor', cpf: '529.982.247-25', email: 'Novo@Example.invalid', telefone: '11999999999', cep: '01000-000', endereco: 'Rua A', numero: '1', bairro: 'Centro', cidade: 'Sao Paulo', estado: 'SP' },
-    pet: { nome: 'Pet', especie: 'cao', porte: 'medio' },
+    pet: { nome: 'Pet', especie: 'cao', raca: 'SRD', porte: 'medio' },
   });
   expect(started.status).toBe(202);
   expect(started.body).not.toHaveProperty('token');
   expect(email.enviarCodigoVerificacao).toHaveBeenCalledWith(expect.objectContaining({ para: 'novo@example.invalid', contexto: 'CADASTRO' }));
+});
+
+test('e-mail compartilhado pode verificar cadastro com CPF novo sem liberar tutor existente', async () => {
+  clientFor('shared');
+  const response = await request(app).post('/api/agendamento-publico/cadastro/solicitar').send({
+    tutor: { nome: 'Familiar', cpf: '529.982.247-25', email: 'familia@example.invalid', telefone: '11999999999', cep: '01000-000', endereco: 'Rua A', numero: '1', bairro: 'Centro', cidade: 'Sao Paulo', estado: 'SP' },
+    pet: { nome: 'Pet', especie: 'cao', raca: 'SRD' },
+  });
+  expect(response.status).toBe(202);
+  expect(email.enviarCodigoVerificacao).toHaveBeenCalledWith(expect.objectContaining({ para: 'familia@example.invalid', contexto: 'CADASTRO' }));
 });
 
 test('confirmacao do cadastro emite prova vinculada sem sessao definitiva', async () => {
@@ -142,7 +152,7 @@ test('requisicao direta de cadastro sem prova de e-mail e bloqueada pelo backend
   pool.connect.mockResolvedValue(client);
   const response = await request(app).post('/api/agendamento-publico/cadastro/concluir').send({
     tutor: { nome: 'Nome', cpf: '529.982.247-25', telefone: '11999999999', email: 'novo@example.invalid', cep: '01000-000', endereco: 'Rua A', numero: '1', bairro: 'Centro', cidade: 'Sao Paulo', estado: 'SP' },
-    pet: { nome: 'Pet', especie: 'cao', porte: 'medio' },
+    pet: { nome: 'Pet', especie: 'cao', raca: 'SRD', porte: 'medio' },
   });
   expect(response.status).toBe(403);
   expect(response.body.codigo).toBe('EMAIL_NAO_VERIFICADO');

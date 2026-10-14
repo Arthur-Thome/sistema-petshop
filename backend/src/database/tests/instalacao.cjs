@@ -88,7 +88,7 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
-const preparacaoD1 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/030_verificacao_email_publico.sql\n';
+const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n';
 
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
 console.log(psql(guard + empty).trim());
@@ -155,7 +155,7 @@ CREATE TABLE public.recuperacoes_senha (
  token_hash varchar(255) NOT NULL UNIQUE, expira_em timestamp NOT NULL, utilizado_em timestamp DEFAULT NULL,
  criado_em timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, extra text NOT NULL DEFAULT 'permitido'
 );
-` + corrections + preparacaoD1 + '\\ir verificar_estrutura.sql\nROLLBACK;\n');
+` + corrections + preparacaoEtapa21 + '\\ir verificar_estrutura.sql\nROLLBACK;\n');
   psql(guard + empty);
   console.log(`PASS: 025 aceita identity ${identity}, default NULL e coluna extra com default`);
 }
@@ -168,7 +168,7 @@ console.log('PASS: duplicidade de email interrompe a correcao');
 
 psql(guard + 'BEGIN;\n' + baseline +
   "INSERT INTO usuarios (nome,email,senha_hash) VALUES ('Preservar','preservar@example.invalid','hash-original');\n" +
-  corrections + corrections + preparacaoD1 + `
+  corrections + corrections + preparacaoEtapa21 + `
 DO $$ BEGIN
   IF (SELECT count(*) FROM usuarios) <> 1 OR NOT EXISTS (
     SELECT 1 FROM usuarios WHERE nome = 'Preservar' AND senha_hash = 'hash-original'
@@ -187,7 +187,7 @@ INSERT INTO tutores (nome, telefone, endereco) VALUES ('Tutor legado', '000', 'T
 INSERT INTO pets (tutor_id, nome, especie) VALUES (:tutor_id, 'Pet legado', 'cao') RETURNING id \\gset pet_
 INSERT INTO banho_tosa (pet_id, agendado_para, origem, status)
 VALUES (:pet_id, '2099-01-01 10:00', 'INTERNO', 'AGENDADO') RETURNING id \\gset atendimento_
-` + corrections + preparacaoD1 + `
+` + corrections + preparacaoEtapa21 + `
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM banho_tosa b JOIN pets p ON p.id = b.pet_id
       WHERE p.nome = 'Pet legado' AND b.origem = 'INTERNO' AND b.status = 'AGENDADO') THEN

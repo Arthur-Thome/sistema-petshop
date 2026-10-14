@@ -3229,3 +3229,9 @@ div > strong {
     font-size: 1.35rem;
   }
 }
+.agendamento-raca-pendente {
+  display: block;
+  margin-top: 0.35rem;
+  color: #795400;
+  font-weight: 700;
+}

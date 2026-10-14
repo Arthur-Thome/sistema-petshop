@@ -561,6 +561,11 @@ function DetalhesBanhoTosa() {
                 ? ` • ${atendimento.pet_raca}`
                 : ""}
             </p>
+            {String(atendimento.pet_raca || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar" && (
+              <p className="banho-tosa-raca-pendente">
+                Raça não identificada — Porte: {atendimento.pet_porte || "não informado"}. A equipe deve confirmar a raça.
+              </p>
+            )}
           </div>
 
 
@@ -580,6 +585,12 @@ function DetalhesBanhoTosa() {
 
 
         <div className="banho-tosa-detalhes-grid">
+
+          <div><span>Raça</span><strong>{atendimento.pet_raca || "Não cadastrada"}</strong></div>
+          <div><span>Porte / Sexo</span><strong>{[atendimento.pet_porte, atendimento.pet_sexo].filter(Boolean).join(" / ") || "-"}</strong></div>
+          <div><span>Alergias</span><strong>{atendimento.pet_alergias || "Nenhuma informada"}</strong></div>
+          <div><span>Necessidades especiais</span><strong>{atendimento.pet_necessidades_especiais || "Nenhuma informada"}</strong></div>
+          <div><span>Comportamento / observações</span><strong>{[atendimento.pet_comportamento, atendimento.pet_observacoes].filter(Boolean).join(" — ") || "Nenhuma informação"}</strong></div>
 
           <div>
             <span>Tutor</span>

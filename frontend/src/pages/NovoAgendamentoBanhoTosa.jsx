@@ -362,6 +362,13 @@ function NovoAgendamentoBanhoTosa() {
       return;
     }
 
+    const racaPet = String(petSelecionado?.raca || "").trim();
+    const racaNaoIdentificada = racaPet.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar";
+    if (!racaPet || (racaNaoIdentificada && !petSelecionado?.porte)) {
+      setErro("Atualize a raça do pet e informe o porte se a raça não for identificada antes de agendar.");
+      return;
+    }
+
 
     if (
       formData.servicos.length ===
@@ -558,6 +565,18 @@ function NovoAgendamentoBanhoTosa() {
               </strong>
             </div>
 
+          )}
+
+          {petSelecionado && (
+            <div className="banho-tosa-dados-pet">
+              <strong>{petSelecionado.raca || "Raça não cadastrada"}</strong>
+              {String(petSelecionado.raca || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar" && (
+                <span> — Porte: {petSelecionado.porte || "não informado"}. A equipe deve confirmar a raça.</span>
+              )}
+              {(!String(petSelecionado.raca || "").trim() || (String(petSelecionado.raca || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar" && !petSelecionado.porte)) && (
+                <button type="button" className="secondary-button" onClick={() => navigate(`/pets/${petSelecionado.id}/editar`)}>Atualizar dados do pet</button>
+              )}
+            </div>
           )}
 
 

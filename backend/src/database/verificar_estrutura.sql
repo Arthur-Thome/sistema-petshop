@@ -1,4 +1,4 @@
--- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + D1 027/028 + D2 030.
+-- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + D1 027/028 + D2 030 + D3 031.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
 -- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
 \set ON_ERROR_STOP on
@@ -340,7 +340,7 @@ BEGIN
         ('pets', 'CHECK (((idade_aproximada_anos IS NULL) OR ((idade_aproximada_anos >= 0) AND (idade_aproximada_anos <= 100))))'),
         ('pets', 'CHECK (((data_nascimento IS NULL) OR (idade_aproximada_anos IS NULL)))'),
         ('pets', 'CHECK (((peso IS NULL) OR (peso > (0)::numeric)))'),
-        ('pets', 'CHECK (((porte IS NULL) OR ((porte)::text = ANY (ARRAY[(''pequeno''::character varying)::text, (''medio''::character varying)::text, (''grande''::character varying)::text]))))'),
+        ('pets', 'CHECK (((porte IS NULL) OR ((porte)::text = ANY (ARRAY[(''pequeno''::character varying)::text, (''medio''::character varying)::text, (''grande''::character varying)::text, (''gigante''::character varying)::text]))))'),
         ('pets', 'CHECK (((sexo IS NULL) OR ((sexo)::text = ANY (ARRAY[(''macho''::character varying)::text, (''femea''::character varying)::text]))))'),
         ('pets', 'FOREIGN KEY (tutor_id) REFERENCES tutores(id) ON DELETE RESTRICT'),
         ('pets', 'PRIMARY KEY (id)'),

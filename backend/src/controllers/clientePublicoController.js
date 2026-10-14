@@ -12,6 +12,7 @@ const {
   formatarCPF,
 } = require("../utils/cpf");
 const verificacaoD2 = require("../services/verificacaoClientePublicoService");
+const { DESCONHECIDA, normalizarRaca, dataRealNaoFutura } = require("./petPublicoController");
 
 
 const DURACAO_CODIGO_MINUTOS = 10;
@@ -640,7 +641,14 @@ async function listarPetsCliente(
             p.data_nascimento,
             p.peso,
             p.cor,
-            p.foto
+            p.foto,
+            p.porte,
+            p.castrado,
+            p.alergias,
+            p.necessidades_especiais,
+            p.comportamento,
+            p.observacoes,
+            p.idade_aproximada_anos
 
           FROM pets p
 
@@ -733,10 +741,8 @@ async function cadastrarNovoCliente(
         ? tutor.cpf.trim()
         : "";
 
-    const telefone =
-      typeof tutor.telefone === "string"
-        ? tutor.telefone.trim()
-        : "";
+    const telefoneInformado = typeof tutor.telefone === "string" ? tutor.telefone.trim() : "";
+    const telefone = telefoneInformado.replace(/\D/g, "");
 
     const email =
       typeof tutor.email === "string"
@@ -745,10 +751,9 @@ async function cadastrarNovoCliente(
             .toLowerCase()
         : "";
 
-    const cep =
-      typeof tutor.cep === "string"
-        ? tutor.cep.trim()
-        : "";
+    const cepInformado = typeof tutor.cep === "string" ? tutor.cep.trim() : "";
+    const cepDigitos = cepInformado.replace(/\D/g, "");
+    const cep = cepDigitos.length === 8 ? `${cepDigitos.slice(0, 5)}-${cepDigitos.slice(5)}` : cepInformado;
 
     const endereco =
       typeof tutor.endereco === "string"
@@ -818,15 +823,15 @@ async function cadastrarNovoCliente(
     }
 
 
-    if (telefone.length > 20) {
+    if (!/^\d{10,11}$/.test(telefone)) {
       return res.status(400).json({
         mensagem:
-          "O telefone deve possuir no máximo 20 caracteres.",
+          "Informe um telefone ou WhatsApp com DDD e 10 ou 11 dígitos.",
       });
     }
 
 
-    if (email.length > 255) {
+    if (email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         mensagem:
           "O e-mail deve possuir no máximo 255 caracteres.",
@@ -874,10 +879,7 @@ async function cadastrarNovoCliente(
     }
 
 
-    if (
-      estado.length !== 2 ||
-      !/^[A-Z]{2}$/.test(estado)
-    ) {
+    if (!new Set("AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ")).has(estado)) {
       return res.status(400).json({
         mensagem:
           "Informe uma UF válida.",
@@ -885,7 +887,7 @@ async function cadastrarNovoCliente(
     }
 
 
-    if (cep.length > 9) {
+    if (!/^\d{5}-\d{3}$/.test(cep)) {
       return res.status(400).json({
         mensagem:
           "CEP inválido.",
@@ -912,10 +914,7 @@ async function cadastrarNovoCliente(
         ? pet.especie.trim()
         : "";
 
-    const raca =
-      typeof pet.raca === "string"
-        ? pet.raca.trim()
-        : "";
+    const raca = normalizarRaca(pet.raca);
 
     const sexo =
       typeof pet.sexo === "string"
@@ -1011,7 +1010,7 @@ async function cadastrarNovoCliente(
     }
 
 
-    if (raca.length > 100) {
+    if (!raca || raca.length > 100) {
       return res.status(400).json({
         mensagem:
           "A raça deve possuir no máximo 100 caracteres.",
@@ -1043,9 +1042,7 @@ async function cadastrarNovoCliente(
 
     if (
       dataNascimento &&
-      !/^\d{4}-\d{2}-\d{2}$/.test(
-        dataNascimento
-      )
+      !dataRealNaoFutura(dataNascimento)
     ) {
       return res.status(400).json({
         mensagem:
@@ -1089,12 +1086,13 @@ async function cadastrarNovoCliente(
     }
 
     if (
-  !porte ||
-  ![
+  (porte && ![
     "pequeno",
     "medio",
     "grande",
-  ].includes(porte)
+    "gigante",
+  ].includes(porte)) ||
+  (raca === DESCONHECIDA && !["pequeno", "medio", "grande", "gigante"].includes(porte))
 ) {
   return res.status(400).json({
     mensagem:
@@ -1244,62 +1242,8 @@ for (
     }
 
 
-    /*
-     * Também verificamos e-mail e telefone para reduzir
-     * cadastros duplicados causados por dados já existentes.
-     *
-     * Diferentemente do CPF, esses campos não possuem
-     * atualmente uma constraint UNIQUE no banco.
-     */
-    const contatoExistente =
-      await client.query(
-        `
-          SELECT id
-
-          FROM tutores
-
-          WHERE
-            LOWER(email) =
-              LOWER($1)
-
-            OR REGEXP_REPLACE(
-                 telefone,
-                 '[^0-9]',
-                 '',
-                 'g'
-               ) =
-               REGEXP_REPLACE(
-                 $2,
-                 '[^0-9]',
-                 '',
-                 'g'
-               )
-
-          LIMIT 1
-        `,
-        [
-          email,
-          telefone,
-        ]
-      );
-
-
-    if (
-      contatoExistente.rows.length > 0
-    ) {
-      await client.query("ROLLBACK");
-
-      transacaoIniciada = false;
-
-      return res.status(409).json({
-        codigo:
-          "POSSIVEL_TUTOR_EXISTENTE",
-
-        mensagem:
-          "Já existe um cadastro utilizando este e-mail ou telefone. Utilize a opção Já sou cliente.",
-      });
-    }
-
+    // Contato compartilhado por familiares nao impede novo cadastro; CPF,
+    // prova de e-mail e sessao continuam vinculados ao proprio tutor.
 
     /*
      * -----------------------------------------------------
@@ -1376,14 +1320,15 @@ const resultadoPet =
         alergias,
         necessidades_especiais,
         comportamento,
-        idade_aproximada_anos
+        idade_aproximada_anos,
+        foto
       )
 
       VALUES
       (
         $1,$2,$3,$4,$5,
         $6,$7,$8,$9,$10,
-        $11,$12,$13,$14,$15
+        $11,$12,$13,$14,$15,$16
       )
 
       RETURNING *
@@ -1404,6 +1349,7 @@ const resultadoPet =
       necessidadesEspeciais || null,
       comportamento || null,
       idadeAproximada,
+      req.file ? `/uploads/pets/${require("path").basename(req.file.filename)}` : null,
     ]
   );
 

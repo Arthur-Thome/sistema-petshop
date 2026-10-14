@@ -256,6 +256,8 @@ async function criarAgendamento(req, res) {
           SELECT
             p.id,
             p.nome,
+            p.raca,
+            p.porte,
             p.ativo,
 
             t.id AS tutor_id,
@@ -299,6 +301,20 @@ async function criarAgendamento(req, res) {
         mensagem:
           "Não é possível agendar atendimento para um pet inativo.",
       });
+    }
+
+    const racaPet = String(pet.raca || "").trim();
+    if (!racaPet) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(400).json({ codigo: "RACA_OBRIGATORIA", mensagem: "Cadastre a raça do pet antes de criar o agendamento." });
+    }
+    const racaNaoIdentificada = racaPet.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar";
+    const portesValidos = ["pequeno", "medio", "grande", "gigante"];
+    if (racaNaoIdentificada && !portesValidos.includes(String(pet.porte || "").toLowerCase())) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(400).json({ codigo: "PORTE_OBRIGATORIO", mensagem: "Informe o porte do pet antes de agendar com raça não identificada." });
     }
 
     /*
@@ -559,6 +575,12 @@ async function listarAtivos(req, res) {
             p.nome AS pet_nome,
             p.especie AS pet_especie,
             p.raca AS pet_raca,
+            p.sexo AS pet_sexo,
+            p.porte AS pet_porte,
+            p.alergias AS pet_alergias,
+            p.necessidades_especiais AS pet_necessidades_especiais,
+            p.comportamento AS pet_comportamento,
+            p.observacoes AS pet_observacoes,
 
             t.id AS tutor_id,
             t.nome AS tutor_nome,
@@ -662,6 +684,14 @@ async function listarHistorico(req, res) {
             bt.*,
 
             p.nome AS pet_nome,
+            p.especie AS pet_especie,
+            p.raca AS pet_raca,
+            p.sexo AS pet_sexo,
+            p.porte AS pet_porte,
+            p.alergias AS pet_alergias,
+            p.necessidades_especiais AS pet_necessidades_especiais,
+            p.comportamento AS pet_comportamento,
+            p.observacoes AS pet_observacoes,
 
             t.id AS tutor_id,
             t.nome AS tutor_nome,
@@ -767,6 +797,12 @@ async function buscarAtendimentoPorId(
             p.nome AS pet_nome,
             p.especie AS pet_especie,
             p.raca AS pet_raca,
+            p.sexo AS pet_sexo,
+            p.porte AS pet_porte,
+            p.alergias AS pet_alergias,
+            p.necessidades_especiais AS pet_necessidades_especiais,
+            p.comportamento AS pet_comportamento,
+            p.observacoes AS pet_observacoes,
 
             t.id AS tutor_id,
             t.nome AS tutor_nome,

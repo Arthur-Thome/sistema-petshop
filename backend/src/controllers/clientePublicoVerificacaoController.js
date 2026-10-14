@@ -60,7 +60,8 @@ async function solicitar(req, res, contexto) {
     if (podeEnviar) {
       await v.advisoryLock(client, `email:${v.hmac(`email:${destino}`)}`);
       const shared = await client.query("SELECT COUNT(*)::int AS quantidade FROM tutores WHERE LOWER(BTRIM(email)) = LOWER(BTRIM($1)) AND ativo = TRUE", [destino]);
-      if (contexto === "CADASTRO" && Number(shared.rows[0].quantidade) > 0) podeEnviar = false;
+      // Contato compartilhado pode cadastrar um CPF novo, mas nunca autentica
+      // tutor existente: essa identificacao exige e-mail exclusivo.
       if (contexto === "IDENTIFICACAO" && Number(shared.rows[0].quantidade) !== 1) podeEnviar = false;
     }
 
@@ -104,25 +105,42 @@ function dadosCadastroValidos(body) {
   const cidade = texto(tutor.cidade); const estado = texto(tutor.estado).toUpperCase();
   const email = v.emailNormalizado(tutor.email);
   const petNome = texto(pet.nome); const especie = texto(pet.especie); const porte = texto(pet.porte).toLowerCase();
+  const raca = texto(pet.raca);
   const idade = pet.idade_aproximada_anos === undefined || pet.idade_aproximada_anos === null || pet.idade_aproximada_anos === ""
     ? null : Number(pet.idade_aproximada_anos);
   const peso = pet.peso === undefined || pet.peso === null || pet.peso === "" ? null : Number(pet.peso);
   const textosLongosValidos = [pet.alergias, pet.necessidades_especiais, pet.comportamento, pet.observacoes]
-    .every((value) => value === undefined || value === null || (typeof value === "string" && value.length <= 2000));
+    .every((value) => value === undefined || value === null || (typeof value === "string" && value.trim().length <= 2000));
+  const racaDesconhecida = raca.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar";
+  const ufs = new Set("AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" "));
   return Boolean(
-    nome && nome.length <= 150 && telefone && telefone.length <= 20 && email && cep && cep.length <= 9 &&
+    nome && nome.length <= 150 && /^\d{10,11}$/.test(telefone.replace(/\D/g, "")) && email &&
+    /^\d{5}-?\d{3}$/.test(cep) &&
     endereco && endereco.length <= 255 && numero && numero.length <= 20 && texto(tutor.complemento).length <= 100 &&
-    bairro && bairro.length <= 100 && cidade && cidade.length <= 100 && /^[A-Z]{2}$/.test(estado) &&
+    bairro && bairro.length <= 100 && cidade && cidade.length <= 100 && ufs.has(estado) &&
     petNome && petNome.length <= 150 && especie && especie.length <= 50 &&
-    ["pequeno", "medio", "grande"].includes(porte) && texto(pet.raca).length <= 100 &&
+    raca.length > 0 && raca.length <= 100 &&
+    (!porte || ["pequeno", "medio", "grande", "gigante"].includes(porte)) &&
+    (!racaDesconhecida || ["pequeno", "medio", "grande", "gigante"].includes(porte)) &&
     (!pet.sexo || ["macho", "femea"].includes(texto(pet.sexo).toLowerCase())) &&
-    (!pet.data_nascimento || /^\d{4}-\d{2}-\d{2}$/.test(texto(pet.data_nascimento))) &&
+    (!pet.data_nascimento || dataNascimentoValida(texto(pet.data_nascimento))) &&
     !(pet.data_nascimento && idade !== null) &&
     (idade === null || (Number.isInteger(idade) && idade >= 0 && idade <= 100)) &&
     (peso === null || (Number.isFinite(peso) && peso > 0 && peso <= 1000)) &&
     (pet.castrado === undefined || pet.castrado === null || typeof pet.castrado === "boolean") &&
     textosLongosValidos
   );
+}
+
+function dataNascimentoValida(valor) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+  const [ano, mes, dia] = valor.split("-").map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  const partes = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const hoje = Object.fromEntries(partes.map(({ type, value }) => [type, value]));
+  const hojeLocal = `${hoje.year}-${hoje.month}-${hoje.day}`;
+  return data.getUTCFullYear() === ano && data.getUTCMonth() === mes - 1 &&
+    data.getUTCDate() === dia && valor <= hojeLocal;
 }
 
 async function solicitarCadastroValidado(req, res) {

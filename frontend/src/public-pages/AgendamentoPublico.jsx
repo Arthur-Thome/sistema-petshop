@@ -26,6 +26,10 @@ const API_URL =
 const BACKEND_URL =
   API_URL.replace(/\/api\/?$/, "");
 
+function ehRacaDesconhecida(valor) {
+  return String(valor || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === "nao sei informar";
+}
+
 
 function obterFotoPet(foto) {
   if (!foto) {
@@ -369,6 +373,19 @@ function AgendamentoPublico() {
     comportamento: "",
     observacoes: "",
   });
+
+  const [fotoPetNovoTutor, setFotoPetNovoTutor] = useState(null);
+  const [formPetNovo, setFormPetNovo] = useState({
+    nome: "", especie: "", raca: "", sexo: "", data_nascimento: "",
+    idade_aproximada_anos: "", peso: "", cor: "", porte: "", castrado: "",
+    alergias: "", necessidades_especiais: "", comportamento: "", observacoes: "",
+  });
+  const [fotoPetNovo, setFotoPetNovo] = useState(null);
+  const [adicionandoPet, setAdicionandoPet] = useState(false);
+  const [formularioPetAberto, setFormularioPetAberto] = useState(false);
+  const [racaPetEdicao, setRacaPetEdicao] = useState("");
+  const [portePetEdicao, setPortePetEdicao] = useState("");
+  const [salvandoRaca, setSalvandoRaca] = useState(false);
 
 
   /*
@@ -1027,9 +1044,15 @@ function AgendamentoPublico() {
 
       if (contextoVerificacao === "CADASTRO") {
         const petParaAPI = { ...dadosPet, castrado: dadosPet.castrado === "" ? null : dadosPet.castrado === "sim" };
-        const cadastro = await axios.post(`${API_URL}/agendamento-publico/cadastro/concluir`, {
-          tutor: dadosTutor, pet: petParaAPI, prova_cadastro: resposta.data.prova_cadastro,
-        });
+        let payload = { tutor: dadosTutor, pet: petParaAPI, prova_cadastro: resposta.data.prova_cadastro };
+        if (fotoPetNovoTutor) {
+          payload = new FormData();
+          payload.append("tutor", JSON.stringify(dadosTutor));
+          payload.append("pet", JSON.stringify(petParaAPI));
+          payload.append("prova_cadastro", resposta.data.prova_cadastro);
+          payload.append("foto", fotoPetNovoTutor);
+        }
+        const cadastro = await axios.post(`${API_URL}/agendamento-publico/cadastro/concluir`, payload);
         limparDadosTutor();
         guardarSessao(cadastro.data.token);
         setTutor(cadastro.data.tutor);
@@ -1197,6 +1220,7 @@ function AgendamentoPublico() {
     if (
       !dadosPet.nome.trim() ||
       !dadosPet.especie.trim() ||
+      !dadosPet.raca.trim() ||
       !dadosPet.porte
     ) {
       setErroFluxo(
@@ -1274,6 +1298,10 @@ function AgendamentoPublico() {
     pet
   ) {
     setPetSelecionado(pet);
+    const raca = String(pet.raca || "").trim();
+    const porte = String(pet.porte || "").trim().toLowerCase();
+    setRacaPetEdicao(raca);
+    setPortePetEdicao(porte);
     setErroFluxo("");
   }
 
@@ -1287,12 +1315,89 @@ function AgendamentoPublico() {
       return;
     }
 
+    const raca = String(petSelecionado.raca || "").trim();
+    const racaDesconhecida = ehRacaDesconhecida(raca);
+    if (!raca || (racaDesconhecida && !petSelecionado.porte)) {
+      setErroFluxo("Informe a raça do pet antes de continuar.");
+      return;
+    }
+
 
     setErroFluxo("");
 
     await carregarServicos();
 
     setEtapa("SERVICOS");
+  }
+
+  async function salvarRacaPetExistente(evento) {
+    evento.preventDefault();
+    limparErro();
+    const raca = racaPetEdicao.trim().replace(/\s+/g, " ");
+    const desconhecida = ehRacaDesconhecida(raca);
+    if (!raca || raca.length > 100) {
+      setErroFluxo("Informe a raça do pet, com até 100 caracteres.");
+      return;
+    }
+    if (desconhecida && !portePetEdicao) {
+      setErroFluxo("Para raça não identificada, informe também o porte do pet.");
+      return;
+    }
+    try {
+      setSalvandoRaca(true);
+      const resposta = await axios.patch(
+        `${API_URL}/agendamento-publico/meus-pets/${petSelecionado.id}/raca`,
+        { raca, porte: portePetEdicao || undefined },
+        { headers: cabecalhoCliente() }
+      );
+      const atualizado = resposta.data.pet;
+      setPets((anteriores) => anteriores.map((pet) => Number(pet.id) === Number(atualizado.id) ? { ...pet, ...atualizado } : pet));
+      setPetSelecionado((anterior) => ({ ...anterior, ...atualizado }));
+      setErroFluxo("");
+    } catch (erro) {
+      if (tratarSessaoExpirada(erro)) return;
+      setErroFluxo(erro.response?.data?.mensagem || "Não foi possível atualizar os dados do pet.");
+    } finally {
+      setSalvandoRaca(false);
+    }
+  }
+
+  async function adicionarPetAoCadastro(evento) {
+    evento.preventDefault();
+    limparErro();
+    const raca = formPetNovo.raca.trim().replace(/\s+/g, " ");
+    const desconhecida = ehRacaDesconhecida(raca);
+    if (!formPetNovo.nome.trim() || !formPetNovo.especie || !raca || raca.length > 100) {
+      setErroFluxo("Preencha nome, espécie e raça do pet.");
+      return;
+    }
+    if (desconhecida && !formPetNovo.porte) {
+      setErroFluxo("Para raça não identificada, informe também o porte do pet.");
+      return;
+    }
+    if (formPetNovo.data_nascimento && formPetNovo.idade_aproximada_anos) {
+      setErroFluxo("Informe a data de nascimento ou a idade aproximada, não as duas.");
+      return;
+    }
+    const pet = { ...formPetNovo, raca, castrado: formPetNovo.castrado === "" ? null : formPetNovo.castrado === "sim" };
+    const payload = new FormData();
+    payload.append("pet", JSON.stringify(pet));
+    if (fotoPetNovo) payload.append("foto", fotoPetNovo);
+    try {
+      setAdicionandoPet(true);
+      const resposta = await axios.post(`${API_URL}/agendamento-publico/meus-pets`, payload, { headers: cabecalhoCliente() });
+      const novoPet = resposta.data.pet;
+      setPets((anteriores) => [...anteriores, novoPet]);
+      escolherPet(novoPet);
+      setFormularioPetAberto(false);
+      setFormPetNovo({ nome: "", especie: "", raca: "", sexo: "", data_nascimento: "", idade_aproximada_anos: "", peso: "", cor: "", porte: "", castrado: "", alergias: "", necessidades_especiais: "", comportamento: "", observacoes: "" });
+      setFotoPetNovo(null);
+    } catch (erro) {
+      if (tratarSessaoExpirada(erro)) return;
+      setErroFluxo(erro.response?.data?.mensagem || "Não foi possível cadastrar o pet.");
+    } finally {
+      setAdicionandoPet(false);
+    }
   }
 
 
@@ -2512,12 +2617,15 @@ function AgendamentoPublico() {
 
 
                   <label>
-                    Raça
+                    Raça do pet *
 
                     <input
                       value={
                         dadosPet.raca
                       }
+                      required
+                      maxLength={100}
+                      placeholder="Ex.: Shih Tzu, Poodle, SRD..."
                       onChange={(
                         evento
                       ) =>
@@ -2527,8 +2635,9 @@ function AgendamentoPublico() {
                             .value
                         )
                       }
-                    />
-                  </label>
+                      />
+                    </label>
+                    <small>Se não souber, digite “Não sei informar”.</small>
 
 
                   <label>
@@ -2642,6 +2751,9 @@ function AgendamentoPublico() {
                       <option value="grande">
                         Grande
                       </option>
+                      <option value="gigante">
+                        Gigante
+                      </option>
                     </select>
                   </label>
 
@@ -2677,6 +2789,12 @@ function AgendamentoPublico() {
                     </select>
                   </label>
 
+
+                  <label className="campo-largo">
+                    Foto do pet (opcional)
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(evento) => setFotoPetNovoTutor(evento.target.files?.[0] || null)} />
+                    <small>JPG, PNG ou WEBP; até 5 MB.</small>
+                  </label>
 
                   <label>
                     Peso aproximado (kg)
@@ -2946,6 +3064,11 @@ function AgendamentoPublico() {
                             )
                             .join(" • ")}
                         </small>
+                        {ehRacaDesconhecida(pet.raca) && (
+                          <span className="agendamento-raca-pendente">
+                            Raça não identificada — Porte: {pet.porte || "não informado"}
+                          </span>
+                        )}
 
                         <span className="agendamento-pet-selecao">
                           {selecionado
@@ -2958,6 +3081,54 @@ function AgendamentoPublico() {
                 )}
 
               </div>
+            )}
+
+            {petSelecionado && (!String(petSelecionado.raca || "").trim() || (ehRacaDesconhecida(petSelecionado.raca) && !petSelecionado.porte)) && (
+              <form className="agendamento-formulario-secao" onSubmit={salvarRacaPetExistente}>
+                <h3>Complete os dados de {petSelecionado.nome}</h3>
+                <p>Precisamos registrar a raça antes de continuar. Se não souber, informe “Não sei informar” e confirme o porte.</p>
+                <div className="agendamento-grade-formulario">
+                  <label className="campo-largo">Raça do pet *
+                    <input value={racaPetEdicao} required maxLength={100} placeholder="Ex.: Shih Tzu, Poodle, SRD..." onChange={(e) => setRacaPetEdicao(e.target.value)} />
+                  </label>
+                  {ehRacaDesconhecida(racaPetEdicao) && (
+                    <label>Porte *
+                      <select value={portePetEdicao} required onChange={(e) => setPortePetEdicao(e.target.value)}>
+                        <option value="">Selecione</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option><option value="gigante">Gigante</option>
+                      </select>
+                    </label>
+                  )}
+                </div>
+                <button className="agendamento-acao-principal" type="submit" disabled={salvandoRaca}>{salvandoRaca ? "Salvando..." : "Salvar e continuar"}</button>
+              </form>
+            )}
+
+            <button type="button" className="agendamento-acao-secundaria" onClick={() => setFormularioPetAberto((aberto) => !aberto)}>
+              {formularioPetAberto ? "Fechar cadastro de pet" : "+ Adicionar novo pet"}
+            </button>
+
+            {formularioPetAberto && (
+              <form className="agendamento-formulario-secao" onSubmit={adicionarPetAoCadastro}>
+                <h3>Novo pet</h3>
+                <div className="agendamento-grade-formulario">
+                  <label>Nome *<input required maxLength={150} value={formPetNovo.nome} onChange={(e) => setFormPetNovo((f) => ({ ...f, nome: e.target.value }))} /></label>
+                  <label>Espécie *<select required value={formPetNovo.especie} onChange={(e) => setFormPetNovo((f) => ({ ...f, especie: e.target.value }))}><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option><option value="outro">Outro</option></select></label>
+                  <label>Raça do pet *<input required maxLength={100} placeholder="Ex.: Shih Tzu, Poodle, SRD..." value={formPetNovo.raca} onChange={(e) => setFormPetNovo((f) => ({ ...f, raca: e.target.value }))} /></label>
+                  <label>Sexo<select value={formPetNovo.sexo} onChange={(e) => setFormPetNovo((f) => ({ ...f, sexo: e.target.value }))}><option value="">Não informado</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></label>
+                  <label>Data de nascimento<input type="date" max={formatarDataAPI(new Date())} value={formPetNovo.data_nascimento} onChange={(e) => setFormPetNovo((f) => ({ ...f, data_nascimento: e.target.value }))} /></label>
+                  <label>Idade aproximada (anos)<input type="number" min="0" max="100" value={formPetNovo.idade_aproximada_anos} onChange={(e) => setFormPetNovo((f) => ({ ...f, idade_aproximada_anos: e.target.value }))} /></label>
+                  <label>Porte{ehRacaDesconhecida(formPetNovo.raca) ? " *" : ""}<select required={ehRacaDesconhecida(formPetNovo.raca)} value={formPetNovo.porte} onChange={(e) => setFormPetNovo((f) => ({ ...f, porte: e.target.value }))}><option value="">Selecione</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option><option value="gigante">Gigante</option></select></label>
+                  <label>Castrado?<select value={formPetNovo.castrado} onChange={(e) => setFormPetNovo((f) => ({ ...f, castrado: e.target.value }))}><option value="">Não informado</option><option value="sim">Sim</option><option value="nao">Não</option></select></label>
+                  <label>Peso aproximado (kg)<input type="number" min="0" step="0.01" value={formPetNovo.peso} onChange={(e) => setFormPetNovo((f) => ({ ...f, peso: e.target.value }))} /></label>
+                  <label>Cor<input maxLength={100} value={formPetNovo.cor} onChange={(e) => setFormPetNovo((f) => ({ ...f, cor: e.target.value }))} /></label>
+                  <label className="campo-largo">Foto opcional<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFotoPetNovo(e.target.files?.[0] || null)} /><small>JPG, PNG ou WEBP; até 5 MB.</small></label>
+                  <label className="campo-largo">Alergias<textarea maxLength={2000} value={formPetNovo.alergias} onChange={(e) => setFormPetNovo((f) => ({ ...f, alergias: e.target.value }))} /></label>
+                  <label className="campo-largo">Necessidades especiais<textarea maxLength={2000} value={formPetNovo.necessidades_especiais} onChange={(e) => setFormPetNovo((f) => ({ ...f, necessidades_especiais: e.target.value }))} /></label>
+                  <label className="campo-largo">Comportamento<textarea maxLength={2000} value={formPetNovo.comportamento} onChange={(e) => setFormPetNovo((f) => ({ ...f, comportamento: e.target.value }))} /></label>
+                  <label className="campo-largo">Observações<textarea maxLength={2000} value={formPetNovo.observacoes} onChange={(e) => setFormPetNovo((f) => ({ ...f, observacoes: e.target.value }))} /></label>
+                </div>
+                <button type="submit" className="agendamento-acao-principal" disabled={adicionandoPet}>{adicionandoPet ? "Salvando pet..." : "Cadastrar e selecionar pet"}</button>
+              </form>
             )}
 
 

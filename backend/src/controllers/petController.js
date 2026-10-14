@@ -64,7 +64,10 @@ function normalizarDadosPet(dados) {
       normalizarTexto(dados.especie),
 
     raca:
-      normalizarTexto(dados.raca),
+      normalizarTexto(dados.raca).replace(/\s+/g, " "),
+
+    porte:
+      normalizarTexto(dados.porte).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
 
     sexo:
       normalizarTexto(
@@ -204,6 +207,12 @@ function validarDadosPet(dados) {
           `${nomeCampo} deve possuir no máximo ${limite} caracteres.`,
       };
     }
+  }
+
+  const portesPermitidos = ["pequeno", "medio", "grande", "gigante"];
+  if (dados.porte && !portesPermitidos.includes(dados.porte)) return { erro: "Porte invÃ¡lido." };
+  if (/^n(?:\u00e3o|ao)\s+sei\s+informar$/i.test(dados.raca) && !portesPermitidos.includes(dados.porte)) {
+    return { erro: "Informe o porte para uma raÃ§a nÃ£o identificada." };
   }
 
   const sexosPermitidos = [
@@ -404,7 +413,8 @@ async function cadastrarPet(req, res) {
           data_nascimento,
           peso,
           cor,
-          observacoes
+          observacoes,
+          porte
         )
         VALUES
         (
@@ -416,7 +426,8 @@ async function cadastrarPet(req, res) {
           $6,
           $7,
           $8,
-          $9
+          $9,
+          $10
         )
         RETURNING *`,
         [
@@ -430,6 +441,7 @@ async function cadastrarPet(req, res) {
           pesoNormalizado,
           dados.cor || null,
           dados.observacoes || null,
+          dados.porte || null,
         ]
       );
 
@@ -615,6 +627,10 @@ async function listarPets(req, res) {
         p.nome,
         p.especie,
         p.raca,
+        p.porte,
+        p.alergias,
+        p.necessidades_especiais,
+        p.comportamento,
         p.sexo,
         p.data_nascimento,
         p.peso,
@@ -947,7 +963,8 @@ async function atualizarPet(req, res) {
            peso = $7,
            cor = $8,
            observacoes = $9,
-           atualizado_em = CURRENT_TIMESTAMP
+           atualizado_em = CURRENT_TIMESTAMP,
+           porte = $11
 
          WHERE id = $10
 
@@ -964,6 +981,7 @@ async function atualizarPet(req, res) {
           dados.cor || null,
           dados.observacoes || null,
           petId,
+          dados.porte || null,
         ]
       );
 

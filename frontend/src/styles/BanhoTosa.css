@@ -2284,3 +2284,10 @@
     width: 100%;
   }
 }
+.banho-tosa-raca-pendente,
+.banho-tosa-dados-pet {
+  display: block;
+  margin-top: 0.35rem;
+  color: #795400;
+  font-weight: 700;
+}

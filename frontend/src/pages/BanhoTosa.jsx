@@ -591,6 +591,11 @@ function classeStatusPagamento(status) {
                       Tutor:{" "}
                       {atendimento.tutor_nome}
                     </span>
+                    <small className="banho-tosa-dados-pet">
+                      {String(atendimento.pet_raca || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar"
+                        ? `Raça não identificada — Porte: ${atendimento.pet_porte || "não informado"}`
+                        : `Raça: ${atendimento.pet_raca || "não cadastrada"}`}
+                    </small>
                   </div>
 
 

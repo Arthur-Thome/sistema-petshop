@@ -492,8 +492,10 @@ function DetalhesPet() {
 
               <Informacao
                 titulo="Raça"
-                valor={pet.raca}
+                valor={pet.raca || "Não cadastrada"}
               />
+
+              <Informacao titulo="Porte" valor={pet.porte} />
 
               <Informacao
                 titulo="Sexo"
@@ -525,8 +527,22 @@ function DetalhesPet() {
                 valor={pet.cor}
               />
             </div>
+            {String(pet.raca || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === "nao sei informar" && (
+              <p className="pet-raca-pendente" role="status">
+                Raça não identificada — Porte: {pet.porte || "não informado"}. A equipe deve confirmar a raça.
+              </p>
+            )}
           </section>
 
+          <section className="pet-details-card">
+            <h2>Cuidados e comportamento</h2>
+            <div className="pet-info-grid">
+              <Informacao titulo="Alergias" valor={pet.alergias} />
+              <Informacao titulo="Necessidades especiais" valor={pet.necessidades_especiais} />
+              <Informacao titulo="Comportamento" valor={pet.comportamento} />
+              <Informacao titulo="Sexo" valor={formatarSexo(pet.sexo)} />
+            </div>
+          </section>
 
           <section className="pet-tutors-card">
             <div className="pet-tutors-header">

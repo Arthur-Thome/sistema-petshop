@@ -22,6 +22,7 @@ const formInicial = {
   nome: "",
   especie: "cachorro",
   raca: "",
+  porte: "",
   sexo: "",
   data_nascimento: "",
   peso: "",
@@ -475,6 +476,9 @@ function FormularioPet() {
 
           raca:
             pet.raca || "",
+
+          porte:
+            pet.porte || "",
 
           sexo:
             pet.sexo || "",
@@ -1158,6 +1162,8 @@ function FormularioPet() {
           form.raca.trim() ||
           null,
 
+        porte: form.porte || null,
+
         sexo:
           form.sexo ||
           null,
@@ -1585,6 +1591,17 @@ function FormularioPet() {
                 atualizarCampo
               }
             />
+
+            <div className="pet-form-field">
+              <label htmlFor="porte">Porte</label>
+              <select id="porte" name="porte" value={form.porte} onChange={atualizarCampo}>
+                <option value="">Não informado</option>
+                <option value="pequeno">Pequeno</option>
+                <option value="medio">Médio</option>
+                <option value="grande">Grande</option>
+                <option value="gigante">Gigante</option>
+              </select>
+            </div>
 
 
             <div className="pet-form-field">

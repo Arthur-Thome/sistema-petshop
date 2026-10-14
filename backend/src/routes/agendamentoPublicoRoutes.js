@@ -14,6 +14,8 @@ const {
 );
 const verificacaoPublica = require("../controllers/clientePublicoVerificacaoController");
 const { listarPetsCliente } = require("../controllers/clientePublicoController");
+const { atualizarRacaPetCliente, criarPetCliente } = require("../controllers/petPublicoController");
+const { receberPetPublico } = require("../middleware/petPublicoUploadMiddleware");
 
 const autenticarClientePublico = require(
   "../middleware/clientePublicoMiddleware"
@@ -67,9 +69,9 @@ router.post(
  */
 router.post("/cadastro/solicitar", verificacaoPublica.solicitarCadastro);
 router.post("/cadastro/confirmar", verificacaoPublica.confirmarCadastro);
-router.post("/cadastro/concluir", cadastrarNovoCliente);
+router.post("/cadastro/concluir", receberPetPublico, cadastrarNovoCliente);
 // Compatibilidade de URL preservada sem permitir contornar a verificacao.
-router.post("/cadastro", cadastrarNovoCliente);
+router.post("/cadastro", receberPetPublico, cadastrarNovoCliente);
 
 
 /*
@@ -90,6 +92,9 @@ router.get(
   "/meus-pets",
   listarPetsCliente
 );
+
+router.post("/meus-pets", receberPetPublico, criarPetCliente);
+router.patch("/meus-pets/:id/raca", atualizarRacaPetCliente);
 
 
 /*

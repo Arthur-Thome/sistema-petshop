@@ -8,7 +8,7 @@ D2 implementa verificacao de contato antes da sessao do tutor existente e antes 
 
 - `POST /api/agendamento-publico/identificacao/solicitar` recebe CPF e sempre responde com desafio opaco e orientacao neutra quando o CPF e valido. Somente tutor ativo com e-mail unico associado pode receber o codigo. CPF inexistente, cadastro inativo, cadastro sem e-mail ou contato compartilhado nao libera sessao nem dispara SMS/WhatsApp. Sem acesso ao endereco cadastrado, o cliente deve procurar atendimento assistido.
 - `POST /api/agendamento-publico/identificacao/confirmar` recebe `{ desafio, codigo }`. O desafio nao e sessao. Codigo valido, dentro de 10 minutos, em ate cinco tentativas, e com o mesmo e-mail ainda associado ao tutor ativo emite token publico de duas horas. O token e independente do JWT interno.
-- `POST /api/agendamento-publico/cadastro/solicitar` valida CPF/e-mail e inicia desafio sem persistir dados pessoais do tutor/pet. CPF/e-mail ja utilizados nao liberam prova para o cadastro.
+- `POST /api/agendamento-publico/cadastro/solicitar` valida CPF/e-mail e inicia desafio sem persistir dados pessoais do tutor/pet. CPF previamente cadastrado nunca libera prova para novo cadastro; e-mail compartilhado pode ser verificado para um CPF novo, sem conceder acesso a cadastros existentes.
 - `POST /api/agendamento-publico/cadastro/confirmar` valida o codigo e emite somente uma prova de cadastro curta, sem token de sessao.
 - `POST /api/agendamento-publico/cadastro/concluir` (e alias legado `/cadastro`) exige prova valida, nao consumida, ainda no prazo e vinculada ao CPF/e-mail submetidos. Tutor, pet, vinculo e sessao sao criados na transacao original; a prova e consumida na mesma transacao.
 

@@ -13,6 +13,7 @@ DECLARE
     tutor integer;
     outro_tutor integer;
     pet integer;
+    pet_gigante integer;
     servico integer;
     outro_servico integer;
     dia integer;
@@ -52,6 +53,19 @@ BEGIN
     INSERT INTO tutores (nome, telefone, endereco) VALUES ('Outro tutor', '000', 'Ficticio') RETURNING id INTO outro_tutor;
     INSERT INTO pets (tutor_id, nome, especie) VALUES (tutor, 'Pet teste', 'cao') RETURNING id INTO pet;
     INSERT INTO pet_tutores (pet_id, tutor_id, principal) VALUES (pet, tutor, true);
+    INSERT INTO pets (tutor_id, nome, especie, raca, porte)
+    VALUES (tutor, 'Pet gigante teste', 'cao', 'Nao sei informar', 'gigante')
+    RETURNING id INTO pet_gigante;
+    IF NOT EXISTS (SELECT 1 FROM pets WHERE id = pet_gigante AND porte = 'gigante')
+       OR NOT EXISTS (SELECT 1 FROM pets WHERE id = pet AND porte IS NULL AND raca IS NULL) THEN
+        RAISE EXCEPTION 'FALHOU: porte gigante ou pet historico sem raca nao preservado';
+    END IF;
+    BEGIN
+        UPDATE pets SET porte = 'imenso' WHERE id = pet_gigante;
+        RAISE EXCEPTION 'FALHOU: porte desconhecido aceito';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+    RAISE NOTICE 'PASS: porte gigante permitido, porte invalido bloqueado e raca historica nula preservada';
     BEGIN
         INSERT INTO pet_tutores (pet_id, tutor_id, principal) VALUES (pet, outro_tutor, true);
         RAISE EXCEPTION 'FALHOU: dois tutores principais';

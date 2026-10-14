@@ -815,3 +815,13 @@
     width: 100%;
   }
 }
+
+.pet-raca-pendente {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 4px solid #d18b00;
+  border-radius: 0.4rem;
+  background: #fff7df;
+  color: #533b0a;
+  font-weight: 700;
+}
