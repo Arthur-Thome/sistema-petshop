@@ -20,6 +20,10 @@ function linkWhatsapp(numero) {
   return `https://wa.me/${internacional}`;
 }
 
+function ocultarImagemIndisponivel(evento) {
+  evento.currentTarget.hidden = true;
+}
+
 
 /*
  * Slides provisórios da página inicial.
@@ -501,7 +505,7 @@ function HomePublica() {
             >
 
               {slideAtual === 0 && configuracoes.imagem_principal_url && (
-                <img className="site-hero-imagem-real" src={`${API_URL}${configuracoes.imagem_principal_url}`} alt="" />
+                <img className="site-hero-imagem-real" src={`${API_URL}${configuracoes.imagem_principal_url}`} alt="" onError={ocultarImagemIndisponivel} />
               )}
 
               <div className="site-hero-imagem-conteudo">
@@ -647,7 +651,7 @@ function HomePublica() {
           <section className="site-historia" id="historia">
             <div className="site-historia-imagem">
               {configuracoes.imagem_historia_url
-                ? <img className="site-historia-imagem-real" src={API_URL + configuracoes.imagem_historia_url} alt="" />
+                ? <img className="site-historia-imagem-real" src={API_URL + configuracoes.imagem_historia_url} alt="" onError={ocultarImagemIndisponivel} />
                 : <span>Amores Pet</span>}
             </div>
             <div className="site-historia-conteudo">
@@ -711,7 +715,7 @@ function HomePublica() {
             <div className="site-premios-grid">
               {conteudoPublico.premios.map((item, index) => (
                 <article key={item.id}>
-                  {item.imagem_url && <img className="site-premio-imagem" src={API_URL + item.imagem_url} alt={item.imagem_alt || ""} />}
+                  {item.imagem_url && <img className="site-premio-imagem" src={API_URL + item.imagem_url} alt={item.imagem_alt || ""} onError={ocultarImagemIndisponivel} />}
                   <span>{String(index + 1).padStart(2, "0")}{item.ano ? ` · ${item.ano}` : ""}</span>
                   <h3>{item.titulo}</h3>
                   {item.instituicao && <small>{item.instituicao}</small>}

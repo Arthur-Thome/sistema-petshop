@@ -58,7 +58,19 @@ function GaleriaPublica() {
           {!carregando && !erro && filtradas.length > 0 && <div className="galeria-grid">
             {filtradas.map((item, index) => <article key={item.id} className={`galeria-item ${FORMATOS_GRID[index % FORMATOS_GRID.length]}`}>
               <figure className="galeria-foto">
-                <img src={`${API_URL}${item.imagem_url}`} alt={item.texto_alternativo} loading="lazy" />
+                <img
+                  src={`${API_URL}${item.imagem_url}`}
+                  alt={item.texto_alternativo}
+                  loading="lazy"
+                  onError={(evento) => {
+                    evento.currentTarget.hidden = true;
+                    const alternativa = evento.currentTarget.nextElementSibling;
+                    if (alternativa) alternativa.hidden = false;
+                  }}
+                />
+                <div className="galeria-foto-indisponivel" role="img" aria-label={item.texto_alternativo} hidden>
+                  Foto temporariamente indisponível
+                </div>
                 {(item.titulo || item.legenda || item.categoria) && <figcaption>
                   {item.categoria && <span>{item.categoria}</span>}
                   {item.titulo && <strong>{item.titulo}</strong>}
