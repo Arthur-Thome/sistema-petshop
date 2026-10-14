@@ -2600,6 +2600,7 @@ async function consultarDisponibilidadePublica(
             d.data BETWEEN $1 AND $2
             AND d.aberto = TRUE
             AND d.publicado = TRUE
+            AND ((d.data + h.horario) AT TIME ZONE 'America/Sao_Paulo') > clock_timestamp()
 
           GROUP BY
             d.id,

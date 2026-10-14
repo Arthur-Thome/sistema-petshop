@@ -123,6 +123,38 @@ function formatarDataAPI(data) {
   return `${ano}-${mes}-${dia}`;
 }
 
+function dataAtualSaoPaulo(instante = new Date()) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(instante);
+  const valores = Object.fromEntries(partes.map(({ type, value }) => [type, value]));
+  return `${valores.year}-${valores.month}-${valores.day}`;
+}
+
+function dataHoraAtualSaoPaulo(instante = new Date()) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instante);
+  const valores = Object.fromEntries(partes.map(({ type, value }) => [type, value]));
+  return `${valores.year}-${valores.month}-${valores.day}T${valores.hour}:${valores.minute}:${valores.second}`;
+}
+
+function horarioFuturoSaoPaulo(data, horario, instante = new Date()) {
+  if (!data || !horario) return false;
+  const horaNormalizada = String(horario).slice(0, 8).padEnd(8, ":00");
+  return `${String(data).slice(0, 10)}T${horaNormalizada}` > dataHoraAtualSaoPaulo(instante);
+}
+
 
 function criarDataLocal(valor) {
   const [
@@ -256,11 +288,8 @@ function mascaraCEP(valor) {
 
 
 function AgendamentoPublico() {
-  const hoje =
-    useMemo(
-      () => new Date(),
-      []
-    );
+  const [instanteAtual, setInstanteAtual] = useState(() => new Date());
+  const hoje = criarDataLocal(dataAtualSaoPaulo(instanteAtual));
 
 
   /*
@@ -574,11 +603,12 @@ function AgendamentoPublico() {
   useEffect(
     () => {
       if (
-        etapa !==
-        "DISPONIBILIDADE"
+        !["DISPONIBILIDADE", "CONFIRMACAO"].includes(etapa)
       ) {
         return;
       }
+
+      const timerAtualizacao = setInterval(() => setInstanteAtual(new Date()), 30000);
 
       let ativo = true;
 
@@ -655,6 +685,7 @@ function AgendamentoPublico() {
 
       return () => {
         ativo = false;
+        clearInterval(timerAtualizacao);
       };
     },
     [
@@ -760,6 +791,8 @@ function AgendamentoPublico() {
 
           const passado =
             data < inicioHoje;
+          const horariosFuturos = (agenda?.horarios || [])
+            .filter((horario) => horarioFuturoSaoPaulo(dataFormatada, horario.horario, instanteAtual));
 
 
           celulas.push({
@@ -780,13 +813,11 @@ function AgendamentoPublico() {
                 Array.isArray(
                   agenda.horarios
                 ) &&
-                agenda.horarios
-                  .length > 0
+                horariosFuturos.length > 0
               ),
 
             horarios:
-              agenda?.horarios ||
-              [],
+              horariosFuturos,
           });
         }
 
@@ -797,6 +828,7 @@ function AgendamentoPublico() {
         anoAtual,
         mesAtual,
         hoje,
+        instanteAtual,
       ]
     );
 
@@ -888,6 +920,7 @@ function AgendamentoPublico() {
 
 
   function voltarInicio() {
+    limparDadosTutor();
     setEtapa("INICIO");
     setTipoCliente(null);
     setErroFluxo("");
@@ -899,6 +932,7 @@ function AgendamentoPublico() {
   function iniciarFluxo(
     tipo
   ) {
+    limparDadosTutor();
     setTipoCliente(tipo);
     setErroFluxo("");
 
@@ -1217,16 +1251,21 @@ function AgendamentoPublico() {
     }
 
 
+    const racaInformada = String(dadosPet.raca || "").trim();
     if (
       !dadosPet.nome.trim() ||
       !dadosPet.especie.trim() ||
-      !dadosPet.raca.trim() ||
-      !dadosPet.porte
+      !racaInformada
     ) {
       setErroFluxo(
-        "Preencha nome, espécie e porte do Pet."
+        "Preencha nome, espécie e raça do Pet."
       );
 
+      return;
+    }
+
+    if (ehRacaDesconhecida(racaInformada) && !dadosPet.porte) {
+      setErroFluxo("Para raça não identificada, informe também o porte do Pet.");
       return;
     }
 
@@ -1428,6 +1467,7 @@ function AgendamentoPublico() {
           ? resposta.data
           : []
       );
+      return Array.isArray(resposta.data) ? resposta.data : [];
 
     } catch (erro) {
       if (tratarSessaoExpirada(erro)) return;
@@ -1438,12 +1478,12 @@ function AgendamentoPublico() {
 
 
       setServicos([]);
-
       setErroFluxo(
         erro.response?.data
           ?.mensagem ||
         "Não foi possível carregar os serviços disponíveis."
       );
+      return [];
 
     } finally {
       setCarregandoServicos(
@@ -1615,6 +1655,13 @@ function AgendamentoPublico() {
       return;
     }
 
+    if (!horarioFuturoSaoPaulo(dataSelecionada, horarioSelecionado.horario, instanteAtual)) {
+      setHorarioSelecionado(null);
+      setErroFluxo("Este horário já passou. Selecione outro horário disponível.");
+      setEtapa("DISPONIBILIDADE");
+      return;
+    }
+
 
     setErroFluxo("");
 
@@ -1641,6 +1688,13 @@ function AgendamentoPublico() {
         "O agendamento está incompleto. Revise os dados antes de confirmar."
       );
 
+      return;
+    }
+
+    if (!horarioFuturoSaoPaulo(dataSelecionada, horarioSelecionado.horario, instanteAtual)) {
+      setHorarioSelecionado(null);
+      setErroFluxo("Este horário já passou. Selecione outro horário disponível.");
+      setEtapa("DISPONIBILIDADE");
       return;
     }
 
@@ -1690,35 +1744,26 @@ function AgendamentoPublico() {
 
     } catch (erro) {
       if (tratarSessaoExpirada(erro)) return;
-      console.error(
-        "Erro ao confirmar agendamento:",
-        erro
-      );
+      console.error("Erro ao confirmar agendamento público:", {
+        status: erro.response?.status,
+        codigo: erro.response?.data?.codigo,
+      });
 
 
       const mensagem =
         erro.response?.data
           ?.mensagem ||
         "Não foi possível confirmar o agendamento.";
+      const codigo = erro.response?.data?.codigo;
 
-
-      setErroFluxo(mensagem);
-
-
-      /*
-       * A disponibilidade é sempre revalidada no servidor.
-       *
-       * Se outro cliente ocupar o horário entre a escolha
-       * e a confirmação, voltamos à agenda para que o usuário
-       * escolha outro horário.
-       */
-      if (
-        erro.response?.status ===
-          409 ||
-        /horário|horario|dispon/i.test(
-          mensagem
-        )
-      ) {
+      if (codigo === "RACA_PET_PENDENTE" || codigo === "PORTE_OBRIGATORIO") {
+        setEtapa("PET");
+      } else if (codigo === "SERVICO_INATIVO" || codigo === "SERVICO_NAO_ENCONTRADO") {
+        const ativos = await carregarServicos();
+        const idsAtivos = new Set(ativos.map((servico) => Number(servico.id)));
+        setServicosSelecionados((anteriores) => anteriores.filter((servico) => idsAtivos.has(Number(servico.id))));
+        setEtapa("SERVICOS");
+      } else if (["HORARIO_INDISPONIVEL", "HORARIO_PASSADO"].includes(codigo) || erro.response?.status === 409) {
         setHorarioSelecionado(
           null
         );
@@ -1727,6 +1772,7 @@ function AgendamentoPublico() {
           "DISPONIBILIDADE"
         );
       }
+      setErroFluxo(mensagem);
 
     } finally {
       setCarregandoFluxo(
@@ -2720,12 +2766,13 @@ function AgendamentoPublico() {
 
 
                   <label>
-                    Porte *
+                    Porte{ehRacaDesconhecida(dadosPet.raca) ? " *" : ""}
 
                     <select
                       value={
                         dadosPet.porte
                       }
+                      required={ehRacaDesconhecida(dadosPet.raca)}
                       onChange={(
                         evento
                       ) =>
@@ -3115,7 +3162,7 @@ function AgendamentoPublico() {
                   <label>Espécie *<select required value={formPetNovo.especie} onChange={(e) => setFormPetNovo((f) => ({ ...f, especie: e.target.value }))}><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option><option value="outro">Outro</option></select></label>
                   <label>Raça do pet *<input required maxLength={100} placeholder="Ex.: Shih Tzu, Poodle, SRD..." value={formPetNovo.raca} onChange={(e) => setFormPetNovo((f) => ({ ...f, raca: e.target.value }))} /></label>
                   <label>Sexo<select value={formPetNovo.sexo} onChange={(e) => setFormPetNovo((f) => ({ ...f, sexo: e.target.value }))}><option value="">Não informado</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></label>
-                  <label>Data de nascimento<input type="date" max={formatarDataAPI(new Date())} value={formPetNovo.data_nascimento} onChange={(e) => setFormPetNovo((f) => ({ ...f, data_nascimento: e.target.value }))} /></label>
+                  <label>Data de nascimento<input type="date" max={dataAtualSaoPaulo()} value={formPetNovo.data_nascimento} onChange={(e) => setFormPetNovo((f) => ({ ...f, data_nascimento: e.target.value }))} /></label>
                   <label>Idade aproximada (anos)<input type="number" min="0" max="100" value={formPetNovo.idade_aproximada_anos} onChange={(e) => setFormPetNovo((f) => ({ ...f, idade_aproximada_anos: e.target.value }))} /></label>
                   <label>Porte{ehRacaDesconhecida(formPetNovo.raca) ? " *" : ""}<select required={ehRacaDesconhecida(formPetNovo.raca)} value={formPetNovo.porte} onChange={(e) => setFormPetNovo((f) => ({ ...f, porte: e.target.value }))}><option value="">Selecione</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option><option value="gigante">Gigante</option></select></label>
                   <label>Castrado?<select value={formPetNovo.castrado} onChange={(e) => setFormPetNovo((f) => ({ ...f, castrado: e.target.value }))}><option value="">Não informado</option><option value="sim">Sim</option><option value="nao">Não</option></select></label>
@@ -3906,6 +3953,12 @@ function AgendamentoPublico() {
 
             </div>
 
+            {dataSelecionada && horarioSelecionado && !horarioFuturoSaoPaulo(dataSelecionada, horarioSelecionado.horario, instanteAtual) && (
+              <p role="status" className="agendamento-erro">
+                Este horário já passou. Volte à agenda e escolha outro horário.
+              </p>
+            )}
+
 
             <div className="agendamento-formulario-acoes">
 
@@ -3930,7 +3983,10 @@ function AgendamentoPublico() {
                   confirmarAgendamento
                 }
                 disabled={
-                  carregandoFluxo
+                  carregandoFluxo ||
+                  !dataSelecionada ||
+                  !horarioSelecionado ||
+                  !horarioFuturoSaoPaulo(dataSelecionada, horarioSelecionado?.horario, instanteAtual)
                 }
               >
                 {carregandoFluxo

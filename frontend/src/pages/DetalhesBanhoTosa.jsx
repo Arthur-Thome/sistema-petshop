@@ -179,7 +179,8 @@ function DetalhesBanhoTosa() {
     }
 
     return new Date(data).toLocaleString(
-      "pt-BR"
+      "pt-BR",
+      { timeZone: "America/Sao_Paulo" }
     );
   }
 

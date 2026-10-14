@@ -104,6 +104,7 @@ function BanhoTosa() {
     return new Date(data).toLocaleString(
       "pt-BR",
       {
+        timeZone: "America/Sao_Paulo",
         dateStyle: "short",
         timeStyle: "short",
       }

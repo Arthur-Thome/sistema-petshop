@@ -570,6 +570,7 @@ async function listarAtivos(req, res) {
         `
           SELECT
             bt.*,
+            (bt.agendado_para AT TIME ZONE 'America/Sao_Paulo') AS agendado_para,
 
             p.nome AS pet_nome,
             p.especie AS pet_especie,
@@ -681,6 +682,7 @@ async function listarHistorico(req, res) {
         `
           SELECT
             bt.*,
+            (bt.agendado_para AT TIME ZONE 'America/Sao_Paulo') AS agendado_para,
 
             p.nome AS pet_nome,
             p.especie AS pet_especie,
@@ -793,6 +795,7 @@ async function buscarAtendimentoPorId(
         `
           SELECT
             bt.*,
+            (bt.agendado_para AT TIME ZONE 'America/Sao_Paulo') AS agendado_para,
 
             p.nome AS pet_nome,
             p.especie AS pet_especie,

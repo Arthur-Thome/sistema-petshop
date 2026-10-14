@@ -31,7 +31,7 @@ function makeClient({ future = true, dayOpen = true, slotStatus = "RESERVADO" } 
       if (q.startsWith("select agenda_publica_horario_id from banho_tosa")) return { rows: [{ agenda_publica_horario_id: 6 }] };
       if (q.startsWith("select ((")) return { rows: [{ futuro: future }] };
       if (q.startsWith("select ( ")) return { rows: [{ agendado_para: "2099-03-10T14:00:00.000Z" }] };
-      if (q.startsWith("select p.id, p.nome, p.ativo")) return { rows: [{ id: 5, nome: "Luna", ativo: true, tutor_id: 44, tutor_nome: "Tutor teste", tutor_telefone: null, tutor_email: null, tutor_ativo: true }] };
+      if (q.startsWith("select p.id, p.nome, p.raca, p.porte, p.ativo")) return { rows: [{ id: 5, nome: "Luna", raca: "SRD", porte: "medio", ativo: true, tutor_id: 44, tutor_nome: "Tutor teste", tutor_telefone: null, tutor_email: null, tutor_ativo: true }] };
       if (q.startsWith("select id, nome, descricao")) return { rows: [{ id: 3, nome: "Banho", descricao: null, valor: "75.00", duracao_minutos: 30, ativo: true }] };
       if (q.startsWith("select * from banho_tosa where id = $1 for update")) return { rows: [{ ...atendimento }] };
       if (q.startsWith("select bt.*")) return { rows: [{ ...atendimento, pet_ativo: true }] };

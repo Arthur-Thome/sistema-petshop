@@ -16,7 +16,9 @@ function racaDesconhecida(valor) {
 async function listarSolicitacoes(req, res) {
   try {
     const resultado = await pool.query(`
-      SELECT bt.id, bt.status, bt.agendado_para, bt.criado_em,
+      SELECT bt.id, bt.status,
+        (bt.agendado_para AT TIME ZONE 'America/Sao_Paulo') AS agendado_para,
+        bt.criado_em,
         bt.observacoes_agendamento,
         p.nome AS pet_nome, p.especie AS pet_especie, p.raca AS pet_raca,
         p.porte AS pet_porte, p.sexo AS pet_sexo, p.alergias AS pet_alergias,

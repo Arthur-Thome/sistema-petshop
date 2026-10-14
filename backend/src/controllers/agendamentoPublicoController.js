@@ -317,6 +317,7 @@ async function confirmarAgendamentoPublico(
       transacaoIniciada = false;
 
       return res.status(409).json({
+        codigo: "HORARIO_INDISPONIVEL",
         mensagem:
           "Este horário não está mais disponível. Escolha outro horário.",
       });
@@ -350,6 +351,7 @@ async function confirmarAgendamentoPublico(
       transacaoIniciada = false;
 
       return res.status(409).json({
+        codigo: "HORARIO_PASSADO",
         mensagem:
           "Este horário já passou.",
       });
@@ -372,6 +374,8 @@ async function confirmarAgendamentoPublico(
           SELECT
             p.id,
             p.nome,
+            p.raca,
+            p.porte,
             p.ativo,
 
             t.id AS tutor_id,
@@ -408,6 +412,7 @@ async function confirmarAgendamentoPublico(
       transacaoIniciada = false;
 
       return res.status(404).json({
+        codigo: "PET_NAO_VINCULADO",
         mensagem:
           "O Pet informado não está vinculado a este Tutor.",
       });
@@ -428,6 +433,28 @@ async function confirmarAgendamentoPublico(
       return res.status(400).json({
         mensagem:
           "Não é possível realizar o agendamento com um cadastro inativo.",
+      });
+    }
+
+    const racaPet = typeof pet.raca === "string"
+      ? pet.raca.trim().replace(/\s+/g, " ")
+      : "";
+    const racaNormalizada = racaPet.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+    const portePet = typeof pet.porte === "string" ? pet.porte.trim().toLocaleLowerCase("pt-BR") : "";
+    if (!racaPet || racaPet.length > 100) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(409).json({
+        codigo: "RACA_PET_PENDENTE",
+        mensagem: "Informe a raça do pet no cadastro antes de solicitar o agendamento.",
+      });
+    }
+    if (racaNormalizada === "nao sei informar" && !["pequeno", "medio", "grande", "gigante"].includes(portePet)) {
+      await client.query("ROLLBACK");
+      transacaoIniciada = false;
+      return res.status(409).json({
+        codigo: "PORTE_OBRIGATORIO",
+        mensagem: "Informe o porte do pet no cadastro para continuar com raça não identificada.",
       });
     }
 
@@ -469,6 +496,7 @@ async function confirmarAgendamentoPublico(
       transacaoIniciada = false;
 
       return res.status(400).json({
+        codigo: "SERVICO_NAO_ENCONTRADO",
         mensagem:
           "Um ou mais serviços selecionados não existem.",
       });
@@ -486,6 +514,7 @@ async function confirmarAgendamentoPublico(
       transacaoIniciada = false;
 
       return res.status(409).json({
+        codigo: "SERVICO_INATIVO",
         mensagem:
           `O serviço "${servicoInativo.nome}" não está mais disponível.`,
       });
@@ -670,7 +699,7 @@ async function confirmarAgendamentoPublico(
     if (!resultadoReserva.rows.length) {
       await client.query("ROLLBACK");
       transacaoIniciada = false;
-      return res.status(409).json({ mensagem: "Este horário acabou de ser reservado. Escolha outro horário." });
+      return res.status(409).json({ codigo: "HORARIO_INDISPONIVEL", mensagem: "Este horário acabou de ser reservado. Escolha outro horário." });
     }
 
     await client.query(
@@ -755,6 +784,7 @@ async function confirmarAgendamentoPublico(
      */
     if (erro.code === "23505") {
       return res.status(409).json({
+        codigo: "HORARIO_INDISPONIVEL",
         mensagem:
           "Este horário acabou de ser reservado. Escolha outro horário.",
       });
