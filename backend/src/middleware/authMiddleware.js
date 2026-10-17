@@ -28,13 +28,15 @@ async function autenticar(req, res, next) {
 
   const token = partes[1];
 
+  let decoded;
+
   try {
     /*
     * Aceitamos explicitamente apenas tokens assinados com HS256.
     * Isso mantém a validação alinhada ao algoritmo utilizado
     * pelo sistema para emitir os JWTs.
     */
-    const decoded = jwt.verify(
+    decoded = jwt.verify(
       token,
       process.env.JWT_SECRET,
       {
@@ -42,14 +44,38 @@ async function autenticar(req, res, next) {
       }
     );
 
+  } catch (_) {
+    return res.status(401).json({
+      mensagem: "Token inválido ou expirado.",
+    });
+  }
+
+  let resultado;
+  try {
     // O banco é a fonte atual da situação e das permissões do usuário.
-    const resultado = await pool.query(
+    resultado = await pool.query(
       `SELECT id, nome, email, perfil, ativo, versao_sessao
        FROM usuarios
        WHERE id = $1`,
       [decoded.id]
     );
+  } catch (erro) {
+    const codigo = typeof erro?.code === "string" && /^[A-Z0-9]{2,10}$/.test(erro.code)
+      ? erro.code
+      : "DB_ERROR";
+    console.error(JSON.stringify({
+      evento: "auth_database_unavailable",
+      requestId: req.requestId || null,
+      codigo,
+      horario: new Date().toISOString(),
+    }));
+    return res.status(503).json({
+      codigo: "SERVICO_INDISPONIVEL",
+      mensagem: "O serviço está temporariamente indisponível. Tente novamente.",
+    });
+  }
 
+  try {
     if (resultado.rows.length === 0) {
       return res.status(401).json({
         mensagem: "Usuário não encontrado.",
@@ -87,9 +113,7 @@ async function autenticar(req, res, next) {
 
     return next();
   } catch (erro) {
-    return res.status(401).json({
-      mensagem: "Token inválido ou expirado.",
-    });
+    return next(erro);
   }
 }
 

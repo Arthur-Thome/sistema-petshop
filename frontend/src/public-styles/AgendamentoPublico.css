@@ -1683,7 +1683,14 @@
 .agendamento-mensagem-erro {
   grid-column: 2;
 
-  margin-bottom: 18px;
+  justify-self: start;
+  align-self: start;
+  width: fit-content;
+  max-width: min(100%, 42rem);
+  min-height: 0;
+  height: auto;
+
+  margin: 0 0 8px;
   padding: 15px 18px;
 
   border: 1px solid #fecaca;
@@ -1800,17 +1807,27 @@
   border-color: var(--amores-rosa);
 }
 
+.agendamento-painel-identificacao .agendamento-painel-topo > div {
+  max-width: 760px;
+}
+
 
 /* ============================================================
    IDENTIFICAÇÃO
    ============================================================ */
 
 .agendamento-formulario-identificacao {
-  max-width: 520px;
+  width: 100%;
+  max-width: 780px;
 
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
 
-  gap: 22px;
+.agendamento-identificacao-instrucao {
+  max-width: 46rem;
 }
 
 
@@ -1858,6 +1875,10 @@
   box-shadow:
     0 0 0 4px
     rgba(240, 0, 139, 0.08);
+}
+
+.agendamento-formulario-identificacao > button {
+  min-width: 190px;
 }
 
 
@@ -3091,8 +3112,10 @@ div > strong {
 @media (max-width: 680px) {
   .agendamento-mensagem-erro {
     grid-column: auto;
+    justify-self: stretch;
+    width: 100%;
 
-    margin-bottom: 15px;
+    margin-bottom: 8px;
   }
 
 
@@ -3106,6 +3129,14 @@ div > strong {
 
   .agendamento-painel-topo {
     flex-direction: column;
+  }
+
+  .agendamento-formulario-identificacao {
+    grid-template-columns: 1fr;
+  }
+
+  .agendamento-formulario-identificacao > button {
+    width: 100%;
   }
 
 

@@ -1,4 +1,4 @@
-test('SMTP do codigo usa transporte simulado e remetente Amores Pet', async () => {
+test('SMTP usa transporte simulado e verifica conexao sem enviar nova mensagem', async () => {
   const config = {
     EMAIL_HOST: process.env.EMAIL_HOST,
     EMAIL_PORT: process.env.EMAIL_PORT,
@@ -14,7 +14,8 @@ test('SMTP do codigo usa transporte simulado e remetente Amores Pet', async () =
 
   jest.resetModules();
   const sendMail = jest.fn().mockResolvedValue({ messageId: 'mock-only' });
-  const createTransport = jest.fn(() => ({ sendMail, verify: jest.fn() }));
+  const verify = jest.fn().mockResolvedValue(true);
+  const createTransport = jest.fn(() => ({ sendMail, verify }));
   jest.doMock('nodemailer', () => ({ createTransport }));
   jest.dontMock('../src/services/emailService');
   const service = require('../src/services/emailService');
@@ -28,6 +29,9 @@ test('SMTP do codigo usa transporte simulado e remetente Amores Pet', async () =
     subject: expect.stringContaining('Amores Pet'),
     text: expect.stringContaining('908172'),
   }));
+  await service.verificarConexaoEmail();
+  expect(verify).toHaveBeenCalledTimes(1);
+  expect(sendMail).toHaveBeenCalledTimes(1);
 
   for (const [key, value] of Object.entries(config)) {
     if (value === undefined) delete process.env[key];

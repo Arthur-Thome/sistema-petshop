@@ -723,6 +723,11 @@ async function listarHistorico(req, res) {
 
             COALESCE(
               pg.valor_total,
+              (
+                SELECT SUM(bts.valor_unitario)
+                FROM banho_tosa_servicos bts
+                WHERE bts.banho_tosa_id = bt.id
+              ),
               0
             ) AS valor_total,
 

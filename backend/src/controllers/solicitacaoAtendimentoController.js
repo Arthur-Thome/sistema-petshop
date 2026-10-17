@@ -13,38 +13,73 @@ function racaDesconhecida(valor) {
     .replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === DESCONHECIDA;
 }
 
+const SQL_LISTAR_SOLICITACOES = `
+  WITH solicitacoes AS (
+    SELECT DISTINCT ON (bt.id, p.id, t.id)
+      bt.id, bt.status,
+      (bt.agendado_para AT TIME ZONE 'America/Sao_Paulo') AS agendado_para,
+      bt.criado_em,
+      bt.observacoes_agendamento,
+      p.nome AS pet_nome, p.foto AS pet_foto, p.especie AS pet_especie, p.raca AS pet_raca,
+      p.porte AS pet_porte, p.sexo AS pet_sexo, p.alergias AS pet_alergias,
+      p.necessidades_especiais AS pet_necessidades_especiais,
+      p.comportamento AS pet_comportamento, p.observacoes AS pet_observacoes,
+      t.nome AS tutor_nome
+    FROM banho_tosa bt
+    JOIN pets p ON p.id = bt.pet_id
+    JOIN historico_atendimentos criado
+      ON criado.banho_tosa_id = bt.id AND criado.evento = 'SOLICITACAO_CRIADA'
+    JOIN pet_tutores pt ON pt.pet_id = p.id AND pt.tutor_id = criado.tutor_id
+    JOIN tutores t ON t.id = criado.tutor_id
+    WHERE bt.status = 'AGUARDANDO_CONFIRMACAO'
+    ORDER BY bt.id, p.id, t.id, criado.criado_em ASC, criado.id ASC
+  )
+  SELECT sol.*,
+    COALESCE((
+      SELECT json_agg(json_build_object(
+        'id', s.id, 'nome', s.nome, 'valor', bts.valor_unitario,
+        'duracao_minutos', bts.duracao_minutos
+      ) ORDER BY s.nome)
+      FROM banho_tosa_servicos bts
+      LEFT JOIN servicos s ON s.id = bts.servico_id
+      WHERE bts.banho_tosa_id = sol.id
+    ), '[]'::json) AS servicos
+  FROM solicitacoes sol
+  ORDER BY sol.criado_em ASC, sol.id ASC
+`;
+
+function campoPostgresSeguro(erro, campo) {
+  const valor = erro?.[campo];
+  return typeof valor === "string" && /^[A-Za-z0-9_.$-]{1,128}$/.test(valor)
+    ? valor
+    : undefined;
+}
+
 async function listarSolicitacoes(req, res) {
   try {
-    const resultado = await pool.query(`
-      SELECT bt.id, bt.status,
-        (bt.agendado_para AT TIME ZONE 'America/Sao_Paulo') AS agendado_para,
-        bt.criado_em,
-        bt.observacoes_agendamento,
-        p.nome AS pet_nome, p.especie AS pet_especie, p.raca AS pet_raca,
-        p.porte AS pet_porte, p.sexo AS pet_sexo, p.alergias AS pet_alergias,
-        p.necessidades_especiais AS pet_necessidades_especiais,
-        p.comportamento AS pet_comportamento, p.observacoes AS pet_observacoes,
-        t.nome AS tutor_nome,
-        COALESCE(json_agg(json_build_object(
-          'id', s.id, 'nome', s.nome, 'valor', bts.valor_unitario,
-          'duracao_minutos', bts.duracao_minutos
-        ) ORDER BY s.nome) FILTER (WHERE bts.id IS NOT NULL), '[]'::json) AS servicos
-      FROM banho_tosa bt
-      JOIN pets p ON p.id = bt.pet_id
-      JOIN historico_atendimentos criado
-        ON criado.banho_tosa_id = bt.id AND criado.evento = 'SOLICITACAO_CRIADA'
-      JOIN pet_tutores pt ON pt.pet_id = p.id AND pt.tutor_id = criado.tutor_id
-      JOIN tutores t ON t.id = criado.tutor_id
-      LEFT JOIN banho_tosa_servicos bts ON bts.banho_tosa_id = bt.id
-      LEFT JOIN servicos s ON s.id = bts.servico_id
-      WHERE bt.status = 'AGUARDANDO_CONFIRMACAO'
-      GROUP BY bt.id, p.id, t.id
-      ORDER BY bt.criado_em ASC, bt.id ASC
-    `);
+    const resultado = await pool.query(SQL_LISTAR_SOLICITACOES);
     return res.status(200).json({ solicitacoes: resultado.rows });
   } catch (erro) {
-    console.error("Falha ao listar solicitações públicas pendentes.");
-    return res.status(500).json({ codigo: "ERRO_INTERNO", mensagem: "Não foi possível carregar as solicitações." });
+    const codigo = typeof erro?.code === "string" && /^[A-Z0-9]{2,10}$/.test(erro.code)
+      ? erro.code
+      : "DB_ERROR";
+    const diagnostico = {
+      evento: "public_requests_list_failed",
+      requestId: req.requestId || null,
+      operacao: "listar_solicitacoes_publicas",
+      codigo,
+      horario: new Date().toISOString(),
+    };
+    for (const campo of ["schema", "table", "column", "constraint", "routine"]) {
+      const valor = campoPostgresSeguro(erro, campo);
+      if (valor) diagnostico[campo] = valor;
+    }
+    console.error(JSON.stringify(diagnostico));
+    return res.status(500).json({
+      codigo: "ERRO_INTERNO",
+      mensagem: "Não foi possível carregar as solicitações.",
+      requestId: req.requestId || null,
+    });
   }
 }
 
@@ -329,4 +364,10 @@ async function listarHistoricoSolicitacao(req, res) {
   }
 }
 
-module.exports = { listarSolicitacoes, confirmarSolicitacao, recusarSolicitacao, listarHistoricoSolicitacao };
+module.exports = {
+  listarSolicitacoes,
+  confirmarSolicitacao,
+  recusarSolicitacao,
+  listarHistoricoSolicitacao,
+  SQL_LISTAR_SOLICITACOES,
+};

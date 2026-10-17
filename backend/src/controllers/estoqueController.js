@@ -18,6 +18,44 @@ const LIMITE_MAXIMO_POR_PAGINA = 100;
 
 
 /*
+ * Historico detalhado consumido pela ficha do produto.
+ * A consulta e somente leitura e permanece disponivel para
+ * qualquer perfil autenticado que possa consultar produtos.
+ */
+async function listarMovimentacoesProduto(req, res) {
+  const produtoId = Number(req.params.produtoId);
+  if (!Number.isSafeInteger(produtoId) || produtoId <= 0) {
+    return res.status(400).json({ mensagem: "ID de produto inválido." });
+  }
+
+  try {
+    const produto = await pool.query(
+      "SELECT id FROM produtos WHERE id = $1",
+      [produtoId]
+    );
+    if (produto.rows.length === 0) {
+      return res.status(404).json({ mensagem: "Produto não encontrado." });
+    }
+
+    const resultado = await pool.query(`
+      SELECT m.id, m.produto_id, m.tipo, m.quantidade,
+        m.quantidade_anterior, m.quantidade_posterior, m.motivo,
+        m.usuario_id, u.nome AS usuario_nome, m.criado_em
+      FROM movimentacoes_estoque m
+      LEFT JOIN usuarios u ON u.id = m.usuario_id
+      WHERE m.produto_id = $1
+      ORDER BY m.criado_em DESC, m.id DESC
+    `, [produtoId]);
+
+    return res.status(200).json(resultado.rows);
+  } catch (error) {
+    console.error("Erro ao listar movimentações do produto:", error);
+    return res.status(500).json({ mensagem: "Erro interno ao carregar movimentações." });
+  }
+}
+
+
+/*
  * Toda alteração de quantidade deve passar por este
  * controller. Assim mantemos um histórico completo
  * das entradas, saídas e ajustes realizados.
@@ -647,5 +685,6 @@ async function listarHistoricoEstoque(
 
 module.exports = {
   movimentarEstoque,
+  listarMovimentacoesProduto,
   listarHistoricoEstoque,
 };

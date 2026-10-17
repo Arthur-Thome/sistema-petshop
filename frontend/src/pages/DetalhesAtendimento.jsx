@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api";
+import { resolverEstadoLista } from "../utils/estadoLista";
 
 import {
   abrirWhatsApp,
@@ -44,6 +45,8 @@ function DetalhesAtendimento() {
     useState(null);
 
   const [historicoOperacional, setHistoricoOperacional] = useState([]);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(true);
+  const [erroHistorico, setErroHistorico] = useState("");
 
   const [carregando, setCarregando] =
     useState(true);
@@ -127,11 +130,21 @@ function DetalhesAtendimento() {
   }, [id]);
 
   const carregarHistoricoOperacional = useCallback(async () => {
+    setCarregandoHistorico(true);
+    setErroHistorico("");
     try {
       const resposta = await api.get(`/atendimentos/${id}/historico`);
-      setHistoricoOperacional(resposta.data.eventos || []);
-    } catch {
-      setHistoricoOperacional([]);
+      if (!Array.isArray(resposta.data?.eventos)) {
+        throw new TypeError("Resposta inválida ao carregar o histórico.");
+      }
+      setHistoricoOperacional(resposta.data.eventos);
+    } catch (error) {
+      setErroHistorico(
+        error.response?.data?.mensagem ||
+        "Não foi possível carregar o histórico operacional."
+      );
+    } finally {
+      setCarregandoHistorico(false);
     }
   }, [id]);
 
@@ -190,6 +203,12 @@ function DetalhesAtendimento() {
     );
   }
 
+  const estadoHistorico = resolverEstadoLista({
+    carregando: carregandoHistorico,
+    erro: erroHistorico,
+    quantidade: historicoOperacional.length,
+  });
+
 
   function formatarValor(valor) {
     return Number(
@@ -219,7 +238,7 @@ function DetalhesAtendimento() {
   }
 
 
-  function formatarStatusPagamento(status) {
+  function formatarStatusPagamento(status, statusAtendimento = "") {
     const nomes = {
       PENDENTE: "Pendente",
       PAGO: "Pago",
@@ -227,6 +246,7 @@ function DetalhesAtendimento() {
       ESTORNADO: "Estornado",
     };
 
+    if (!status && statusAtendimento === "RECUSADO") return "Sem cobrança";
     return nomes[status] || status || "-";
   }
 
@@ -722,7 +742,7 @@ function DetalhesAtendimento() {
             <strong>
               {atendimento.status === "AGUARDANDO_CONFIRMACAO" && !atendimento.pagamento_status
                 ? "Ainda não criada"
-                : formatarStatusPagamento(atendimento.pagamento_status)}
+                : formatarStatusPagamento(atendimento.pagamento_status, atendimento.status)}
             </strong>
           </div>
 
@@ -902,7 +922,13 @@ function DetalhesAtendimento() {
 
       <div className="atendimento-detalhes-card">
         <h2>Histórico operacional</h2>
-        {historicoOperacional.length === 0 ? <p>Nenhum evento operacional registrado.</p> : (
+        {estadoHistorico === "carregando" ? <p>Carregando histórico operacional…</p> :
+          estadoHistorico === "erro" ? <div className="atendimento-erro" role="alert">
+            <p>{erroHistorico}</p>
+            <button type="button" className="secondary-button" onClick={() => void carregarHistoricoOperacional()}>
+              Tentar novamente
+            </button>
+          </div> : estadoHistorico === "vazio" ? <p>Nenhum evento operacional registrado.</p> : (
           <div className="atendimento-detalhes-servicos">
             {historicoOperacional.map((evento) => (
               <div className="atendimento-detalhes-servico" key={evento.id}>
@@ -1144,8 +1170,9 @@ function DetalhesAtendimento() {
                   <span>Forma de pagamento</span>
 
                   <strong>
-                    {atendimento.pagamento_metodo ||
-                      "-"}
+                    {atendimento.pagamento_metodo || (atendimento.pagamento_status === "PENDENTE"
+                      ? "Definida ao registrar o pagamento"
+                      : "-")}
                   </strong>
                 </div>
 
@@ -1160,7 +1187,8 @@ function DetalhesAtendimento() {
                     }
                   >
                     {formatarStatusPagamento(
-                      atendimento.pagamento_status
+                      atendimento.pagamento_status,
+                      atendimento.status
                     )}
                   </strong>
                 </div>

@@ -7,16 +7,33 @@ const v = require("../services/verificacaoClientePublicoService");
 
 const RESPOSTA_NEUTRA = "Se os dados corresponderem a um cadastro elegivel, enviaremos um codigo ao e-mail informado. Se nao tiver acesso ao e-mail cadastrado, procure a equipe Amores Pet para atendimento assistido.";
 
-function respostaErro(res, error, fallback) {
+function codigoErroSeguro(error) {
+  return typeof error?.code === "string" && /^[A-Z0-9_-]{1,32}$/.test(error.code)
+    ? error.code
+    : "ERRO_NAO_CLASSIFICADO";
+}
+
+function respostaErro(res, error, fallback, requestId) {
   if (error.status === 429) {
     res.set("Retry-After", String(error.retryAfter));
-    return res.status(429).json({ codigo: "LIMITE_TEMPORARIO", mensagem: "Aguarde antes de tentar novamente.", tentar_novamente_em: error.retryAfter });
+    return res.status(429).json({ codigo: "LIMITE_TEMPORARIO", mensagem: "Aguarde antes de tentar novamente.", tentar_novamente_em: error.retryAfter, requestId: requestId || null });
   }
   if (error.code === "VERIFICACAO_NAO_CONFIGURADA") {
-    return res.status(503).json({ codigo: "SERVICO_INDISPONIVEL", mensagem: "A identificacao por e-mail esta temporariamente indisponivel." });
+    console.error(JSON.stringify({
+      evento: "public_email_verification_unavailable",
+      requestId: requestId || null,
+      codigo: codigoErroSeguro(error),
+      variavel: v.PEPPER_ENV,
+    }));
+    return res.status(503).json({ codigo: "SERVICO_INDISPONIVEL", mensagem: "A identificacao por e-mail esta temporariamente indisponivel.", requestId: requestId || null });
   }
-  console.error(fallback);
-  return res.status(500).json({ codigo: "ERRO_INTERNO", mensagem: "Nao foi possivel concluir a operacao." });
+  console.error(JSON.stringify({
+    evento: "public_email_verification_failed",
+    requestId: requestId || null,
+    operacao: fallback,
+    codigo: codigoErroSeguro(error),
+  }));
+  return res.status(500).json({ codigo: "ERRO_INTERNO", mensagem: "Nao foi possivel concluir a operacao.", requestId: requestId || null });
 }
 
 async function solicitar(req, res, contexto) {
@@ -80,15 +97,20 @@ async function solicitar(req, res, contexto) {
 
     if (podeEnviar) {
       try { await enviarCodigoVerificacao({ para: destino, codigo: code, contexto }); }
-      catch (_) {
+      catch (error) {
+        console.error(JSON.stringify({
+          evento: "public_email_delivery_failed",
+          requestId: req.requestId || null,
+          codigo: codigoErroSeguro(error),
+        }));
         await pool.query("UPDATE verificacoes_cliente_publico SET confirmado_em = CURRENT_TIMESTAMP WHERE desafio_hash = $1 AND confirmado_em IS NULL", [v.hmac(`desafio:${challenge}`)]);
-        return res.status(503).json({ codigo: "ENVIO_INDISPONIVEL", mensagem: "Nao foi possivel enviar o e-mail agora. Tente novamente mais tarde." });
+        return res.status(503).json({ codigo: "ENVIO_INDISPONIVEL", mensagem: "Nao foi possivel enviar o e-mail agora. Tente novamente mais tarde.", requestId: req.requestId || null });
       }
     }
     return res.status(202).json({ encontrado: true, desafio: challenge, mensagem: RESPOSTA_NEUTRA, expira_em: new Date(Date.now() + v.DURACAO_MS).toISOString() });
   } catch (error) {
     if (client && tx) { try { await client.query("ROLLBACK"); } catch (_) {} }
-    return respostaErro(res, error, "Falha ao solicitar codigo de verificacao.");
+    return respostaErro(res, error, "solicitar_codigo_verificacao", req.requestId);
   } finally { if (client) client.release(); }
 }
 
@@ -188,7 +210,7 @@ async function confirmar(req, res, contexto) {
     return res.status(200).json({ prova_cadastro: proof, expira_em: new Date(Date.now() + v.DURACAO_MS).toISOString(), mensagem: "E-mail verificado. Conclua o cadastro para prosseguir ao agendamento." });
   } catch (error) {
     if (client && tx) { try { await client.query("ROLLBACK"); } catch (_) {} }
-    return respostaErro(res, error, "Falha ao confirmar codigo.");
+    return respostaErro(res, error, "confirmar_codigo_verificacao", req.requestId);
   } finally { if (client) client.release(); }
 }
 

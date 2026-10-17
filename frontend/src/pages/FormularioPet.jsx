@@ -12,6 +12,11 @@ import {
 
 import api from "../services/api";
 import { useFotoPet } from "../utils/useFotoPet";
+import {
+  calcularRecorteFoto,
+  limitarPosicaoFoto,
+  validarArquivoFotoPet,
+} from "../utils/fotoPetEditor";
 import "../styles/FormularioPet.css";
 
 import SeletorTutor
@@ -119,6 +124,10 @@ function FormularioPet() {
     imagemEditor,
     setImagemEditor,
   ] = useState("");
+
+  const [imagemEditorCarregada, setImagemEditorCarregada] = useState(false);
+  const [erroImagemEditor, setErroImagemEditor] = useState("");
+  const [processandoRecorte, setProcessandoRecorte] = useState(false);
 
   const [
     nomeArquivoOriginal,
@@ -582,41 +591,16 @@ function FormularioPet() {
     }
 
 
-    const tiposPermitidos = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-
-    if (
-      !tiposPermitidos.includes(
-        arquivo.type
-      )
-    ) {
-      setErro(
-        "Selecione uma imagem JPG, PNG ou WEBP."
-      );
-
+    const validacao = validarArquivoFotoPet(arquivo);
+    if (!validacao.valido) {
+      setErro(validacao.mensagem);
       return;
     }
-
-
-    if (
-      arquivo.size >
-      5 * 1024 * 1024
-    ) {
-      setErro(
-        "A imagem deve ter no máximo 5 MB."
-      );
-
-      return;
-    }
-
 
     setErro("");
-
-
+    setErroImagemEditor("");
+    setImagemEditorCarregada(false);
+    setProcessandoRecorte(false);
     if (imagemEditor) {
       URL.revokeObjectURL(
         imagemEditor
@@ -701,18 +685,19 @@ function FormularioPet() {
       ponto.y -
       inicioArrasteRef.current.y;
 
+    const imagem = imagemEditorRef.current;
+    const area = areaEditorRef.current;
+    const novaPosicao = {
+      x: inicioArrasteRef.current.posicaoX + diferencaX,
+      y: inicioArrasteRef.current.posicaoY + diferencaY,
+    };
 
-    setPosicao({
-      x:
-        inicioArrasteRef.current
-          .posicaoX +
-        diferencaX,
-
-      y:
-        inicioArrasteRef.current
-          .posicaoY +
-        diferencaY,
-    });
+    setPosicao(limitarPosicaoFoto(novaPosicao, {
+      larguraOriginal: imagem?.naturalWidth,
+      alturaOriginal: imagem?.naturalHeight,
+      tamanhoArea: area?.clientWidth,
+      zoom,
+    }));
   }
 
 
@@ -749,11 +734,16 @@ function FormularioPet() {
 
 
   function alterarZoom(event) {
-    setZoom(
-      Number(
-        event.target.value
-      )
-    );
+    const novoZoom = Number(event.target.value);
+    const imagem = imagemEditorRef.current;
+    const area = areaEditorRef.current;
+    setZoom(novoZoom);
+    setPosicao((anterior) => limitarPosicaoFoto(anterior, {
+      larguraOriginal: imagem?.naturalWidth,
+      alturaOriginal: imagem?.naturalHeight,
+      tamanhoArea: area?.clientWidth,
+      zoom: novoZoom,
+    }));
   }
 
 
@@ -771,6 +761,9 @@ function FormularioPet() {
     setEditorAberto(false);
 
     setArrastando(false);
+    setImagemEditorCarregada(false);
+    setErroImagemEditor("");
+    setProcessandoRecorte(false);
 
     setNomeArquivoOriginal("");
 
@@ -804,6 +797,7 @@ function FormularioPet() {
     if (
       !imagem ||
       !area ||
+      !imagemEditorCarregada ||
       !imagem.naturalWidth ||
       !imagem.naturalHeight
     ) {
@@ -815,6 +809,9 @@ function FormularioPet() {
     }
 
 
+    setProcessandoRecorte(true);
+    setErroImagemEditor("");
+
     try {
       const tamanhoVisual =
         area.clientWidth;
@@ -824,87 +821,13 @@ function FormularioPet() {
        * object-fit: cover faz a imagem preencher toda
        * a área quadrada antes de aplicar o zoom.
        */
-      const escalaBase =
-        Math.max(
-          tamanhoVisual /
-            imagem.naturalWidth,
-
-          tamanhoVisual /
-            imagem.naturalHeight
-        );
-
-
-      const escalaVisual =
-        escalaBase * zoom;
-
-
-      const larguraVisual =
-        imagem.naturalWidth *
-        escalaVisual;
-
-      const alturaVisual =
-        imagem.naturalHeight *
-        escalaVisual;
-
-
-      /*
-       * Posição da imagem dentro da janela quadrada.
-       */
-      const esquerdaVisual =
-        (
-          tamanhoVisual -
-          larguraVisual
-        ) /
-          2 +
-        posicao.x;
-
-      const topoVisual =
-        (
-          tamanhoVisual -
-          alturaVisual
-        ) /
-          2 +
-        posicao.y;
-
-
-      /*
-       * Converte a região visível novamente para
-       * coordenadas da fotografia original.
-       */
-      const origemX =
-        Math.max(
-          0,
-          -esquerdaVisual /
-            escalaVisual
-        );
-
-      const origemY =
-        Math.max(
-          0,
-          -topoVisual /
-            escalaVisual
-        );
-
-
-      const larguraOrigem =
-        Math.min(
-          tamanhoVisual /
-            escalaVisual,
-
-          imagem.naturalWidth -
-            origemX
-        );
-
-      const alturaOrigem =
-        Math.min(
-          tamanhoVisual /
-            escalaVisual,
-
-          imagem.naturalHeight -
-            origemY
-        );
-
-
+      const recorte = calcularRecorteFoto({
+        larguraOriginal: imagem.naturalWidth,
+        alturaOriginal: imagem.naturalHeight,
+        tamanhoArea: tamanhoVisual,
+        zoom,
+        posicao,
+      });
       const canvas =
         document.createElement(
           "canvas"
@@ -937,48 +860,16 @@ function FormularioPet() {
       );
 
 
-      const destinoX =
-        Math.max(
-          0,
-          esquerdaVisual /
-            tamanhoVisual *
-            TAMANHO_FOTO_FINAL
-        );
-
-      const destinoY =
-        Math.max(
-          0,
-          topoVisual /
-            tamanhoVisual *
-            TAMANHO_FOTO_FINAL
-        );
-
-
-      const larguraDestino =
-        larguraOrigem *
-        escalaVisual /
-        tamanhoVisual *
-        TAMANHO_FOTO_FINAL;
-
-      const alturaDestino =
-        alturaOrigem *
-        escalaVisual /
-        tamanhoVisual *
-        TAMANHO_FOTO_FINAL;
-
-
       contexto.drawImage(
         imagem,
-
-        origemX,
-        origemY,
-        larguraOrigem,
-        alturaOrigem,
-
-        destinoX,
-        destinoY,
-        larguraDestino,
-        alturaDestino
+        recorte.x,
+        recorte.y,
+        recorte.tamanho,
+        recorte.tamanho,
+        0,
+        0,
+        canvas.width,
+        canvas.height
       );
 
 
@@ -1066,9 +957,15 @@ function FormularioPet() {
         error
       );
 
+      setErroImagemEditor(
+        "N\u00e3o foi poss\u00edvel recortar a foto. Tente selecionar a imagem novamente."
+      );
+
       setErro(
         "Não foi possível recortar a foto. Tente selecionar a imagem novamente."
       );
+    } finally {
+      setProcessandoRecorte(false);
     }
   }
 
@@ -1807,9 +1704,18 @@ function FormularioPet() {
               }
             >
               <img
+                key={imagemEditor}
                 ref={imagemEditorRef}
                 src={imagemEditor}
                 alt="Imagem sendo ajustada"
+                onLoad={() => {
+                  setImagemEditorCarregada(true);
+                  setErroImagemEditor("");
+                }}
+                onError={() => {
+                  setImagemEditorCarregada(false);
+                  setErroImagemEditor("Não foi possível carregar esta imagem. Verifique se o arquivo não está corrompido e tente outro JPG, PNG ou WEBP.");
+                }}
                 draggable="false"
                 style={{
                   transform:
@@ -1819,6 +1725,16 @@ function FormularioPet() {
 
               <div className="pet-photo-editor-guide" />
             </div>
+
+            {!imagemEditorCarregada && !erroImagemEditor && (
+              <p role="status">Carregando pr\u00e9via da foto\u2026</p>
+            )}
+
+            {erroImagemEditor && (
+              <p className="pet-photo-editor-error" role="alert">
+                {erroImagemEditor}
+              </p>
+            )}
 
 
             <div className="pet-photo-editor-controls">
@@ -1881,11 +1797,12 @@ function FormularioPet() {
               <button
                 type="button"
                 className="primary-button"
+                disabled={!imagemEditorCarregada || Boolean(erroImagemEditor) || processandoRecorte}
                 onClick={
                   confirmarEdicaoFoto
                 }
               >
-                Usar esta foto
+                {processandoRecorte ? "Processando…" : "Usar esta foto"}
               </button>
             </div>
 

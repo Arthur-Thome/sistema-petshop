@@ -13,6 +13,7 @@ const {
 } = require("../utils/cpf");
 const verificacaoD2 = require("../services/verificacaoClientePublicoService");
 const { DESCONHECIDA, normalizarRaca, dataRealNaoFutura } = require("./petPublicoController");
+const { validarTelefoneBrasil } = require("../utils/telefoneBrasil");
 
 
 const DURACAO_CODIGO_MINUTOS = 10;
@@ -823,10 +824,10 @@ async function cadastrarNovoCliente(
     }
 
 
-    if (!/^\d{10,11}$/.test(telefone)) {
+    if (!validarTelefoneBrasil(telefone)) {
       return res.status(400).json({
         mensagem:
-          "Informe um telefone ou WhatsApp com DDD e 10 ou 11 dígitos.",
+          "Informe um telefone ou WhatsApp brasileiro válido com DDD e 10 ou 11 dígitos.",
       });
     }
 

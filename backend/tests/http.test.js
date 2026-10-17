@@ -33,6 +33,45 @@ test('importar app sem JWT_SECRET nao carrega dotenv, abre DB nem encerra o proc
 test('rota real exige autenticacao', async () => {
   expect((await request(app).get('/api/atendimentos/ativos')).status).toBe(401);
 });
+test('readiness valida as dependencias usadas pelo login e identifica a requisição', async () => {
+  pool.query
+    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [{ usuarios_disponiveis: true, rate_limit_disponivel: true, permissao_rate_limit: true }] })
+    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [] });
+  const pronta = await request(app).get('/health/ready');
+  expect(pronta.status).toBe(200);
+  expect(pronta.body.status).toBe('ready');
+  expect(pronta.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
+
+  const erroLog = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    pool.query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ usuarios_disponiveis: true, rate_limit_disponivel: true, permissao_rate_limit: false }] });
+    const semPermissao = await request(app).get('/health/ready');
+    expect(semPermissao.status).toBe(503);
+    expect(semPermissao.body).toEqual({ status: 'unavailable' });
+  } finally {
+    erroLog.mockRestore();
+  }
+});
+test('falha transitória de PostgreSQL em rota autenticada não invalida o token', async () => {
+  const auth = token('administrador');
+  pool.query.mockRejectedValueOnce(Object.assign(new Error('detalhe de conexão que não deve ser exposto'), { code: '57P01' }));
+  const erroLog = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const resposta = await request(app).get('/api/auth/me').auth(auth, { type: 'bearer' });
+    expect(resposta.status).toBe(503);
+    expect(resposta.body.codigo).toBe('SERVICO_INDISPONIVEL');
+    expect(resposta.body.mensagem).not.toMatch(/detalhe de conexão|57P01/);
+    expect(erroLog).toHaveBeenCalledTimes(1);
+    expect(erroLog.mock.calls[0][0]).toContain('auth_database_unavailable');
+    expect(erroLog.mock.calls[0][0]).not.toContain(auth);
+  } finally {
+    erroLog.mockRestore();
+  }
+});
 test.each(['funcionario', 'gerente'])('auditoria real continua exclusiva do administrador: %s', async perfil => {
   expect((await request(app).get('/api/auditoria').auth(token(perfil), { type: 'bearer' })).status).toBe(403);
 });

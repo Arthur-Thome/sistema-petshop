@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   movimentarEstoque,
+  listarMovimentacoesProduto,
   listarHistoricoEstoque,
 } = require(
   "../controllers/estoqueController"
@@ -38,6 +39,12 @@ router.get(
     "gerente"
   ),
   listarHistoricoEstoque
+);
+
+// A ficha de produto permite consultar o historico, inclusive de inativos.
+router.get(
+  "/produtos/:produtoId/movimentacoes",
+  listarMovimentacoesProduto
 );
 
 

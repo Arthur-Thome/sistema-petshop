@@ -102,6 +102,11 @@
   color: #374151;
 }
 
+.movimentacao-aviso--erro {
+  background: #fdeaea;
+  color: #a32a2a;
+}
+
 
 /* Mensagens de erro */
 

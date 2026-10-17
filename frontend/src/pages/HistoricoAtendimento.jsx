@@ -140,7 +140,7 @@ function HistoricoAtendimento() {
    * Um atendimento pode estar FINALIZADO e seu pagamento
    * estar PAGO, PENDENTE ou ESTORNADO.
    */
-  function formatarStatusPagamento(status) {
+  function formatarStatusPagamento(status, statusAtendimento) {
     const nomes = {
       PENDENTE: "Pendente",
       PAGO: "Pago",
@@ -148,6 +148,7 @@ function HistoricoAtendimento() {
       ESTORNADO: "Estornado",
     };
 
+    if (!status && statusAtendimento === "RECUSADO") return "Sem cobrança";
     return nomes[status] || status || "-";
   }
 
@@ -462,7 +463,8 @@ function HistoricoAtendimento() {
                       }
                     >
                       {formatarStatusPagamento(
-                        atendimento.pagamento_status
+                        atendimento.pagamento_status,
+                        atendimento.status
                       )}
                     </strong>
 

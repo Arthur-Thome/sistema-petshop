@@ -8,11 +8,14 @@ import {
 import axios from "axios";
 
 import "../styles/AgendaPublica.css";
+import { resolverBaseApi } from "../utils/resolverBaseApi";
 
 
 const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "/api";
+  resolverBaseApi(
+    import.meta.env.VITE_API_URL,
+    typeof window !== "undefined" ? window.location.origin : "http://localhost:5173",
+  );
 
 
 const NOMES_MESES = [

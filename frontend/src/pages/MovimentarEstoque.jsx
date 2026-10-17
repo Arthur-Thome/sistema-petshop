@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api";
+import { preverSaidaEstoque } from "../utils/previsaoEstoque";
 
 import "../styles/MovimentarEstoque.css";
 
@@ -51,6 +52,10 @@ function MovimentarEstoque() {
 
   const [erro, setErro] =
     useState("");
+
+  const previaSaida = produto
+    ? preverSaidaEstoque(produto.quantidade_atual, quantidade)
+    : null;
 
 
   /*
@@ -321,24 +326,26 @@ function MovimentarEstoque() {
 
         {tipo === "SAIDA" && (
 
-          <div className="movimentacao-aviso">
-
-            Após esta saída, o estoque ficará
-            com{" "}
-
-            <strong>
-              {Math.max(
-                0,
-                Number(
-                  produto.quantidade_atual
-                ) -
-                Number(quantidade || 0)
-              )}
-            </strong>
-
-            {" "}
-            {produto.unidade}.
-
+          <div
+            className={`movimentacao-aviso${
+              previaSaida?.status === "estoque-insuficiente"
+                ? " movimentacao-aviso--erro"
+                : ""
+            }`}
+            role={previaSaida?.status === "estoque-insuficiente" ? "alert" : "status"}
+            aria-live="polite"
+          >
+            {previaSaida?.status === "estoque-insuficiente" ? (
+              `Saída inválida: foram solicitadas ${previaSaida.quantidadeSolicitada} ${produto.unidade}, mas há somente ${previaSaida.saldoDisponivel} disponíveis. Reduza a quantidade.`
+            ) : previaSaida?.status === "quantidade-invalida" ? (
+              "Informe uma quantidade inteira maior que zero para calcular o saldo."
+            ) : (
+              <>
+                Após esta saída, o estoque ficará com{" "}
+                <strong>{previaSaida.saldoPrevisto}</strong>{" "}
+                {produto.unidade}.
+              </>
+            )}
           </div>
 
         )}

@@ -32,6 +32,8 @@
 .solicitacao-modal > header h2 { margin: 3px 0 0; }
 .solicitacao-modal > header button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f3eef4; color: #443b46; font-size: 24px; cursor: pointer; }
 .solicitacao-modal-dados { display: grid; gap: 10px; }
+.solicitacao-pet-foto { display: block; width: 132px; height: 132px; margin: 0 0 16px; border: 1px solid #eee8ef; border-radius: 16px; object-fit: cover; background: #faf7fa; }
+.solicitacao-pet-foto-vazia { display: grid; place-items: center; width: 132px; min-height: 86px; margin: 0 0 16px; padding: 12px; border: 1px dashed #d8ceda; border-radius: 16px; background: #faf7fa; color: #736b74; font-size: 13px; text-align: center; }
 .solicitacao-modal-dados p { margin: 0; color: #514953; line-height: 1.5; overflow-wrap: anywhere; }
 .solicitacao-modal-dados b { color: #2f2932; }
 .solicitacao-eventos { margin-top: 22px; padding-top: 16px; border-top: 1px solid #eee8ef; }

@@ -48,7 +48,10 @@ test("relatório de estoque inclui lista de reposição separada das movimentaç
     if (sql.includes("FROM usuarios")) return { rows: [{ id: 7, nome: "Operador", perfil: "funcionario", ativo: true, versao_sessao: 1 }] };
     if (sql.includes("AS movimentacoes")) return { rows: [{ movimentacoes: 0, unidades_entrada: 0, unidades_saida: 0 }] };
     if (sql.includes("GROUP BY tipo")) return { rows: [] };
-    if (sql.includes("FROM produtos")) return { rows: [{ produto_id: 9, produto_nome: "Shampoo", quantidade_atual: 1, quantidade_minima: 2 }] };
+    if (sql.includes("FROM produtos")) return { rows: [
+      { produto_id: 9, produto_nome: "Shampoo", quantidade_atual: 1, quantidade_minima: 2 },
+      { produto_id: 10, produto_nome: "Luvas", quantidade_atual: 2, quantidade_minima: 2 },
+    ] };
     if (sql.includes("FROM movimentacoes_estoque m")) return { rows: [] };
     throw new Error("Consulta inesperada no relatório de estoque");
   });
@@ -60,7 +63,10 @@ test("relatório de estoque inclui lista de reposição separada das movimentaç
   expect(resposta.body.dados).toEqual([]);
   expect(resposta.body.estoque_baixo).toEqual([
     expect.objectContaining({ produto_id: 9, quantidade_atual: 1, quantidade_minima: 2 }),
+    expect.objectContaining({ produto_id: 10, quantidade_atual: 2, quantidade_minima: 2 }),
   ]);
+  const consultaBaixo = pool.query.mock.calls.find(([sql]) => String(sql).includes("FROM produtos"));
+  expect(consultaBaixo[0]).toMatch(/WHERE ativo = TRUE AND quantidade_atual <= quantidade_minima/);
 });
 
 test("relatório de creche separa entradas e saídas e mantém permanências abertas no indicador", async () => {

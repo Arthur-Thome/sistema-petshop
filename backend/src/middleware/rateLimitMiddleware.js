@@ -6,6 +6,12 @@ function criarRateLimitCompartilhado({ nome, windowMs, limit, mensagem }) {
   return async function rateLimitPostgres(req, res, next) {
     const segredo = process.env.RATE_LIMIT_HMAC_SECRET || process.env.JWT_SECRET;
     if (typeof segredo !== "string" || segredo.length < 32) {
+      console.error(JSON.stringify({
+        evento: "auth_rate_limit_unavailable",
+        requestId: req.requestId || null,
+        codigo: "CONFIG_MISSING",
+        horario: new Date().toISOString(),
+      }));
       return res.status(503).json({ mensagem: "Proteção temporariamente indisponível. Tente novamente mais tarde." });
     }
     const identidade = String(req.ip || req.socket?.remoteAddress || "ip-indisponivel");
@@ -37,6 +43,12 @@ function criarRateLimitCompartilhado({ nome, windowMs, limit, mensagem }) {
       `, [chave, windowMs]);
       const contagem = Number(result.rows[0]?.request_count);
       if (!Number.isSafeInteger(contagem) || contagem < 1) {
+        console.error(JSON.stringify({
+          evento: "auth_rate_limit_unavailable",
+          requestId: req.requestId || null,
+          codigo: "DB_RESULT_INVALID",
+          horario: new Date().toISOString(),
+        }));
         return res.status(503).json({ mensagem: "Proteção temporariamente indisponível. Tente novamente mais tarde." });
       }
       const expira = new Date(result.rows[0].expires_at);
@@ -51,8 +63,17 @@ function criarRateLimitCompartilhado({ nome, windowMs, limit, mensagem }) {
         return res.status(429).json({ mensagem });
       }
       return next();
-    } catch (_) {
+    } catch (erro) {
       // Fail closed: indisponibilidade do banco não desativa a barreira de login.
+      const codigo = typeof erro?.code === "string" && /^[A-Z0-9]{2,10}$/.test(erro.code)
+        ? erro.code
+        : "DB_ERROR";
+      console.error(JSON.stringify({
+        evento: "auth_rate_limit_unavailable",
+        requestId: req.requestId || null,
+        codigo,
+        horario: new Date().toISOString(),
+      }));
       return res.status(503).json({ mensagem: "Proteção temporariamente indisponível. Tente novamente mais tarde." });
     }
   };

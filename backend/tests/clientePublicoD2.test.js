@@ -33,6 +33,30 @@ beforeEach(() => {
   email.enviarCodigoVerificacao.mockResolvedValue({ messageId: 'fake' });
 });
 
+test('pepper ausente falha fechado sem enviar e-mail e reverte a transacao', async () => {
+  const pepperAnterior = process.env.CLIENTE_PUBLICO_PEPPER;
+  const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const client = clientFor();
+  delete process.env.CLIENTE_PUBLICO_PEPPER;
+  try {
+    const response = await request(app).post('/api/agendamento-publico/identificacao/solicitar')
+      .send({ cpf: '529.982.247-25' });
+    expect(response.status).toBe(503);
+    expect(response.body.codigo).toBe('SERVICO_INDISPONIVEL');
+    expect(response.body.mensagem).toBe('A identificacao por e-mail esta temporariamente indisponivel.');
+    expect(response.body.requestId).toBe(response.headers['x-request-id']);
+    expect(email.enviarCodigoVerificacao).not.toHaveBeenCalled();
+    expect(client.query).toHaveBeenCalledWith("ROLLBACK");
+    expect(client.query.mock.calls.some(([sql]) => /INSERT INTO verificacoes_cliente_publico/i.test(String(sql)))).toBe(false);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('CLIENTE_PUBLICO_PEPPER'));
+    expect(JSON.stringify(response.body)).not.toMatch(/pepper|codigo_desenvolvimento|\b\d{6}\b/i);
+  } finally {
+    if (pepperAnterior === undefined) delete process.env.CLIENTE_PUBLICO_PEPPER;
+    else process.env.CLIENTE_PUBLICO_PEPPER = pepperAnterior;
+    log.mockRestore();
+  }
+});
+
 test('solicitacao existente envia somente por email e nao revela codigo ou CPF', async () => {
   const client = clientFor();
   const response = await request(app).post('/api/agendamento-publico/identificacao/solicitar').send({ cpf: '529.982.247-25' });
@@ -49,13 +73,33 @@ test('solicitacao existente envia somente por email e nao revela codigo ou CPF',
 
 test('falha SMTP retorna erro e nao confirma a solicitacao', async () => {
   const client = clientFor();
-  email.enviarCodigoVerificacao.mockRejectedValue(new Error('smtp secret must not be logged'));
-  const response = await request(app).post('/api/agendamento-publico/identificacao/solicitar').send({ cpf: '529.982.247-25' });
-  expect(response.status).toBe(503);
-  expect(response.body).not.toHaveProperty('desafio');
-  expect(JSON.stringify(response.body)).not.toMatch(/smtp secret|\b\d{6}\b|[a-f0-9]{64}/i);
-  expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('SET confirmado_em'), expect.any(Array));
-  expect(client.release).toHaveBeenCalled();
+  email.enviarCodigoVerificacao.mockRejectedValue(Object.assign(new Error('smtp secret must not be logged'), { code: 'EAUTH' }));
+  const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const response = await request(app).post('/api/agendamento-publico/identificacao/solicitar').send({ cpf: '529.982.247-25' });
+    expect(response.status).toBe(503);
+    expect(response.body.codigo).toBe('ENVIO_INDISPONIVEL');
+    expect(response.body).not.toHaveProperty('desafio');
+    expect(response.body.requestId).toBe(response.headers['x-request-id']);
+    expect(JSON.stringify(response.body)).not.toMatch(/smtp secret|\b\d{6}\b|[a-f0-9]{64}/i);
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('SET confirmado_em'), expect.any(Array));
+    expect(client.release).toHaveBeenCalled();
+
+    const deliveryLog = log.mock.calls.map(([entry]) => JSON.parse(entry))
+      .find((entry) => entry.evento === 'public_email_delivery_failed');
+    expect(deliveryLog).toEqual({
+      evento: 'public_email_delivery_failed',
+      requestId: response.body.requestId,
+      codigo: 'EAUTH',
+    });
+    const deliveryLogText = JSON.stringify(deliveryLog);
+    expect(deliveryLogText).not.toContain('tutor@example.invalid');
+    expect(deliveryLogText).not.toContain('52998224725');
+    expect(deliveryLogText).not.toContain(email.enviarCodigoVerificacao.mock.calls[0][0].codigo);
+    expect(deliveryLogText).not.toContain('smtp secret must not be logged');
+  } finally {
+    log.mockRestore();
+  }
 });
 
 test.each(['inactive', 'no-email', 'shared'])('%s tutor receives no email and no session path', async (mode) => {
@@ -151,7 +195,7 @@ test('requisicao direta de cadastro sem prova de e-mail e bloqueada pelo backend
   }) };
   pool.connect.mockResolvedValue(client);
   const response = await request(app).post('/api/agendamento-publico/cadastro/concluir').send({
-    tutor: { nome: 'Nome', cpf: '529.982.247-25', telefone: '11999999999', email: 'novo@example.invalid', cep: '01000-000', endereco: 'Rua A', numero: '1', bairro: 'Centro', cidade: 'Sao Paulo', estado: 'SP' },
+    tutor: { nome: 'Nome', cpf: '529.982.247-25', telefone: '11987654321', email: 'novo@example.invalid', cep: '01000-000', endereco: 'Rua A', numero: '1', bairro: 'Centro', cidade: 'Sao Paulo', estado: 'SP' },
     pet: { nome: 'Pet', especie: 'cao', raca: 'SRD', porte: 'medio' },
   });
   expect(response.status).toBe(403);

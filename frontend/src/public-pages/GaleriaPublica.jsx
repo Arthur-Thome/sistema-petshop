@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { resolverBaseApi } from "../utils/resolverBaseApi";
 import "../public-styles/GaleriaPublica.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = resolverBaseApi(
+  import.meta.env.VITE_API_URL,
+  typeof window !== "undefined" ? window.location.origin : "http://localhost:5173",
+);
 const FORMATOS_GRID = ["galeria-item-grande", "", "galeria-item-alto", "", "galeria-item-largo", ""];
 
 function GaleriaPublica() {

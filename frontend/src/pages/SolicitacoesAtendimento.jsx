@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import { extrairSolicitacoes, resolverEstadoLista } from "../utils/estadoLista";
+import { useFotoPetEstado } from "../utils/useFotoPet";
+import FotoPetExibicao from "../components/FotoPetExibicao";
 import "../styles/SolicitacoesAtendimento.css";
 
 const PERFIS = { administrador: "Administrador", gerente: "Gerente", funcionario: "Funcionário" };
@@ -11,6 +14,11 @@ function dataHora(valor) {
 
 function racaDesconhecida(raca) {
   return String(raca || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === "nao sei informar";
+}
+
+function FotoPetSolicitacao({ foto, nome }) {
+  const estado = useFotoPetEstado(foto);
+  return <FotoPetExibicao nome={nome} src={estado.src} temFoto={Boolean(foto)} carregando={estado.loading} />;
 }
 
 function SolicitacoesAtendimento() {
@@ -32,7 +40,7 @@ function SolicitacoesAtendimento() {
       setCarregando(true);
       setErro("");
       const resposta = await api.get("/atendimentos/solicitacoes");
-      setSolicitacoes(resposta.data.solicitacoes || []);
+      setSolicitacoes(extrairSolicitacoes(resposta.data));
     } catch (error) {
       setErro(error.response?.data?.mensagem || "Não foi possível carregar as solicitações.");
     } finally {
@@ -84,6 +92,12 @@ function SolicitacoesAtendimento() {
     });
   }, [solicitacoes, busca, filtroData, agora]);
 
+  const estadoLista = resolverEstadoLista({
+    carregando,
+    erro,
+    quantidade: filtradas.length,
+  });
+
   async function confirmar() {
     if (!selecionada) return;
     try {
@@ -133,11 +147,11 @@ function SolicitacoesAtendimento() {
         <label>Data do horário<select value={filtroData} onChange={(e) => setFiltroData(e.target.value)}>
           <option value="todas">Todas</option><option value="hoje">Hoje</option><option value="futuras">Futuras</option><option value="passadas">Já passaram</option>
         </select></label>
-        <strong>{filtradas.length} pendente{filtradas.length === 1 ? "" : "s"}</strong>
+        <strong>{estadoLista === "erro" ? "Indisponível" : estadoLista === "carregando" ? "Carregando…" : `${filtradas.length} pendente${filtradas.length === 1 ? "" : "s"}`}</strong>
       </div>
 
-      {erro && <div className="solicitacoes-mensagem erro">{erro}</div>}
-      {carregando ? <div className="solicitacoes-mensagem">Carregando solicitações…</div> : filtradas.length === 0 ?
+      {estadoLista === "carregando" ? <div className="solicitacoes-mensagem">Carregando solicitações…</div> : estadoLista === "erro" ?
+        <div className="solicitacoes-mensagem erro" role="alert">{erro}</div> : estadoLista === "vazio" ?
         <div className="solicitacoes-vazio"><h2>Nenhuma solicitação pendente</h2><p>Novos pedidos aparecerão nesta fila quando a página for atualizada.</p></div> :
         <div className="solicitacoes-lista">{filtradas.map((item) => <article className="solicitacao-card" key={item.id}>
           <div className="solicitacao-card-principal"><div><span className="solicitacao-data">Recebida em {dataHora(item.criado_em)}</span>
@@ -157,6 +171,7 @@ function SolicitacoesAtendimento() {
           <header><div><span className="solicitacoes-eyebrow">SOLICITAÇÃO #{selecionada.id}</span><h2 id="solicitacao-modal-titulo">{selecionada.pet_nome}</h2></div>
             <button type="button" aria-label="Fechar" onClick={() => setSelecionada(null)}>×</button></header>
           {aviso && <div className="solicitacoes-mensagem">{aviso}</div>}
+          <FotoPetSolicitacao foto={selecionada.pet_foto} nome={selecionada.pet_nome} />
           <div className="solicitacao-modal-dados">
             <div className="solicitacao-raca"><span>Raça do pet</span><strong>{racaDesconhecida(selecionada.pet_raca) ? `Raça não identificada — Porte: ${selecionada.pet_porte || "não informado"}` : selecionada.pet_raca || "Não cadastrada"}</strong>
               {racaDesconhecida(selecionada.pet_raca) && <small>Conferência da raça pendente pela equipe.</small>}</div>

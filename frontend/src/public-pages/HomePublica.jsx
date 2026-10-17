@@ -7,10 +7,14 @@ import {
   Link,
 } from "react-router-dom";
 import axios from "axios";
+import { resolverBaseApi } from "../utils/resolverBaseApi";
 
 import "../public-styles/HomePublica.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = resolverBaseApi(
+  import.meta.env.VITE_API_URL,
+  typeof window !== "undefined" ? window.location.origin : "http://localhost:5173",
+);
 
 function linkWhatsapp(numero) {
   const digitos = String(numero || "").replace(/\D/g, "");

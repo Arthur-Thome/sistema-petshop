@@ -10,13 +10,13 @@ import {
 
 import axios from "axios";
 import { useFotoPet } from "../utils/useFotoPet";
+import { resolverBaseApi } from "../utils/resolverBaseApi";
 
 import "../public-styles/AgendamentoPublico.css";
 
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "/api";
+const origemPagina = typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+const API_URL = resolverBaseApi(import.meta.env.VITE_API_URL, origemPagina);
 
 function ehRacaDesconhecida(valor) {
   return String(valor || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR") === "nao sei informar";
@@ -984,6 +984,17 @@ function AgendamentoPublico() {
       setEtapa("CODIGO");
 
     } catch (erro) {
+      const requestId = erro.response?.headers?.["x-request-id"];
+      console.warn(JSON.stringify({
+        evento: "public_identification_request_failed",
+        metodo: "POST",
+        rota: "/api/agendamento-publico/identificacao/solicitar",
+        status: Number.isInteger(erro.response?.status) ? erro.response.status : null,
+        codigo: typeof erro.code === "string" && /^[A-Z0-9_]{2,32}$/.test(erro.code)
+          ? erro.code
+          : erro.response ? "HTTP_ERROR" : "NETWORK_ERROR",
+        requestId: typeof requestId === "string" && /^[a-f0-9-]{36}$/i.test(requestId) ? requestId : null,
+      }));
       setErroFluxo(
         erro.response?.data
           ?.mensagem ||
@@ -2113,7 +2124,7 @@ function AgendamentoPublico() {
 
         {etapa ===
           "IDENTIFICACAO" && (
-          <section className="agendamento-painel-formulario">
+          <section className="agendamento-painel-formulario agendamento-painel-identificacao">
 
             <div className="agendamento-painel-topo">
 
@@ -2130,9 +2141,11 @@ function AgendamentoPublico() {
                   Informe o CPF utilizado no
                   cadastro da Amores Pet.
                 </p>
-              </div>
 
-              <p>O codigo e enviado exclusivamente por e-mail. Se nao tiver acesso ao endereco cadastrado, procure a equipe Amores Pet para atendimento assistido.</p>
+                <p className="agendamento-identificacao-instrucao">
+                  O codigo e enviado exclusivamente por e-mail. Se nao tiver acesso ao endereco cadastrado, procure a equipe Amores Pet para atendimento assistido.
+                </p>
+              </div>
 
               <button
                 type="button"

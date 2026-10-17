@@ -11,6 +11,15 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api";
+import {
+  formatarTelefone,
+  consultarCep,
+  consultaCepEstaAtual,
+  iniciarConsultaCep,
+  invalidarConsultaCep,
+  mesclarEnderecoCep,
+  validarTelefoneBrasileiro,
+} from "../utils/tutorFormValidation";
 
 import "../styles/FormularioTutor.css";
 
@@ -41,6 +50,11 @@ function FormularioTutor() {
 
   const numeroRef =
     useRef(null);
+
+  const cepConsultaIdRef = useRef(0);
+  const cepAbortControllerRef = useRef(null);
+  const cepAutoPreenchidoRef = useRef({});
+
 
 
   const [
@@ -88,6 +102,18 @@ function FormularioTutor() {
     erroCep,
     setErroCep,
   ] = useState("");
+
+  const [telefoneVisitado, setTelefoneVisitado] = useState(false);
+  const [telefoneOriginal, setTelefoneOriginal] = useState("");
+  const telefoneSemAlteracao = modoEdicao && form.telefone.replace(/\D/g, "") === telefoneOriginal.replace(/\D/g, "");
+
+  useEffect(() => () => {
+    cepAbortControllerRef.current?.abort();
+    invalidarConsultaCep(cepConsultaIdRef);
+  }, []);
+  const erroTelefone = telefoneVisitado && form.telefone && !telefoneSemAlteracao
+    ? validarTelefoneBrasileiro(form.telefone)
+    : "";
 
 
   /*
@@ -200,6 +226,8 @@ function FormularioTutor() {
 
         const tutor =
           resposta.data;
+
+        setTelefoneOriginal(tutor.telefone || "");
 
 
         setForm({
@@ -522,8 +550,13 @@ function FormularioTutor() {
 
 
     if (name === "cep") {
+      cepAbortControllerRef.current?.abort();
+      cepAbortControllerRef.current = null;
+      invalidarConsultaCep(cepConsultaIdRef);
+      setBuscandoCep(false);
       novoValor =
         formatarCEP(value);
+      setErroCep("");
     }
 
 
@@ -556,85 +589,62 @@ function FormularioTutor() {
    * =====================================================
    */
   async function buscarCEP() {
-    const cepNumeros =
-      form.cep.replace(
-        /\D/g,
-        ""
-      );
-
-
-    if (
-      cepNumeros.length !== 8
-    ) {
-      return;
-    }
-
-
+    cepAbortControllerRef.current?.abort();
+    const consultaId = iniciarConsultaCep(cepConsultaIdRef);
+    const abortController = new AbortController();
+    cepAbortControllerRef.current = abortController;
+    setErroCep("");
+    setBuscandoCep(true);
     try {
-      setBuscandoCep(true);
+      const resultadoCep = await consultarCep(form.cep, { signal: abortController.signal });
 
-      setErroCep("");
+      if (!consultaCepEstaAtual(cepConsultaIdRef, consultaId)) return;
 
+      const mensagens = {
+        incomplete: "Informe um CEP com oito dígitos para consultar.",
+        "not-found": "CEP não encontrado. Confira os números ou preencha o endereço manualmente.",
+        "invalid-response": "O serviço de CEP respondeu em formato inesperado. Você pode preencher o endereço manualmente.",
+        "service-unavailable": "O serviço de CEP está temporariamente indisponível. Você pode preencher o endereço manualmente.",
+        network: "Não foi possível conectar ao serviço de CEP. Verifique sua conexão ou preencha o endereço manualmente.",
+        timeout: "A consulta do CEP demorou demais. Você pode preencher o endereço manualmente.",
+      };
 
-      const resposta =
-        await fetch(
-          `https://viacep.com.br/ws/${cepNumeros}/json/`
-        );
-
-
-      if (!resposta.ok) {
-        throw new Error(
-          "Erro ao consultar CEP."
-        );
-      }
-
-
-      const dados =
-        await resposta.json();
-
-
-      if (dados.erro) {
-        setErroCep(
-          "CEP não encontrado."
-        );
-
+      if (resultadoCep.status === "empty") return;
+      if (resultadoCep.status !== "found") {
+        setErroCep(mensagens[resultadoCep.status] || mensagens["invalid-response"]);
         return;
       }
 
 
-      setForm(
-        (anterior) => ({
-          ...anterior,
-
-          endereco:
-            dados.logradouro ||
-            "",
-
-          bairro:
-            dados.bairro ||
-            "",
-
-          cidade:
-            dados.localidade ||
-            "",
-
-          estado:
-            dados.uf ||
-            "",
-        })
-      );
+      setForm((anterior) => {
+        const mesclado = mesclarEnderecoCep(
+          anterior,
+          resultadoCep.address,
+          cepAutoPreenchidoRef.current,
+        );
+        cepAutoPreenchidoRef.current = mesclado.valoresAutoPreenchidos;
+        return mesclado.form;
+      });
 
 
       setTimeout(() => {
-        numeroRef.current?.focus();
+        if (consultaCepEstaAtual(cepConsultaIdRef, consultaId)) {
+          numeroRef.current?.focus();
+        }
       }, 0);
 
     } catch {
+      if (!consultaCepEstaAtual(cepConsultaIdRef, consultaId)) return;
       setErroCep(
-        "Não foi possível consultar o CEP. Preencha o endereço manualmente."
+        "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente."
       );
     } finally {
-      setBuscandoCep(false);
+      if (consultaCepEstaAtual(cepConsultaIdRef, consultaId)) {
+        setBuscandoCep(false);
+        if (cepAbortControllerRef.current === abortController) {
+          cepAbortControllerRef.current = null;
+        }
+      }
     }
   }
 
@@ -706,6 +716,14 @@ function FormularioTutor() {
         "Informe o telefone do tutor."
       );
 
+      return;
+    }
+
+    const telefoneAtualSemAlteracao = modoEdicao && form.telefone.replace(/\D/g, "") === telefoneOriginal.replace(/\D/g, "");
+    const erroTelefoneAtual = telefoneAtualSemAlteracao ? "" : validarTelefoneBrasileiro(form.telefone);
+    if (erroTelefoneAtual) {
+      setTelefoneVisitado(true);
+      setErro(erroTelefoneAtual);
       return;
     }
 
@@ -1011,6 +1029,10 @@ function FormularioTutor() {
               placeholder="(00) 00000-0000"
               maxLength={15}
               required
+              onBlur={() => setTelefoneVisitado(true)}
+              ariaInvalid={Boolean(erroTelefone)}
+              describedBy="telefone-ajuda"
+              helperText={erroTelefone || "Informe DDD e telefone fixo ou celular válidos."}
             />
 
 
@@ -1039,7 +1061,7 @@ function FormularioTutor() {
             </h2>
 
             <p>
-              Endereço residencial do tutor.
+              Endereço residencial do tutor. A consulta do CEP é automática quando disponível; você também pode preencher manualmente. Cidade e estado são opcionais.
             </p>
           </div>
 
@@ -1063,14 +1085,14 @@ function FormularioTutor() {
 
             <div className="cep-status">
               {buscandoCep && (
-                <span className="cep-message">
+                <span className="cep-message" role="status" aria-live="polite">
                   Buscando endereço...
                 </span>
               )}
 
 
               {erroCep && (
-                <span className="cep-error">
+                <span className="cep-error" role="status" aria-live="polite">
                   {erroCep}
                 </span>
               )}
@@ -1131,6 +1153,7 @@ function FormularioTutor() {
               onChange={
                 atualizarCampo
               }
+              helperText="Opcional"
             />
 
 
@@ -1143,6 +1166,7 @@ function FormularioTutor() {
               }
               placeholder="RS"
               maxLength={2}
+              helperText="UF com duas letras (opcional)"
             />
 
           </div>
@@ -1332,6 +1356,9 @@ function Campo({
   required = false,
   full = false,
   maxLength,
+  ariaInvalid = false,
+  describedBy,
+  helperText,
 }) {
   return (
     <div
@@ -1362,7 +1389,19 @@ function Campo({
         placeholder={placeholder}
         required={required}
         maxLength={maxLength}
+        aria-invalid={ariaInvalid}
+        aria-describedby={describedBy}
       />
+
+      {helperText && (
+        <small
+          id={describedBy}
+          className={`form-field-hint ${ariaInvalid ? "is-error" : ""}`}
+          aria-live={ariaInvalid ? "polite" : undefined}
+        >
+          {helperText}
+        </small>
+      )}
 
     </div>
   );
@@ -1389,40 +1428,6 @@ function formatarCPF(valor) {
     )
     .replace(
       /(\d{3})(\d{1,2})$/,
-      "$1-$2"
-    );
-}
-
-
-function formatarTelefone(valor) {
-  const numeros =
-    valor
-      .replace(/\D/g, "")
-      .slice(0, 11);
-
-
-  if (
-    numeros.length <= 10
-  ) {
-    return numeros
-      .replace(
-        /(\d{2})(\d)/,
-        "($1) $2"
-      )
-      .replace(
-        /(\d{4})(\d)/,
-        "$1-$2"
-      );
-  }
-
-
-  return numeros
-    .replace(
-      /(\d{2})(\d)/,
-      "($1) $2"
-    )
-    .replace(
-      /(\d{5})(\d)/,
       "$1-$2"
     );
 }

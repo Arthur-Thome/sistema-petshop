@@ -4,8 +4,9 @@ const nodemailer = require("nodemailer");
 /*
  * Centraliza o envio de e-mails do sistema.
  *
- * As credenciais ficam exclusivamente no .env e nunca
- * devem ser colocadas diretamente no código-fonte.
+ * O transporte recebe configuracao somente pelo ambiente do processo.
+ * O launcher de homologacao substitui EMAIL_* pelo SMTP local.
+ * Credenciais nunca devem ser colocadas no codigo-fonte ou registradas.
  */
 let transporter;
 function obterTransporter() {

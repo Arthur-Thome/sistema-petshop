@@ -1,6 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const path = require("node:path");
+const fs = require("node:fs");
+const { randomUUID } = require("node:crypto");
 
 const authRoutes = require("./src/routes/authRoutes");
 const usuarioRoutes = require("./src/routes/usuarioRoutes");
@@ -23,6 +26,13 @@ const comunicacaoRoutes = require("./src/routes/comunicacaoRoutes");
 
 const app = express();
 
+// Identificador correlacionável para diagnóstico sem registrar corpo, cookies ou tokens.
+app.use((req, res, next) => {
+  req.requestId = randomUUID();
+  res.setHeader("X-Request-Id", req.requestId);
+  next();
+});
+
 /*
  * Adiciona cabeçalhos HTTP de segurança.
  *
@@ -36,6 +46,12 @@ const app = express();
  */
 app.use(
   helmet({
+    contentSecurityPolicy: {
+      directives: {
+        connectSrc: ["'self'", "https://viacep.com.br"],
+        imgSrc: ["'self'", "data:", "blob:"],
+      },
+    },
     crossOriginResourcePolicy: {
       policy: "cross-origin",
     },
@@ -126,9 +142,37 @@ app.get("/uploads/pets/:filename", require("./src/controllers/fotoPetController"
 app.get("/health/live", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/health/ready", async (_req, res) => {
   try {
-    await require("./src/database/connection").query("SELECT 1");
+    const pool = require("./src/database/connection");
+    await pool.query("SELECT 1");
+    const { rows: [estado] } = await pool.query(`
+      SELECT
+        to_regclass('public.usuarios') IS NOT NULL AS usuarios_disponiveis,
+        to_regclass('public.rate_limit_buckets') IS NOT NULL AS rate_limit_disponivel,
+        CASE
+          WHEN to_regclass('public.rate_limit_buckets') IS NULL THEN FALSE
+          ELSE has_table_privilege(
+            current_user,
+            'public.rate_limit_buckets',
+            'SELECT,INSERT,UPDATE,DELETE'
+          )
+        END AS permissao_rate_limit
+    `);
+    await pool.query(`SELECT id, nome, email, perfil, ativo, versao_sessao FROM public.usuarios LIMIT 0`);
+    await pool.query(`SELECT limiter_key, window_start, expires_at, request_count FROM public.rate_limit_buckets LIMIT 0`);
+    if (!estado?.usuarios_disponiveis || !estado?.rate_limit_disponivel || !estado?.permissao_rate_limit) {
+      return res.status(503).json({ status: "unavailable" });
+    }
     return res.status(200).json({ status: "ready" });
-  } catch (_) {
+  } catch (erro) {
+    const codigo = typeof erro?.code === "string" && /^[A-Z0-9]{2,10}$/.test(erro.code)
+      ? erro.code
+      : "DB_OR_SCHEMA_ERROR";
+    console.error(JSON.stringify({
+      evento: "readiness_unavailable",
+      requestId: _req.requestId || null,
+      codigo,
+      horario: new Date().toISOString(),
+    }));
     return res.status(503).json({ status: "unavailable" });
   }
 });
@@ -166,10 +210,32 @@ app.use("/api/relatorios", relatorioRoutes);
 app.use("/api/notificacoes", notificacaoRoutes);
 app.use("/api/comunicacao", comunicacaoRoutes);
 
+// O launcher local serve o build Vite na mesma origem da API. Opt-in, sem
+// ativacao na Vercel ou nos testes por padrao.
+const servirFrontendLocal = process.env.AMORES_PET_HOMOLOGACAO === "1"
+  && process.env.SERVIR_FRONTEND_LOCAL === "1";
+const frontendDist = path.resolve(__dirname, "../frontend/dist");
+if (servirFrontendLocal) {
+  const indexFrontend = path.join(frontendDist, "index.html");
+  if (!fs.existsSync(indexFrontend)) {
+    throw new Error("Build do frontend ausente. Execute a preparacao da homologacao.");
+  }
+
+  app.use(express.static(frontendDist, { index: false, fallthrough: true }));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api/") || req.path.startsWith("/uploads/")
+      || path.extname(req.path) || !req.accepts("html")) {
+      return next();
+    }
+    return res.sendFile(indexFrontend);
+  });
+}
+
 
 
 // Rota simples utilizada para verificar se a API está funcionando.
 app.get("/", (req, res) => {
+  if (servirFrontendLocal) return res.sendFile(path.join(frontendDist, "index.html"));
   res.json({
     mensagem: "API do sistema pet shop funcionando",
   });

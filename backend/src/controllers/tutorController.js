@@ -4,6 +4,11 @@ const {
   validarCPF,
   formatarCPF,
 } = require("../utils/cpf");
+const {
+  UFS_BRASIL,
+  validarTelefoneBrasil,
+  validarEmailOpcional,
+} = require("../utils/telefoneBrasil");
 
 /*
  * Normaliza os campos textuais de um tutor antes
@@ -54,13 +59,25 @@ function normalizarDadosTutor(dados) {
  * Mantém as mesmas regras de tamanho no cadastro
  * e na edição de tutores.
  */
-function validarDadosTutor(dados) {
+function validarDadosTutor(dados, {
+  telefoneLegadoPreservado = false,
+  emailLegadoPreservado = false,
+  ufLegadaPreservada = false,
+} = {}) {
   if (
     !dados.nome ||
     !dados.telefone ||
     !dados.endereco
   ) {
     return "Nome, telefone e endereço são obrigatórios.";
+  }
+
+  if (!telefoneLegadoPreservado && !validarTelefoneBrasil(dados.telefone)) {
+    return "Informe um telefone brasileiro válido com DDD e 10 ou 11 dígitos.";
+  }
+
+  if (!emailLegadoPreservado && !validarEmailOpcional(dados.email)) {
+    return "Informe um e-mail válido.";
   }
 
   const limites = [
@@ -98,11 +115,8 @@ function validarDadosTutor(dados) {
    * Neste momento validamos o formato; não estamos
    * alterando a lógica do formulário/ViaCEP.
    */
-  if (
-    dados.estado &&
-    !/^[A-Z]{2}$/.test(dados.estado)
-  ) {
-    return "Estado deve ser informado com uma UF de 2 letras.";
+  if (dados.estado && !ufLegadaPreservada && !UFS_BRASIL.has(dados.estado)) {
+    return "Informe uma UF brasileira válida.";
   }
 
   return null;
@@ -367,8 +381,45 @@ async function atualizarTutor(req, res) {
         observacoes,
       } = dados;
 
+      const resultadoAnterior = await pool.query(
+        `SELECT *
+         FROM tutores
+         WHERE id = $1`,
+        [tutorId]
+      );
+
+      if (resultadoAnterior.rows.length === 0) {
+        return res.status(404).json({
+          mensagem: "Tutor não encontrado.",
+        });
+      }
+
+      const anterior = resultadoAnterior.rows[0];
+      const telefoneAnterior = typeof anterior.telefone === "string"
+        ? anterior.telefone.trim()
+        : "";
+      const telefoneLegadoPreservado = Boolean(
+        telefone && telefone === telefoneAnterior && !validarTelefoneBrasil(telefone)
+      );
+      const emailAnterior = typeof anterior.email === "string"
+        ? anterior.email.trim().toLowerCase()
+        : "";
+      const emailLegadoPreservado = Boolean(
+        email && email === emailAnterior && !validarEmailOpcional(email)
+      );
+      const ufAnterior = typeof anterior.estado === "string"
+        ? anterior.estado.trim().toUpperCase()
+        : "";
+      const ufLegadaPreservada = Boolean(
+        estado && estado === ufAnterior && !UFS_BRASIL.has(estado)
+      );
+
       const erroValidacao =
-        validarDadosTutor(dados);
+        validarDadosTutor(dados, {
+          telefoneLegadoPreservado,
+          emailLegadoPreservado,
+          ufLegadaPreservada,
+        });
 
       if (erroValidacao) {
         return res.status(400).json({
@@ -387,19 +438,6 @@ async function atualizarTutor(req, res) {
       ? formatarCPF(cpf)
       : null;
 
-    const resultadoAnterior = await pool.query(
-      `SELECT *
-       FROM tutores
-       WHERE id = $1`,
-      [tutorId]
-    );
-
-    if (resultadoAnterior.rows.length === 0) {
-      return res.status(404).json({
-        mensagem: "Tutor não encontrado.",
-      });
-    }
-
     if (cpfFormatado) {
         const cpfExistente = await pool.query(
           `SELECT id
@@ -415,8 +453,6 @@ async function atualizarTutor(req, res) {
         });
       }
     }
-
-    const anterior = resultadoAnterior.rows[0];
 
     const resultado = await pool.query(
       `UPDATE tutores
@@ -577,4 +613,6 @@ module.exports = {
   buscarTutorPorId,
   atualizarTutor,
   alterarStatusTutor,
+  normalizarDadosTutor,
+  validarDadosTutor,
 };
