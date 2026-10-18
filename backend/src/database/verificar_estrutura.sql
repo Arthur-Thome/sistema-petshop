@@ -1,14 +1,43 @@
 -- Contrato explicito da instalacao nova: bootstrap 024 + correcoes 025/026 + Etapa 21 027-035.
 -- Apenas le catalogos; nao corrige divergencias de bancos historicos.
--- Definicoes esperadas extraidas do bootstrap preservado (PostgreSQL 18).
+-- Definicoes esperadas extraidas do bootstrap preservado; o deparse de chk_pets_porte e normalizado entre majors.
 \set ON_ERROR_STOP on
 DO $$
 DECLARE
     item record;
     atual record;
     seq regclass;
+    porte_constraint text;
+    porte_constraint_normalized text;
+    porte_constraint_expected text;
 BEGIN
     PERFORM set_config('search_path', 'pg_catalog, public', true);
+
+    -- pg_get_constraintdef decompõe ARRAY/IN e casts de character varying
+    -- de forma diferente entre majors. A forma normalizada ainda exige
+    -- exatamente NULL ou um dos quatro portes suportados.
+    SELECT pg_get_constraintdef(c.oid, false)
+      INTO porte_constraint
+      FROM pg_constraint c
+     WHERE c.conrelid = 'public.pets'::regclass
+       AND c.conname = 'chk_pets_porte'
+       AND c.contype = 'c'
+       AND c.convalidated
+       AND NOT c.condeferrable;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Constraint chk_pets_porte ausente ou nao validada';
+    END IF;
+    porte_constraint_normalized := regexp_replace(lower(porte_constraint),
+        '::(character varying|varchar|text)(\[\])?', '', 'g');
+    porte_constraint_normalized := regexp_replace(porte_constraint_normalized,
+        '[^a-z0-9''=!<>]', '', 'g');
+    porte_constraint_expected := 'checkporteisnullorporte=anyarray'
+        || quote_literal('pequeno') || quote_literal('medio')
+        || quote_literal('grande') || quote_literal('gigante');
+    IF porte_constraint_normalized <> porte_constraint_expected THEN
+        RAISE EXCEPTION 'Constraint chk_pets_porte possui definicao incompativel';
+    END IF;
+
     FOR item IN SELECT * FROM (VALUES
         ('historico_atendimentos', 'id', 'bigint', true, NULL),
         ('historico_atendimentos', 'banho_tosa_id', 'integer', true, NULL),
@@ -340,7 +369,6 @@ BEGIN
         ('pets', 'CHECK (((idade_aproximada_anos IS NULL) OR ((idade_aproximada_anos >= 0) AND (idade_aproximada_anos <= 100))))'),
         ('pets', 'CHECK (((data_nascimento IS NULL) OR (idade_aproximada_anos IS NULL)))'),
         ('pets', 'CHECK (((peso IS NULL) OR (peso > (0)::numeric)))'),
-        ('pets', 'CHECK (((porte IS NULL) OR ((porte)::text = ANY ((ARRAY[''pequeno''::character varying, ''medio''::character varying, ''grande''::character varying, ''gigante''::character varying])::text[]))))'),
         ('pets', 'CHECK (((sexo IS NULL) OR ((sexo)::text = ANY (ARRAY[(''macho''::character varying)::text, (''femea''::character varying)::text]))))'),
         ('pets', 'FOREIGN KEY (tutor_id) REFERENCES tutores(id) ON DELETE RESTRICT'),
         ('pets', 'PRIMARY KEY (id)'),
@@ -633,3 +661,63 @@ BEGIN
   END LOOP;
 END $$;
 SELECT 'Contrato 035 validado: tabelas canonicas e aliases legados atualizaveis.' AS resultado;
+
+DO $$
+DECLARE item record; atual record;
+BEGIN
+    FOR item IN SELECT * FROM (VALUES
+        ('token_hash', 'character(64)', true),
+        ('requester_user_id', 'integer', true),
+        ('authorizer_user_id', 'integer', true),
+        ('operation', 'character varying(80)', true),
+        ('entity', 'character varying(100)', false),
+        ('resource_id', 'character varying(100)', false),
+        ('context_hash', 'character(64)', true),
+        ('created_at', 'timestamp with time zone', true),
+        ('expires_at', 'timestamp with time zone', true),
+        ('consumed_at', 'timestamp with time zone', false)
+    ) AS expected(column_name, type_name, required)
+    LOOP
+        SELECT format_type(a.atttypid, a.atttypmod) AS type_name, a.attnotnull AS required
+          INTO atual FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+          JOIN pg_attribute a ON a.attrelid=c.oid
+         WHERE n.nspname='public' AND c.relname='operation_authorizations'
+           AND a.attname=item.column_name AND a.attnum>0 AND NOT a.attisdropped;
+        IF NOT FOUND OR atual.type_name <> item.type_name OR atual.required <> item.required THEN
+            RAISE EXCEPTION 'Estrutura da migration 036 ausente/incompativel: operation_authorizations.%', item.column_name;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.operation_authorizations'::regclass
+         AND conname='operation_authorizations_pkey' AND contype='p' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.operation_authorizations'::regclass
+         AND conname='chk_operation_authorizations_expiry' AND contype='c' AND convalidated)
+       OR (SELECT count(*) FROM pg_constraint WHERE conrelid='public.operation_authorizations'::regclass
+         AND contype='f' AND confdeltype='r') <> 2
+       OR NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid='public.idx_operation_authorizations_expiry'::regclass AND indisvalid AND indisready) THEN
+        RAISE EXCEPTION 'Constraints ou indices essenciais da migration 036 ausentes ou incompativeis';
+    END IF;
+END $$;
+SELECT 'Contrato estrutural 036 validado: autorizacoes hash-only, vinculadas, expiraveis e nao reutilizaveis.' AS resultado;
+
+DO $$
+BEGIN
+    IF to_regclass('public.permanent_file_deletion_queue') IS NULL
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.permanent_file_deletion_queue'::regclass
+         AND conname='permanent_file_deletion_queue_pkey' AND contype='p' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='public.permanent_file_deletion_queue'::regclass
+         AND conname='chk_permanent_file_deletion_key' AND contype='c' AND convalidated)
+       OR NOT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid='public.idx_permanent_file_deletion_pending'::regclass AND indisvalid AND indisready AND indpred IS NOT NULL) THEN
+        RAISE EXCEPTION 'Estrutura da fila de exclusao segura de arquivos ausente ou incompativel';
+    END IF;
+END $$;
+SELECT 'Contrato de exclusao de arquivos validado: nomes limitados, fila persistente e retomavel.' AS resultado;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+       WHERE n.nspname='public' AND p.proname='emitir_notificacao_equipe'
+         AND position('super_administrador' IN pg_get_functiondef(p.oid)) > 0) THEN
+        RAISE EXCEPTION 'Migration 037 nao incluiu Super Administrador nos destinatarios de notificacao';
+    END IF;
+END $$;
+SELECT 'Contrato 037 validado: notificacoes operacionais incluem Super Administrador.' AS resultado;

@@ -30,7 +30,7 @@ function configurarUsuario(perfil) {
 beforeEach(() => pool.query.mockReset());
 afterAll(async () => { await fs.rm(diretorioTeste, { recursive: true, force: true }); });
 
-test.each(["administrador", "gerente"])("perfil %s acessa o painel autenticado", async (perfil) => {
+test.each(["administrador", "super_administrador"])("perfil %s acessa o painel completo", async (perfil) => {
   configurarUsuario(perfil);
   pool.query.mockImplementation(async (sql) => {
     if (sql.includes("FROM usuarios")) return { rows: [{ id: 7, nome: "Gestor teste", email: "teste@example.invalid", perfil, ativo: true, versao_sessao: 1 }] };
@@ -42,7 +42,7 @@ test.each(["administrador", "gerente"])("perfil %s acessa o painel autenticado",
   expect(resposta.body.configuracoes.id).toBe(1);
 });
 
-test.each(["administrador", "gerente"])("perfil %s atualiza conteúdo institucional com autoria", async (perfil) => {
+test.each(["administrador", "super_administrador"])("perfil %s atualiza conteúdo institucional com autoria", async (perfil) => {
   pool.query.mockImplementation(async (sql) => {
     if (sql.includes("FROM usuarios")) return { rows: [{ id: 7, nome: "Gestor teste", email: "teste@example.invalid", perfil, ativo: true, versao_sessao: 1 }] };
     return { rows: [] };
@@ -68,13 +68,30 @@ test.each(["administrador", "gerente"])("perfil %s atualiza conteúdo institucio
   expect(pool.query).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO logs"), expect.any(Array));
 });
 
-test("funcionario recebe 403 pela API e visitante nao consulta o painel", async () => {
-  configurarUsuario("funcionario");
-  const negado = await request(app).put("/api/site-conteudo/admin/configuracoes")
-    .auth(token("funcionario"), { type: "bearer" }).send({ titulo_principal: "Tentativa" });
-  expect(negado.status).toBe(403);
+test.each(["gerente", "funcionario"])("perfil %s consulta a Galeria sem acessar a administraÃ§Ã£o geral", async (perfil) => {
+  configurarUsuario(perfil);
+  pool.query.mockImplementation(async (sql) => {
+    if (sql.includes("FROM usuarios")) return { rows: [{ id: 7, nome: "Equipe teste", email: "teste@example.invalid", perfil, ativo: true, versao_sessao: 1 }] };
+    if (sql.includes("FROM site_galeria")) return { rows: [{ id: 12, titulo: "Foto teste" }] };
+    return { rows: [] };
+  });
+  const tokenAuth = token(perfil);
+  expect((await request(app).get("/api/site-conteudo/admin").auth(tokenAuth, { type: "bearer" })).status).toBe(403);
+  const resposta = await request(app).get("/api/site-conteudo/admin/galeria").auth(tokenAuth, { type: "bearer" });
+  expect(resposta.status).toBe(200);
+  expect(resposta.body.galeria).toHaveLength(1);
+});
+
+test.each(["gerente", "funcionario"])("perfil %s nao altera a Galeria sem autorizacao por operacao", async (perfil) => {
+  configurarUsuario(perfil);
+  const negado = await request(app).delete("/api/site-conteudo/admin/galeria/12")
+    .auth(token(perfil), { type: "bearer" });
+  expect(negado.status).toBe(401);
+});
+
+test("visitante nao consulta o painel", async () => {
   expect((await request(app).get("/api/site-conteudo/admin")).status).toBe(401);
-  expect(pool.query).toHaveBeenCalledTimes(1);
+  expect(pool.query).not.toHaveBeenCalled();
 });
 
 test("leitura publica nao devolve rascunhos e SQL filtra publicacao e remocao", async () => {
@@ -103,9 +120,9 @@ test("Maps aceita destino HTTPS permitido e recusa destinos perigosos", () => {
 test("upload de galeria persiste PNG valido no armazenamento segregado e rejeita arquivo falso", async () => {
   expect(storage.detectarMimeImagem(PNG_1X1)).toBe("image/png");
   expect(storage.detectarMimeImagem(Buffer.from("<script>alert(1)</script>"))).toBeNull();
-  configurarUsuario("gerente");
+  configurarUsuario("administrador");
   const valido = await request(app).post("/api/site-conteudo/admin/galeria")
-    .auth(token("gerente"), { type: "bearer" })
+    .auth(token("administrador"), { type: "bearer" })
     .field("texto_alternativo", "Foto teste")
     .field("publicado", "false")
     .attach("imagem", PNG_1X1, { filename: "foto.png", contentType: "image/png" });
@@ -116,9 +133,9 @@ test("upload de galeria persiste PNG valido no armazenamento segregado e rejeita
   expect(arquivos[0]).toMatch(/^[a-f0-9-]{36}\.png$/);
 
   pool.query.mockReset();
-  configurarUsuario("gerente");
+  configurarUsuario("administrador");
   const falso = await request(app).post("/api/site-conteudo/admin/galeria")
-    .auth(token("gerente"), { type: "bearer" })
+    .auth(token("administrador"), { type: "bearer" })
     .field("texto_alternativo", "Arquivo recusado")
     .field("publicado", "false")
     .attach("imagem", Buffer.from("<svg onload=alert(1) />"), { filename: "imagem.png", contentType: "image/png" });
@@ -132,9 +149,16 @@ test("remover imagem do site e uma operacao logica sem apagar o arquivo", async 
   const existente = (await fs.readdir(diretorioTeste))[0];
   pool.query.mockImplementation(async (sql) => {
     if (sql.includes("FROM usuarios")) return { rows: [{ id: 7, nome: "Admin teste", email: "teste@example.invalid", perfil: "administrador", ativo: true, versao_sessao: 1 }] };
-    if (sql.includes("UPDATE site_galeria")) return { rows: [{ id: 12, titulo: "Teste", arquivo_nome: existente }] };
     return { rows: [] };
   });
+  const client = {
+    query: jest.fn(async (sql) => {
+      if (String(sql).includes("UPDATE site_galeria")) return { rows: [{ id: 12, titulo: "Teste", arquivo_nome: existente }], rowCount: 1 };
+      return { rows: [] };
+    }),
+    release: jest.fn(),
+  };
+  pool.connect.mockResolvedValue(client);
   const remover = jest.spyOn(storage, "removerImagem");
   const resposta = await request(app).delete("/api/site-conteudo/admin/galeria/12")
     .auth(token("administrador"), { type: "bearer" });

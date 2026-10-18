@@ -1,12 +1,13 @@
 const bcrypt = require("bcrypt");
 const pool = require("../database/connection");
+const { authorizationIpLimiter, authorizationAccountLimiter } = require("./rateLimitMiddleware");
 
 // Exige a senha atual do usuário antes de executar operações críticas.
 //
 // A senha chega temporariamente pelo cabeçalho X-Confirm-Password
 // e é comparada com o hash armazenado. A senha em texto puro
 // nunca deve ser gravada no banco, logs ou tokens.
-async function confirmarOperacaoCritica(req, res, next) {
+async function validarSenhaConfirmacao(req, res, next) {
   try {
     const senhaConfirmacao = req.headers["x-confirm-password"];
 
@@ -52,6 +53,12 @@ async function confirmarOperacaoCritica(req, res, next) {
       mensagem: "Erro interno do servidor.",
     });
   }
+}
+
+function confirmarOperacaoCritica(req, res, next) {
+  authorizationIpLimiter(req, res, () => {
+    authorizationAccountLimiter(req, res, () => validarSenhaConfirmacao(req, res, next));
+  });
 }
 
 module.exports = confirmarOperacaoCritica;

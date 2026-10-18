@@ -55,7 +55,7 @@ function protegerCSV(valor) {
 
 function Relatorios() {
   const perfil = JSON.parse(localStorage.getItem("usuario") || "{}").perfil;
-  const tiposDisponiveis = useMemo(() => TIPOS.filter((tipo) => !tipo.financeiro || ["administrador", "gerente"].includes(perfil)), [perfil]);
+  const tiposDisponiveis = useMemo(() => TIPOS.filter((tipo) => !tipo.financeiro || ["administrador", "super_administrador", "gerente"].includes(perfil)), [perfil]);
   const [tipo, setTipo] = useState("atendimentos-servicos");
   const [inicio, setInicio] = useState(dataHoje().slice(0, 8) + "01");
   const [fim, setFim] = useState(dataHoje());

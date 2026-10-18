@@ -1,11 +1,16 @@
 const bcrypt = require("bcrypt");
 const pool = require("../database/connection");
-const { registrarLog } = require("../services/logService");
+const { registrarLog, registrarLogObrigatorio } = require("../services/logService");
 const {validarSenha,} = require("../utils/validarSenha");
+
+function usuarioEhSuperAdministrador(req) {
+  return req.usuario?.perfil === "super_administrador";
+}
 
 // Cadastro de usuários é restrito pelas rotas aos perfis autorizados.
 // A senha é transformada em hash antes de qualquer gravação.
 async function cadastrarUsuario(req, res) {
+  let client;
   try {
     let {
       nome,
@@ -60,12 +65,17 @@ async function cadastrarUsuario(req, res) {
       "administrador",
       "gerente",
       "funcionario",
+      "super_administrador",
     ];
 
     if (!perfisPermitidos.includes(perfil)) {
       return res.status(400).json({
         mensagem: "Perfil inválido.",
       });
+    }
+
+    if (perfil === "super_administrador" && !usuarioEhSuperAdministrador(req)) {
+      return res.status(403).json({ mensagem: "Somente um Super Administrador pode criar outro Super Administrador." });
     }
 
     const validacaoSenha =
@@ -91,7 +101,9 @@ async function cadastrarUsuario(req, res) {
 
     const senhaHash = await bcrypt.hash(senha, 12);
 
-    const resultado = await pool.query(
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const resultado = await client.query(
       `INSERT INTO usuarios
        (nome, email, senha_hash, perfil)
        VALUES ($1, $2, $3, $4)
@@ -101,7 +113,7 @@ async function cadastrarUsuario(req, res) {
 
     const novoUsuario = resultado.rows[0];
 
-    await registrarLog({
+    await registrarLogObrigatorio({
       usuarioId: req.usuario.id,
       acao: "CRIAR_USUARIO",
       entidade: "usuarios",
@@ -113,13 +125,15 @@ async function cadastrarUsuario(req, res) {
         ativo: novoUsuario.ativo,
       },
       ip: req.ip,
-    });
+    }, client);
+    await client.query("COMMIT");
 
     return res.status(201).json({
       mensagem: "Usuário cadastrado com sucesso.",
       usuario: novoUsuario,
     });
     } catch (erro) {
+      if (client) await client.query("ROLLBACK").catch(() => {});
       /*
       * O PostgreSQL utiliza o código 23505 quando uma
       * restrição de unicidade é violada.
@@ -143,6 +157,8 @@ async function cadastrarUsuario(req, res) {
       return res.status(500).json({
         mensagem: "Erro interno do servidor.",
       });
+    } finally {
+      client?.release();
     }
 }
 
@@ -158,7 +174,9 @@ async function listarUsuarios(req, res) {
          criado_em,
          atualizado_em
        FROM usuarios
+       WHERE ($1 = 'super_administrador' OR perfil <> 'super_administrador')
        ORDER BY nome`
+      , [req.usuario.perfil]
     );
 
     return res.status(200).json(resultado.rows);
@@ -203,12 +221,17 @@ async function alterarPerfil(req, res) {
       "administrador",
       "gerente",
       "funcionario",
+      "super_administrador",
     ];
 
     if (!perfisPermitidos.includes(perfil)) {
       return res.status(400).json({
         mensagem: "Perfil inválido.",
       });
+    }
+
+    if (perfil === "super_administrador" && !usuarioEhSuperAdministrador(req)) {
+      return res.status(403).json({ mensagem: "Somente um Super Administrador pode conceder esse perfil." });
     }
 
     /*
@@ -235,7 +258,7 @@ async function alterarPerfil(req, res) {
     await client.query(
       `SELECT id
        FROM usuarios
-       WHERE perfil = 'administrador'
+       WHERE perfil IN ('administrador', 'super_administrador')
          AND ativo = TRUE
        FOR UPDATE`
     );
@@ -263,6 +286,11 @@ async function alterarPerfil(req, res) {
     const anterior =
       resultadoAnterior.rows[0];
 
+    if (anterior.perfil === "super_administrador" && !usuarioEhSuperAdministrador(req)) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ mensagem: "Usuário não encontrado." });
+    }
+
     /*
      * Se estamos retirando o perfil de um administrador
      * ativo, precisa continuar existindo pelo menos outro
@@ -277,7 +305,7 @@ async function alterarPerfil(req, res) {
         await client.query(
           `SELECT COUNT(*) AS total
            FROM usuarios
-           WHERE perfil = 'administrador'
+           WHERE perfil IN ('administrador', 'super_administrador')
              AND ativo = TRUE`
         );
 
@@ -295,9 +323,20 @@ async function alterarPerfil(req, res) {
       }
     }
 
+    if (anterior.perfil === "super_administrador" && perfil !== "super_administrador" && anterior.ativo) {
+      const superAdministradores = await client.query(
+        `SELECT COUNT(*) AS total FROM usuarios WHERE perfil='super_administrador' AND ativo=TRUE`
+      );
+      if (Number(superAdministradores.rows[0].total) <= 1) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ mensagem: "Não é possível alterar o perfil do último Super Administrador ativo." });
+      }
+    }
+
     const resultado = await client.query(
       `UPDATE usuarios
        SET perfil = $1,
+           versao_sessao = versao_sessao + 1,
            atualizado_em = CURRENT_TIMESTAMP
        WHERE id = $2
        RETURNING
@@ -424,7 +463,7 @@ async function alterarStatus(req, res) {
     await client.query(
       `SELECT id
        FROM usuarios
-       WHERE perfil = 'administrador'
+       WHERE perfil IN ('administrador', 'super_administrador')
          AND ativo = TRUE
        FOR UPDATE`
     );
@@ -455,6 +494,11 @@ async function alterarStatus(req, res) {
     const anterior =
       resultadoAnterior.rows[0];
 
+    if (anterior.perfil === "super_administrador" && !usuarioEhSuperAdministrador(req)) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ mensagem: "Usuário não encontrado." });
+    }
+
     /*
      * Ao desativar um administrador ativo, deve continuar
      * existindo pelo menos outro administrador ativo.
@@ -468,7 +512,7 @@ async function alterarStatus(req, res) {
         await client.query(
           `SELECT COUNT(*) AS total
            FROM usuarios
-           WHERE perfil = 'administrador'
+           WHERE perfil IN ('administrador', 'super_administrador')
              AND ativo = TRUE`
         );
 
@@ -486,9 +530,20 @@ async function alterarStatus(req, res) {
       }
     }
 
+    if (anterior.perfil === "super_administrador" && anterior.ativo && ativo === false) {
+      const superAdministradores = await client.query(
+        `SELECT COUNT(*) AS total FROM usuarios WHERE perfil='super_administrador' AND ativo=TRUE`
+      );
+      if (Number(superAdministradores.rows[0].total) <= 1) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ mensagem: "Não é possível desativar o último Super Administrador ativo." });
+      }
+    }
+
     const resultado = await client.query(
       `UPDATE usuarios
        SET ativo = $1,
+           versao_sessao = versao_sessao + 1,
            atualizado_em = CURRENT_TIMESTAMP
        WHERE id = $2
        RETURNING
@@ -638,6 +693,11 @@ async function redefinirSenhaUsuario(req, res) {
     const usuario =
       resultadoUsuario.rows[0];
 
+    if (usuario.perfil === "super_administrador" && !usuarioEhSuperAdministrador(req)) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ mensagem: "Usuário não encontrado." });
+    }
+
     /*
      * Além de trocar a senha, incrementamos a versão da
      * sessão. Todos os JWTs emitidos anteriormente para
@@ -750,8 +810,8 @@ async function buscarUsuarioPorId(req, res) {
          criado_em,
          atualizado_em
        FROM usuarios
-       WHERE id = $1`,
-      [usuarioId]
+       WHERE id = $1 AND ($2 = 'super_administrador' OR perfil <> 'super_administrador')`,
+      [usuarioId, req.usuario.perfil]
     );
 
     if (resultado.rows.length === 0) {
@@ -858,6 +918,10 @@ async function alterarDadosUsuario(req, res) {
 
     const usuarioAnterior =
       resultadoAtual.rows[0];
+
+    if (usuarioAnterior.perfil === "super_administrador" && !usuarioEhSuperAdministrador(req)) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado." });
+    }
 
 
     /*

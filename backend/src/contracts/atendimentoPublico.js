@@ -5,7 +5,7 @@ const ESTADOS_ATENDIMENTO = Object.freeze([
 ]);
 const ESTADOS_HORARIO = Object.freeze(['DISPONIVEL', 'RESERVADO', 'OCUPADO', 'BLOQUEADO']);
 const ESTADOS_PAGAMENTO = Object.freeze(['PENDENTE', 'PAGO', 'CANCELADO', 'ESTORNADO']);
-const PERFIS_DECISAO = Object.freeze(['funcionario', 'gerente', 'administrador']);
+const PERFIS_DECISAO = Object.freeze(['funcionario', 'gerente', 'administrador', 'super_administrador']);
 const FUSO_OPERACIONAL = 'America/Sao_Paulo';
 const TRANSICOES = Object.freeze({
   CONFIRMAR: Object.freeze({ AGUARDANDO_CONFIRMACAO: 'AGENDADO' }),

@@ -145,6 +145,13 @@
 .conteudo-site textarea:focus-visible,
 .conteudo-site select:focus-visible { outline: 3px solid rgba(217, 0, 124, .32); outline-offset: 2px; }
 
+.conteudo-autorizacao-modal { max-width: 520px; }
+.conteudo-autorizacao-modal form { display: grid; gap: 14px; }
+.conteudo-autorizacao-modal label { display: grid; gap: 6px; color: #39333f; font-size: .9rem; font-weight: 600; }
+.conteudo-autorizacao-modal select,
+.conteudo-autorizacao-modal input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #d4ced8; border-radius: 7px; background: #fff; color: #302b35; }
+.conteudo-autorizacao-modal .conteudo-acoes { justify-content: flex-end; margin-top: 4px; }
+
 @media (max-width: 680px) {
   .conteudo-site { padding: 16px 12px; }
   .conteudo-site-cabecalho { align-items: flex-start; flex-direction: column; }

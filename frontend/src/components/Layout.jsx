@@ -25,7 +25,9 @@ function Layout() {
    */
   const podeAcessarAdministrativo =
     usuario.perfil === "administrador" ||
+    usuario.perfil === "super_administrador" ||
     usuario.perfil === "gerente";
+  const podeAdministrarSite = ["administrador", "super_administrador"].includes(usuario.perfil);
 
 
   function sair() {
@@ -132,10 +134,10 @@ function Layout() {
             Produtos
           </NavLink>
 
-          <NavLink to="/atendimentos/servicos">
+          {podeAdministrarSite && <NavLink to="/atendimentos/servicos">
             <span>🧰</span>
             Serviços
-          </NavLink>
+          </NavLink>}
 
           <NavLink to="/relatorios">
             <span>▤</span>
@@ -155,14 +157,9 @@ function Layout() {
               Administrador ou Gerente ativo para efetivá-las.
           */}
 
-          <div className="menu-section">
-            SITE PÚBLICO
-          </div>
-
-          <NavLink to="/agenda-publica">
-            <span>📅</span>
-            Agenda Pública
-          </NavLink>
+          {(podeAdministrarSite || ["gerente", "funcionario"].includes(usuario.perfil)) && <div className="menu-section">SITE PÚBLICO</div>}
+          {podeAdministrarSite && <NavLink to="/agenda-publica"><span>📅</span>Agenda Pública</NavLink>}
+          {["gerente", "funcionario"].includes(usuario.perfil) && <NavLink to="/sistema/conteudo-site"><span>🖼</span>Galeria de Fotos</NavLink>}
 
 
           {/* =================================================
@@ -212,12 +209,14 @@ function Layout() {
                 SISTEMA
               </div>
 
-              <NavLink to="/sistema/conteudo-site">
+              {podeAdministrarSite && <NavLink to="/sistema/conteudo-site">
                 <span>✎</span>
                 Conteúdo do Site
-              </NavLink>
+              </NavLink>}
 
-              {usuario.perfil === "administrador" && (
+              {usuario.perfil === "super_administrador" && <NavLink to="/administracao/exclusoes-definitivas"><span>⌫</span>Exclusões definitivas</NavLink>}
+
+              {podeAdministrarSite && (
                 <NavLink to="/administracao">
                   <span>⚙</span>
                   Administração

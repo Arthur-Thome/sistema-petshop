@@ -2,7 +2,7 @@ const { rateLimit } = require("express-rate-limit");
 const crypto = require("crypto");
 const pool = require("../database/connection");
 
-function criarRateLimitCompartilhado({ nome, windowMs, limit, mensagem }) {
+function criarRateLimitCompartilhado({ nome, windowMs, limit, mensagem, identidade }) {
   return async function rateLimitPostgres(req, res, next) {
     const segredo = process.env.RATE_LIMIT_HMAC_SECRET || process.env.JWT_SECRET;
     if (typeof segredo !== "string" || segredo.length < 32) {
@@ -14,8 +14,10 @@ function criarRateLimitCompartilhado({ nome, windowMs, limit, mensagem }) {
       }));
       return res.status(503).json({ mensagem: "Proteção temporariamente indisponível. Tente novamente mais tarde." });
     }
-    const identidade = String(req.ip || req.socket?.remoteAddress || "ip-indisponivel");
-    const chave = crypto.createHmac("sha256", segredo).update(`${nome}\0${identidade}`).digest("hex");
+    const identificador = typeof identidade === "function"
+      ? String(identidade(req) || "identidade-indisponivel")
+      : String(req.ip || req.socket?.remoteAddress || "ip-indisponivel");
+    const chave = crypto.createHmac("sha256", segredo).update(`${nome}\0${identificador}`).digest("hex");
     try {
       const result = await pool.query(`
         WITH relogio AS (SELECT clock_timestamp() AS agora), expirados AS (
@@ -115,6 +117,23 @@ const redefinicaoSenhaLimiter = criarRateLimitCompartilhado({
   mensagem: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
 });
 
+const authorizationIpLimiter = criarRateLimitCompartilhado({
+  nome: "security-operation-authorization-ip-v1",
+  windowMs: 15 * 60 * 1000,
+  limit: 12,
+  mensagem: "Muitas solicitações de autorização. Aguarde alguns minutos e tente novamente.",
+});
+
+const authorizationAccountLimiter = criarRateLimitCompartilhado({
+  nome: "security-operation-authorization-account-v1",
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  mensagem: "Muitas tentativas de autorização para esta conta. Aguarde alguns minutos e tente novamente.",
+  // A senha pertence ao autorizador; o limite deve valer entre todos os
+  // solicitantes para impedir tentativas distribuídas contra a mesma conta.
+  identidade: req => `autorizador:${req.body?.autorizador_id || req.usuario?.id || "indefinido"}`,
+});
+
 const whatsappBusinessLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -136,6 +155,8 @@ module.exports = {
   loginLimiter,
   recuperacaoSenhaLimiter,
   redefinicaoSenhaLimiter,
+  authorizationIpLimiter,
+  authorizationAccountLimiter,
   whatsappBusinessLimiter,
   siteUploadLimiter,
 };

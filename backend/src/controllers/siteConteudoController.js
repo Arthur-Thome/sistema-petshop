@@ -1,8 +1,9 @@
 const pool = require("../database/connection");
-const { registrarLog } = require("../services/logService");
+const { registrarLogObrigatorio } = require("../services/logService");
 const storage = require("../services/siteGalleryStorage");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { consumirAutorizacao } = require("../services/operationAuthorizationService");
 
 const CAMPOS_TEXTO = {
   titulo_principal: 180,
@@ -129,16 +130,33 @@ function validarGaleria(body) {
   };
 }
 
-async function registrarAuditoria(req, acao, entidade, registroId, anterior, novo) {
-  await registrarLog({
+async function registrarAuditoria(req, acao, entidade, registroId, anterior, novo, executor = pool) {
+  const autorizacao = req.autorizacaoOperacao;
+  await registrarLogObrigatorio({
     usuarioId: req.usuario.id,
     acao,
     entidade,
     registroId: Number(registroId) || null,
     valorAnterior: anterior,
-    valorNovo: novo,
+    valorNovo: {
+      ...(novo && typeof novo === "object" && !Array.isArray(novo) ? novo : { resultado: novo }),
+      solicitante_id: req.usuario.id,
+      autorizador_id: autorizacao?.authorizerId ?? null,
+    },
     ip: req.ip,
-  });
+  }, executor);
+}
+
+async function consultarGaleriaAdmin(req, res) {
+  try {
+    const result = await pool.query(`SELECT id, titulo, legenda, texto_alternativo, categoria, ordem,
+      publicado, mime_type, tamanho_bytes, criado_por, atualizado_por, criado_em, atualizado_em
+      FROM site_galeria WHERE removido_em IS NULL ORDER BY ordem, id LIMIT 100`);
+    return res.status(200).json({ galeria: result.rows });
+  } catch (erro) {
+    console.error("Erro ao consultar galeria administrativa:", erro.message);
+    return res.status(500).json({ mensagem: "Não foi possível carregar a galeria." });
+  }
 }
 
 async function validarImagensReferenciadas(client, ids) {
@@ -323,9 +341,12 @@ async function enviarImagem(req, res) {
   try { meta = validarGaleria({ ...req.body, publicado: req.body.publicado === "true" || req.body.publicado === true }); }
   catch (erro) { return res.status(400).json({ mensagem: erro.message }); }
   let arquivo;
+  let client;
   try {
     arquivo = await storage.salvarImagem(req.file.buffer, mime);
-    const result = await pool.query(`
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const result = await client.query(`
       INSERT INTO site_galeria (arquivo_nome, mime_type, tamanho_bytes, titulo, legenda,
         texto_alternativo, categoria, ordem, publicado, criado_por, atualizado_por)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10) RETURNING *
@@ -333,9 +354,16 @@ async function enviarImagem(req, res) {
       meta.categoria, meta.ordem, meta.publicado, req.usuario.id]);
     const row = result.rows[0];
     await registrarAuditoria(req, "IMAGEM_GALERIA_CRIADA", "site_galeria", row.id, null,
-      { id: row.id, titulo: meta.titulo, categoria: meta.categoria, publicado: meta.publicado });
+      { id: row.id, titulo: meta.titulo, categoria: meta.categoria, publicado: meta.publicado }, client);
+    await client.query("COMMIT");
+    client.release();
+    client = null;
     return res.status(201).json({ imagem: imagemAdmin(row) });
   } catch (erro) {
+    if (client) {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+    }
     if (arquivo) await storage.removerImagem(arquivo.arquivoNome).catch(() => {});
     console.error("Erro ao salvar imagem da galeria:", erro.message);
     return res.status(400).json({ mensagem: erro.message.includes("alternativo") ? erro.message : "Não foi possível salvar a imagem." });
@@ -413,6 +441,21 @@ async function finalizarUploadDireto(req, res) {
       await storage.removerUploadDireto(token.chave_temporaria).catch(() => {});
       return res.status(400).json({ mensagem: "O conteudo enviado nao e uma imagem valida." });
     }
+    if (!["administrador", "super_administrador"].includes(req.usuario.perfil)) {
+      try {
+        req.autorizacaoOperacao = await consumirAutorizacao({
+          token: req.get("X-Operation-Authorization"),
+          requesterId: req.usuario.id,
+          operation: "GALERIA_CRIAR",
+          entity: "site_galeria",
+          context: { ...meta, content_sha256: crypto.createHash("sha256").update(bytes).digest("hex") },
+          ip: req.ip,
+        });
+      } catch (erro) {
+        const status = [401, 403, 409].includes(erro.status) ? erro.status : 503;
+        return res.status(status).json({ mensagem: status === 503 ? "Não foi possível validar a autorização da Galeria." : erro.message });
+      }
+    }
     const permanente = await storage.salvarImagem(bytes, token.mime_type, token.arquivo_nome);
     arquivoPermanenteCriado = true;
     const client = await pool.connect();
@@ -429,6 +472,9 @@ async function finalizarUploadDireto(req, res) {
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10) RETURNING *
       `, [permanente.arquivoNome, token.mime_type, bytes.length, meta.titulo, meta.legenda, meta.texto_alternativo,
         meta.categoria, meta.ordem, meta.publicado, req.usuario.id]);
+      const row = result.rows[0];
+      await registrarAuditoria(req, "IMAGEM_GALERIA_CRIADA", "site_galeria", row.id, null,
+        { id: row.id, titulo: meta.titulo, categoria: meta.categoria, publicado: meta.publicado, origem: "upload_direto" }, client);
       await client.query("COMMIT");
     } catch (erro) {
       await client.query("ROLLBACK").catch(() => {});
@@ -437,8 +483,6 @@ async function finalizarUploadDireto(req, res) {
       client.release();
     }
     const row = result.rows[0];
-    await registrarAuditoria(req, "IMAGEM_GALERIA_CRIADA", "site_galeria", row.id, null,
-      { id: row.id, titulo: meta.titulo, categoria: meta.categoria, publicado: meta.publicado, origem: "upload_direto" });
     await storage.removerUploadDireto(token.chave_temporaria).catch(() => {});
     return res.status(201).json({ imagem: imagemAdmin(row) });
   } catch (erro) {
@@ -463,37 +507,57 @@ async function atualizarImagem(req, res) {
   if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ mensagem: "Identificador inválido." });
   let dados;
   try { dados = validarGaleria(req.body); } catch (erro) { return res.status(400).json({ mensagem: erro.message }); }
+  const client = await pool.connect();
   try {
-    const anterior = await pool.query("SELECT * FROM site_galeria WHERE id=$1 AND removido_em IS NULL", [id]);
+    await client.query("BEGIN");
+    const anterior = await client.query("SELECT * FROM site_galeria WHERE id=$1 AND removido_em IS NULL FOR UPDATE", [id]);
+    if (!anterior.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ mensagem: "Registro indisponível." });
+    }
     if (!anterior.rows.length) return res.status(404).json({ mensagem: "Imagem não encontrada." });
-    const result = await pool.query(`UPDATE site_galeria SET titulo=$1, legenda=$2, texto_alternativo=$3,
+    const result = await client.query(`UPDATE site_galeria SET titulo=$1, legenda=$2, texto_alternativo=$3,
       categoria=$4, ordem=$5, publicado=$6, atualizado_por=$7, atualizado_em=CURRENT_TIMESTAMP
       WHERE id=$8 AND removido_em IS NULL RETURNING *`, [dados.titulo, dados.legenda, dados.texto_alternativo,
       dados.categoria, dados.ordem, dados.publicado, req.usuario.id, id]);
-    await registrarAuditoria(req, "IMAGEM_GALERIA_ATUALIZADA", "site_galeria", id, anterior.rows[0], dados);
+    await registrarAuditoria(req, "IMAGEM_GALERIA_ATUALIZADA", "site_galeria", id, anterior.rows[0], dados, client);
+    await client.query("COMMIT");
     return res.status(200).json({ imagem: imagemAdmin(result.rows[0]) });
   } catch (erro) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("Erro ao atualizar imagem da galeria:", erro.message);
     return res.status(500).json({ mensagem: "Não foi possível atualizar a imagem." });
+  } finally {
+    client.release();
   }
 }
 
 async function removerImagem(req, res) {
   const id = Number(req.params.id);
+  const client = Number.isSafeInteger(id) && id > 0 ? await pool.connect() : null;
   if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ mensagem: "Identificador inválido." });
   try {
-    const result = await pool.query(`UPDATE site_galeria SET publicado=FALSE, removido_em=CURRENT_TIMESTAMP,
+    await client.query("BEGIN");
+    const result = await client.query(`UPDATE site_galeria SET publicado=FALSE, removido_em=CURRENT_TIMESTAMP,
       removido_por=$1, atualizado_por=$1, atualizado_em=CURRENT_TIMESTAMP
       WHERE id=$2 AND removido_em IS NULL RETURNING id, titulo, arquivo_nome`, [req.usuario.id, id]);
+    if (!result.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ mensagem: "Registro indisponível." });
+    }
     if (!result.rows.length) return res.status(404).json({ mensagem: "Imagem não encontrada." });
     await registrarAuditoria(req, "IMAGEM_GALERIA_REMOVIDA", "site_galeria", id,
-      { id, titulo: result.rows[0].titulo }, { removida: true });
+      { id, titulo: result.rows[0].titulo }, { removida: true }, client);
+    await client.query("COMMIT");
     // O arquivo segregado fica retido para auditoria/recuperação; o endpoint de imagem
     // exige registro publicado e ativo. Nenhum arquivo de outro módulo é removido.
     return res.status(200).json({ mensagem: "Imagem removida da galeria." });
   } catch (erro) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("Erro ao remover imagem da galeria:", erro.message);
     return res.status(500).json({ mensagem: "Não foi possível remover a imagem." });
+  } finally {
+    client?.release();
   }
 }
 
@@ -528,6 +592,7 @@ module.exports = {
   validarGaleria,
   consultarPublico,
   consultarAdmin,
+  consultarGaleriaAdmin,
   salvarConfiguracoes,
   criarPremiacao,
   atualizarPremiacao,

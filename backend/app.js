@@ -23,6 +23,8 @@ const siteConteudoRoutes = require("./src/routes/siteConteudoRoutes");
 const relatorioRoutes = require("./src/routes/relatorioRoutes");
 const notificacaoRoutes = require("./src/routes/notificacaoRoutes");
 const comunicacaoRoutes = require("./src/routes/comunicacaoRoutes");
+const operationAuthorizationRoutes = require("./src/routes/operationAuthorizationRoutes");
+const hardDeleteRoutes = require("./src/routes/hardDeleteRoutes");
 
 const app = express();
 
@@ -112,6 +114,7 @@ app.use(
       "Content-Type",
       "Authorization",
       "X-Confirm-Password",
+      "X-Operation-Authorization",
     ],
   })
 );
@@ -128,6 +131,22 @@ app.use(
     limit: "1mb",
   })
 );
+
+// O launcher Neon deste estágio é deliberadamente somente leitura. A restrição
+// fica no backend para cobrir todas as APIs, inclusive chamadas fora da UI.
+const modoNeonSomenteLeitura = process.env.AMORES_PET_DATABASE_MODE === "NEON_HOMOLOGACAO";
+if (modoNeonSomenteLeitura) {
+  const { deveBloquearEscritaNeon } = require("./src/database/neonHomologacao.cjs");
+  app.use((req, res, next) => {
+    res.setHeader("X-Amores-Pet-Mode", "NEON_HOMOLOGACAO_READ_ONLY");
+    if (!deveBloquearEscritaNeon(req.method, req.path)) return next();
+    return res.status(423).json({
+      erro: "O ambiente Neon de homologação está em modo somente leitura.",
+      codigo: "NEON_HOMOLOGACAO_READ_ONLY",
+      requestId: req.requestId,
+    });
+  });
+}
 
 // Rotina stateless acionada diariamente pelo cron da plataforma ou manualmente.
 app.get(
@@ -148,6 +167,8 @@ app.get("/health/ready", async (_req, res) => {
       SELECT
         to_regclass('public.usuarios') IS NOT NULL AS usuarios_disponiveis,
         to_regclass('public.rate_limit_buckets') IS NOT NULL AS rate_limit_disponivel,
+        to_regclass('public.operation_authorizations') IS NOT NULL AS autorizacoes_operacionais_disponiveis,
+        to_regclass('public.permanent_file_deletion_queue') IS NOT NULL AS fila_exclusoes_disponivel,
         CASE
           WHEN to_regclass('public.rate_limit_buckets') IS NULL THEN FALSE
           ELSE has_table_privilege(
@@ -155,11 +176,23 @@ app.get("/health/ready", async (_req, res) => {
             'public.rate_limit_buckets',
             'SELECT,INSERT,UPDATE,DELETE'
           )
-        END AS permissao_rate_limit
+        END AS permissao_rate_limit,
+        CASE
+          WHEN to_regclass('public.operation_authorizations') IS NULL THEN FALSE
+          ELSE has_table_privilege(current_user, 'public.operation_authorizations', 'SELECT,INSERT,UPDATE')
+        END AS permissao_autorizacoes,
+        CASE
+          WHEN to_regclass('public.permanent_file_deletion_queue') IS NULL THEN FALSE
+          ELSE has_table_privilege(current_user, 'public.permanent_file_deletion_queue', 'SELECT,INSERT,UPDATE')
+        END AS permissao_fila_exclusoes
     `);
     await pool.query(`SELECT id, nome, email, perfil, ativo, versao_sessao FROM public.usuarios LIMIT 0`);
     await pool.query(`SELECT limiter_key, window_start, expires_at, request_count FROM public.rate_limit_buckets LIMIT 0`);
-    if (!estado?.usuarios_disponiveis || !estado?.rate_limit_disponivel || !estado?.permissao_rate_limit) {
+    await pool.query(`SELECT token_hash, requester_user_id, authorizer_user_id, operation, context_hash, expires_at, consumed_at FROM public.operation_authorizations LIMIT 0`);
+    await pool.query(`SELECT id, resource_kind, object_key, attempts, completed_at FROM public.permanent_file_deletion_queue LIMIT 0`);
+    if (!estado?.usuarios_disponiveis || !estado?.rate_limit_disponivel || !estado?.permissao_rate_limit
+      || !estado?.autorizacoes_operacionais_disponiveis || !estado?.fila_exclusoes_disponivel
+      || !estado?.permissao_autorizacoes || !estado?.permissao_fila_exclusoes) {
       return res.status(503).json({ status: "unavailable" });
     }
     return res.status(200).json({ status: "ready" });
@@ -181,6 +214,8 @@ app.get("/health/ready", async (_req, res) => {
 // Rotas principais da API.
 // Cada módulo mantém suas próprias regras e endpoints.
 app.use("/api/auth", authRoutes);
+app.use("/api/operacoes/autorizacoes", operationAuthorizationRoutes);
+app.use("/api/exclusoes-definitivas", hardDeleteRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/tutores", tutorRoutes);
 app.use("/api/pets", petRoutes);
@@ -212,7 +247,8 @@ app.use("/api/comunicacao", comunicacaoRoutes);
 
 // O launcher local serve o build Vite na mesma origem da API. Opt-in, sem
 // ativacao na Vercel ou nos testes por padrao.
-const servirFrontendLocal = process.env.AMORES_PET_HOMOLOGACAO === "1"
+const servirFrontendLocal = (process.env.AMORES_PET_HOMOLOGACAO === "1"
+  || process.env.AMORES_PET_DATABASE_MODE === "NEON_HOMOLOGACAO")
   && process.env.SERVIR_FRONTEND_LOCAL === "1";
 const frontendDist = path.resolve(__dirname, "../frontend/dist");
 if (servirFrontendLocal) {

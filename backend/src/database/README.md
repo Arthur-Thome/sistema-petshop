@@ -22,6 +22,8 @@ Ordem fixa, sem migration runner na aplicação:
 12. `migrations/033_notificacoes_internas.sql` (Etapa 23).
 13. `migrations/034_rate_limit_upload_cleanup.sql` (limites compartilhados e inventário de uploads temporários).
 14. migrations/035_renomear_tabelas_atendimentos.sql (tabelas canonicas e views atualizaveis legadas).
+15. `migrations/036_autorizacoes_operacionais.sql` (autorizacoes hash-only e fila retomavel de arquivos).
+16. `migrations/037_notificacoes_super_administrador.sql` (quarto perfil nas notificacoes).
 
 Resultado após Etapa 24: inclui contadores compartilhados de rate limit e intents de limpeza, sem dados de clientes ou administrador. A 032 cria somente a configuração institucional vazia; a 033 cria notificações operacionais e preferências.
 O bootstrap e as migrations 020–024 permanecem intactos. Não executar todas
@@ -248,6 +250,16 @@ para contornar erro de certificado. `DB_POOL_MAX` limita conexoes por processo
 URL pooled do Neon conforme a topologia. Controllers transacionais devem
 continuar fazendo `const client = await pool.connect()` e manter `BEGIN`/locks/
 `COMMIT`/`ROLLBACK` no mesmo cliente.
+
+Para a homologacao Neon local use exclusivamente o modo novo
+`AMORES_PET_DATABASE_MODE=NEON_HOMOLOGACAO` e o launcher
+`scripts/homologacao/Amores Pet - Homologação Neon.vbs`. Esse modo tem destino
+direto fixo, TLS com validacao da cadeia e hostname, timezone
+`America/Sao_Paulo` e sessao PostgreSQL somente leitura. Nao carrega `.env`,
+`DATABASE_URL` nem variaveis PostgreSQL herdadas; bloqueia metodos HTTP que
+alterem dados e mantem SMTP desativado. O launcher legado de homologacao local
+na porta 3001 nao foi alterado. Detalhes, limites e configuracao do notebook:
+`backend/docs/neon-homologacao-local.md`.
 
 Fotos de pets sao servidas por endpoint que valida JWT interno ou sessao
 publica e vinculo tutor-pet; nao use `express.static` para fotos privadas. O

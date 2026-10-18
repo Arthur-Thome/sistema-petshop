@@ -19,6 +19,13 @@ function hostDaConfiguracao(env) {
 }
 
 function criarConfiguracaoPool(env = process.env) {
+  if (env.AMORES_PET_DATABASE_MODE === "NEON_HOMOLOGACAO") {
+    return require("./neonHomologacao.cjs").configurarPoolNeon(env);
+  }
+  if (env.AMORES_PET_DATABASE_MODE && env.AMORES_PET_DATABASE_MODE !== "HOMOLOGACAO_LOCAL") {
+    throw new Error("Modo PostgreSQL desconhecido; conexão recusada.");
+  }
+
   const serverless = env.VERCEL === "1" || env.SERVERLESS === "true";
   const host = hostDaConfiguracao(env);
   const remoto = !["localhost", "127.0.0.1", "::1"].includes(host.toLowerCase());

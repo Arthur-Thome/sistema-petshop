@@ -50,24 +50,18 @@ router.get(
 
 /*
  * Alterações no catálogo de serviços ficam restritas
- * a administradores e gerentes.
+ * a Administrador e Super Administrador.
  */
 router.post(
   "/",
-  permitirPerfis(
-    "administrador",
-    "gerente"
-  ),
+  permitirPerfis("administrador"),
   cadastrarServico
 );
 
 
 router.put(
   "/:id",
-  permitirPerfis(
-    "administrador",
-    "gerente"
-  ),
+  permitirPerfis("administrador"),
   atualizarServico
 );
 
@@ -78,10 +72,7 @@ router.put(
  */
 router.patch(
   "/:id/status",
-  permitirPerfis(
-    "administrador",
-    "gerente"
-  ),
+  permitirPerfis("administrador"),
   confirmarOperacaoCritica,
   alterarStatusServico
 );

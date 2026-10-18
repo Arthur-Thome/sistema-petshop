@@ -16,6 +16,7 @@ async function buscarResumo(req, res) {
       "funcionario",
       "gerente",
       "administrador",
+      "super_administrador",
     ];
 
     if (!perfisPermitidos.includes(perfil)) {
@@ -317,7 +318,7 @@ async function buscarResumo(req, res) {
 
     /*
      * =====================================================
-     * GERENTE E ADMINISTRADOR
+     * GERENTE, ADMINISTRADOR E SUPER ADMINISTRADOR
      * =====================================================
      */
 
@@ -439,7 +440,7 @@ async function buscarResumo(req, res) {
 
     /*
      * =====================================================
-     * ADMINISTRADOR
+     * ADMINISTRADOR E SUPER ADMINISTRADOR
      * =====================================================
      */
 
@@ -471,6 +472,7 @@ async function buscarResumo(req, res) {
 
     resposta.usuarios_por_perfil = {
       administradores: 0,
+      super_administradores: 0,
       gerentes: 0,
       funcionarios: 0,
     };
@@ -497,6 +499,10 @@ async function buscarResumo(req, res) {
             .usuarios_por_perfil
             .gerentes =
               item.total;
+        }
+
+        if (item.perfil === "super_administrador") {
+          resposta.usuarios_por_perfil.super_administradores = item.total;
         }
 
 

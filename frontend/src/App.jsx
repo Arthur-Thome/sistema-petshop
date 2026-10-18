@@ -56,7 +56,10 @@ const GerenciarUsuario = lazy(() => import("./pages/GerenciarUsuario"));
 const HistoricoEstoque = lazy(() => import("./pages/HistoricoEstoque"));
 const PagamentosPendentes = lazy(() => import("./pages/PagamentosPendentes"));
 import RotaAdministrativo from "./components/RotaAdministrativo";
+import RotaGaleria from "./components/RotaGaleria";
+import RotaSuperAdministrador from "./components/RotaSuperAdministrador";
 const ConteudoSite = lazy(() => import("./pages/ConteudoSite"));
+const ExclusoesDefinitivas = lazy(() => import("./pages/ExclusoesDefinitivas"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 
 /*
@@ -72,13 +75,8 @@ const GaleriaPublica = lazy(() => import("./public-pages/GaleriaPublica"));
 /*
  * Administração da Agenda Pública.
  *
- * Diferentemente das páginas protegidas por
- * RotaAdministrativo, esta tela pode ser acessada também
- * pelo Funcionário.
- *
- * A autorização adicional exigida do Funcionário ocorre
- * no momento de alterar a agenda e é validada novamente
- * pelo backend.
+ * A administração da agenda e os conteúdos gerais do site
+ * são reservados a Administrador e Super Administrador.
  */
 const AgendaPublica = lazy(() => import("./pages/AgendaPublica"));
 
@@ -307,20 +305,20 @@ function App() {
 
           <Route
             path="/atendimentos/servicos"
-            element={<ServicosAtendimento />}
+            element={<RotaAdministrador><ServicosAtendimento /></RotaAdministrador>}
           />
 
           <Route
             path="/atendimentos/servicos/novo"
             element={
-              <FormularioServicoAtendimento />
+              <RotaAdministrador><FormularioServicoAtendimento /></RotaAdministrador>
             }
           />
 
           <Route
             path="/atendimentos/servicos/:id/editar"
             element={
-              <FormularioServicoAtendimento />
+              <RotaAdministrador><FormularioServicoAtendimento /></RotaAdministrador>
             }
           />
 
@@ -400,12 +398,12 @@ function App() {
 
           <Route
             path="/agenda-publica"
-            element={<AgendaPublica />}
+            element={<RotaAdministrador><AgendaPublica /></RotaAdministrador>}
           />
 
           <Route
             path="/sistema/conteudo-site"
-            element={<RotaAdministrativo><ConteudoSite /></RotaAdministrativo>}
+            element={<RotaGaleria><ConteudoSite /></RotaGaleria>}
           />
 
 
@@ -451,6 +449,10 @@ function App() {
               </RotaAdministrador>
             }
           />
+
+          <Route path="/administracao/exclusoes-definitivas" element={
+            <RotaSuperAdministrador><ExclusoesDefinitivas /></RotaSuperAdministrador>
+          } />
 
           <Route
             path="/administracao/auditoria"

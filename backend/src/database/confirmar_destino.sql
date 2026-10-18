@@ -5,7 +5,7 @@
   DO $$ BEGIN RAISE EXCEPTION 'Informe -v banco_confirmado=NOME_EXATO_DO_BANCO'; END $$;
 \endif
 SELECT current_database() = :'banco_confirmado'
-       AND current_database() NOT IN ('sistema_petshop', 'postgres', 'template0', 'template1')
+       AND current_database() NOT IN ('sistema_petshop', 'amores_pet_homologacao', 'postgres', 'template0', 'template1')
        AS destino_confirmado \gset
 \if :destino_confirmado
   SELECT current_database() AS banco_confirmado, inet_server_addr() AS servidor,

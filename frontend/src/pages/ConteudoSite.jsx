@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../services/api";
 import "../styles/ConteudoSite.css";
+import "../styles/ModalConfirmacaoSenha.css";
 
 const ABAS = [
   ["inicio", "Página inicial"],
@@ -23,8 +24,18 @@ const CONFIG_VAZIA = {
 const PREMIO_VAZIO = { titulo: "", descricao: "", instituicao: "", ano: "", imagem_galeria_id: "", ordem: 0, publicado: false };
 const FOTO_VAZIA = { titulo: "", legenda: "", texto_alternativo: "", categoria: "", ordem: 0, publicado: false };
 
+async function hashArquivo(arquivo) {
+  const digest = await crypto.subtle.digest("SHA-256", await arquivo.arrayBuffer());
+  return [...new Uint8Array(digest)].map(valor => valor.toString(16).padStart(2, "0")).join("");
+}
+
 function ConteudoSite() {
-  const [aba, setAba] = useState("inicio");
+  const usuarioAtual = (() => {
+    try { return JSON.parse(localStorage.getItem("usuario") || "{}"); } catch { return {}; }
+  })();
+  const somenteGaleria = ["gerente", "funcionario"].includes(usuarioAtual.perfil);
+  const abasDisponiveis = somenteGaleria ? ABAS.filter(([id]) => id === "galeria") : ABAS;
+  const [aba, setAba] = useState(somenteGaleria ? "galeria" : "inicio");
   const [config, setConfig] = useState(CONFIG_VAZIA);
   const [premios, setPremios] = useState([]);
   const [galeria, setGaleria] = useState([]);
@@ -40,12 +51,57 @@ function ConteudoSite() {
   const [arquivo, setArquivo] = useState(null);
   const [previewLocal, setPreviewLocal] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [dialogAutorizacao, setDialogAutorizacao] = useState(null);
+  const [erroAutorizacao, setErroAutorizacao] = useState("");
+  const resolucaoAutorizacao = useRef(null);
+
+  function solicitarAutorizacao(operacao, registroId, contexto = null) {
+    if (!somenteGaleria) return Promise.resolve({ headers: {} });
+    return api.get("/operacoes/autorizacoes/autorizadores").then(({ data }) => new Promise((resolve) => {
+      resolucaoAutorizacao.current = resolve;
+      setErroAutorizacao("");
+      setDialogAutorizacao({ operacao, registroId, contexto, autorizadores: data });
+    }));
+  }
+
+  async function confirmarAutorizacao(evento) {
+    evento.preventDefault();
+    if (!dialogAutorizacao) return;
+    const elementoFormulario = evento.currentTarget;
+    const form = new FormData(elementoFormulario);
+    try {
+      const { data } = await api.post("/operacoes/autorizacoes", {
+        operacao: dialogAutorizacao.operacao,
+        entidade: "site_galeria",
+        registro_id: dialogAutorizacao.registroId,
+        contexto: dialogAutorizacao.contexto,
+        autorizador_id: Number(form.get("autorizador_id")),
+        senha: form.get("senha"),
+      });
+      const resolver = resolucaoAutorizacao.current;
+      resolucaoAutorizacao.current = null;
+      setDialogAutorizacao(null);
+      setErroAutorizacao("");
+      resolver?.({ headers: { "X-Operation-Authorization": data.autorizacao } });
+    } catch (error) {
+      setErroAutorizacao(error.response?.data?.mensagem || "Não foi possível autorizar esta alteração.");
+    } finally {
+      elementoFormulario.reset();
+    }
+  }
+
+  function cancelarAutorizacao() {
+    const resolver = resolucaoAutorizacao.current;
+    resolucaoAutorizacao.current = null;
+    setDialogAutorizacao(null);
+    resolver?.(null);
+  }
 
   async function carregar() {
     try {
       setCarregando(true);
       setErro("");
-      const { data } = await api.get("/site-conteudo/admin");
+      const { data } = await api.get(somenteGaleria ? "/site-conteudo/admin/galeria" : "/site-conteudo/admin");
       setConfig({ ...CONFIG_VAZIA, ...(data.configuracoes || {}) });
       setPremios(data.premios || []);
       setGaleria(data.galeria || []);
@@ -60,7 +116,7 @@ function ConteudoSite() {
     let ativo = true;
     async function carregarInicial() {
       try {
-        const { data } = await api.get("/site-conteudo/admin");
+        const { data } = await api.get(somenteGaleria ? "/site-conteudo/admin/galeria" : "/site-conteudo/admin");
         if (!ativo) return;
         setConfig({ ...CONFIG_VAZIA, ...(data.configuracoes || {}) });
         setPremios(data.premios || []);
@@ -73,7 +129,7 @@ function ConteudoSite() {
     }
     carregarInicial();
     return () => { ativo = false; };
-  }, []);
+  }, [somenteGaleria]);
 
   useEffect(() => {
     if (!arquivo) return undefined;
@@ -179,6 +235,8 @@ function ConteudoSite() {
     if (!arquivo) { setErro("Escolha uma imagem JPEG, PNG ou WebP."); return; }
     try {
       setSalvando(true); setErro(""); setSucesso("");
+      const normalizarTexto = valor => String(valor || "").trim() || null;
+      const contentSha256 = await hashArquivo(arquivo);
       const intencao = await api.post("/site-conteudo/admin/galeria/upload-direto", {
         mime_type: arquivo.type,
         tamanho_bytes: arquivo.size,
@@ -190,17 +248,28 @@ function ConteudoSite() {
           body: arquivo,
         });
         if (!envio.ok) throw new Error("O armazenamento recusou o arquivo. Verifique a conexao e tente novamente.");
+        const contexto = {
+          titulo: normalizarTexto(foto.titulo), legenda: normalizarTexto(foto.legenda),
+          texto_alternativo: normalizarTexto(foto.texto_alternativo), categoria: normalizarTexto(foto.categoria),
+          ordem: Number(foto.ordem || 0), publicado: Boolean(foto.publicado), content_sha256: contentSha256,
+        };
+        const autorizacao = await solicitarAutorizacao("GALERIA_CRIAR", null, contexto);
+        if (!autorizacao) return;
         await api.post("/site-conteudo/admin/galeria/finalizar-upload-direto", {
           uploadToken: intencao.data.uploadToken,
           ...foto,
           ordem: Number(foto.ordem || 0),
           publicado: Boolean(foto.publicado),
-        });
+        }, autorizacao);
       } else {
         const dados = new FormData();
         dados.append("imagem", arquivo);
         Object.entries(foto).forEach(([chave, valor]) => dados.append(chave, String(valor)));
-        await api.post("/site-conteudo/admin/galeria", dados);
+        const contexto = Object.fromEntries([...dados.entries()].filter(([chave]) => chave !== "imagem"));
+        contexto.content_sha256 = contentSha256;
+        const autorizacao = await solicitarAutorizacao("GALERIA_CRIAR", null, contexto);
+        if (!autorizacao) return;
+        await api.post("/site-conteudo/admin/galeria", dados, autorizacao);
       }
       setFoto(FOTO_VAZIA); setArquivo(null); evento.currentTarget.reset();
       await carregar(); setSucesso("Imagem enviada. Edite a ordem ou publicação quando desejar.");
@@ -213,7 +282,9 @@ function ConteudoSite() {
     if (!fotoId) return;
     try {
       setSalvando(true); setErro(""); setSucesso("");
-      await api.put(`/site-conteudo/admin/galeria/${fotoId}`, foto);
+      const autorizacao = await solicitarAutorizacao("GALERIA_ATUALIZAR", fotoId, foto);
+      if (!autorizacao) return;
+      await api.put(`/site-conteudo/admin/galeria/${fotoId}`, foto, autorizacao);
       setFoto(FOTO_VAZIA); setFotoId(null); await carregar(); setSucesso("Imagem atualizada.");
     } catch (error) { setErro(error.response?.data?.mensagem || "Não foi possível atualizar a imagem."); }
     finally { setSalvando(false); }
@@ -221,7 +292,12 @@ function ConteudoSite() {
 
   async function removerFoto(id) {
     if (!window.confirm("Remover esta imagem da galeria pública? O arquivo ficará retido para preservar o histórico.")) return;
-    try { await api.delete(`/site-conteudo/admin/galeria/${id}`); await carregar(); setSucesso("Imagem removida da galeria."); }
+    try {
+      const autorizacao = await solicitarAutorizacao("GALERIA_REMOVER", id, null);
+      if (!autorizacao) return;
+      await api.delete(`/site-conteudo/admin/galeria/${id}`, autorizacao);
+      await carregar(); setSucesso("Imagem removida da galeria.");
+    }
     catch (error) { setErro(error.response?.data?.mensagem || "Não foi possível remover a imagem."); }
   }
 
@@ -239,16 +315,27 @@ function ConteudoSite() {
   return (
     <main className="conteudo-site">
       <header className="conteudo-site-cabecalho">
-        <div><span>Sistema · Site público</span><h1>Conteúdo do Site</h1><p>Edite as informações públicas e confira a publicação sem alterar serviços, preços ou agenda.</p></div>
+        <div><span>Sistema · Site público</span><h1>{somenteGaleria ? "Galeria de Fotos" : "Conteúdo do Site"}</h1><p>{somenteGaleria ? "Gerencie as imagens da Galeria mediante autorização de um Administrador ou Super Administrador." : "Edite as informações públicas e confira a publicação sem alterar serviços, preços ou agenda."}</p></div>
         <a className="secondary-button" href="/" target="_blank" rel="noreferrer">Abrir site</a>
       </header>
 
       <nav className="conteudo-site-abas" aria-label="Seções do conteúdo">
-        {ABAS.map(([id, label]) => <button type="button" key={id} className={aba === id ? "ativa" : ""} onClick={() => setAba(id)}>{label}</button>)}
+        {abasDisponiveis.map(([id, label]) => <button type="button" key={id} className={aba === id ? "ativa" : ""} onClick={() => setAba(id)}>{label}</button>)}
       </nav>
 
       {erro && <p className="conteudo-alerta erro" role="alert">{erro}</p>}
       {sucesso && <p className="conteudo-alerta sucesso" role="status">{sucesso}</p>}
+
+      {dialogAutorizacao && <div className="modal-overlay" role="presentation"><section className="confirmation-modal conteudo-autorizacao-modal" role="dialog" aria-modal="true" aria-labelledby="titulo-autorizacao-galeria">
+        <h2 id="titulo-autorizacao-galeria">Autorizar alteração da Galeria</h2>
+        <p>Um Administrador ou Super Administrador ativo precisa autorizar esta operação específica. A senha não será armazenada.</p>
+        <form onSubmit={confirmarAutorizacao}>
+          <label>Autorizador<select name="autorizador_id" required defaultValue=""><option value="" disabled>Selecione uma pessoa</option>{dialogAutorizacao.autorizadores.map(item => <option key={item.id} value={item.id}>{item.nome} · {item.perfil === "super_administrador" ? "Super Administrador" : "Administrador"} ({item.email})</option>)}</select></label>
+          <label>Senha do autorizador<input name="senha" type="password" autoComplete="current-password" required /></label>
+          {erroAutorizacao && <p role="alert" className="conteudo-alerta erro">{erroAutorizacao}</p>}
+          <div className="conteudo-acoes"><button className="primary-button" type="submit">Autorizar operação</button><button className="secondary-button" type="button" onClick={cancelarAutorizacao}>Cancelar</button></div>
+        </form>
+      </section></div>}
 
       {aba === "inicio" && <form className="conteudo-card" onSubmit={salvarConfig}>
         <h2>Página inicial</h2><p>Deixe em branco para manter o texto neutro atual. Nenhuma informação institucional será presumida.</p>

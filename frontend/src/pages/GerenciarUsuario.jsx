@@ -18,6 +18,7 @@ import "../styles/GerenciarUsuario.css";
 function GerenciarUsuario() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const ehSuperAdministrador = (() => { try { return JSON.parse(localStorage.getItem("usuario") || "{}").perfil === "super_administrador"; } catch { return false; } })();
 
   const [usuario, setUsuario] = useState(null);
   const [perfil, setPerfil] = useState("");
@@ -85,6 +86,7 @@ function GerenciarUsuario() {
   function formatarPerfil(valor) {
     const perfis = {
       administrador: "Administrador",
+      super_administrador: "Super Administrador",
       gerente: "Gerente",
       funcionario: "Funcionário",
     };
@@ -578,6 +580,7 @@ function GerenciarUsuario() {
             <option value="administrador">
               Administrador
             </option>
+            {ehSuperAdministrador && <option value="super_administrador">Super Administrador</option>}
           </select>
 
 

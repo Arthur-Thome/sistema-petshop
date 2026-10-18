@@ -714,3 +714,20 @@ Analise antes de alterar.
 Preserve antes de substituir.
 Teste antes de concluir.
 Explique antes de executar algo perigoso.
+
+---
+
+# 33. Autonomia concedida para o lote autorizado
+
+O Codex pode executar autonomamente as atividades tecnicas necessarias para concluir o lote atualmente autorizado, sem pedir aprovacao individual para cada arquivo ou comando rotineiro. Isso inclui criar, editar e remover arquivos de codigo, corrigir defeitos dentro do escopo, atualizar documentacao, instalar dependencias compativeis quando justificadas, criar ambientes temporarios de teste e executar testes, builds, lint e integracoes isoladas.
+
+Configuracoes locais, inclusive `.env`, podem ser alteradas quando a tarefa atual autorizar essa mudanca e ela for necessaria. Nunca incluir valores secretos em saidas, logs, testes versionados ou documentacao; confirmar que arquivos locais de segredos estao ignorados pelo Git. Verificacoes de conexao nao autorizam envio de mensagens: e-mails reais somente podem ser enviados aos destinatarios que o usuario autorizar expressamente.
+
+Esta autonomia nao autoriza iniciar outro lote nem ampliar o escopo solicitado. Decisoes de negocio nao documentadas, credenciais ausentes, operacoes protegidas e testes reais com terceiros continuam dependendo da intervencao apropriada do usuario.
+
+## Protecoes que permanecem obrigatorias
+
+- Preservar os bancos persistentes `sistema_petshop` e `amores_pet_homologacao`, seus dados e arquivos associados. Nao executar DDL, migrations, seeds, alteracoes de roles/permissoes ou mudancas de dados nesses bancos sem autorizacao especifica. Para testes que alteram dados, usar somente mocks, fixtures ou banco temporario e descartavel.
+- Nao executar `git commit`, `git push`, deploy ou publicacao sem autorizacao especifica. Nao executar `git reset --hard`, `git clean`, restauracoes destrutivas nem comandos que descartem alteracoes locais sem autorizacao.
+- Manter sandbox limitado ao workspace e politica de aprovacao interativa. Regras `.rules` sao uma protecao adicional para comandos executados fora do sandbox, nao uma barreira absoluta; no Windows, caminhos absolutos do executavel PowerShell e flags como `-ExecutionPolicy Bypass` podem deixar de corresponder a prefixos, portanto validar a invocacao exata. Nunca conceder acesso irrestrito a maquina ou bancos.
+- Consultar `git status` antes de editar, preservar alteracoes locais existentes e relatar quais arquivos foram adicionados, alterados ou removidos.

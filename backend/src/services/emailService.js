@@ -10,6 +10,12 @@ const nodemailer = require("nodemailer");
  */
 let transporter;
 function obterTransporter() {
+  if (process.env.AMORES_EMAIL_DISABLED === "1"
+      || process.env.AMORES_PET_DATABASE_MODE === "NEON_HOMOLOGACAO") {
+    const error = new Error("Envio de e-mail está desativado neste ambiente de homologação.");
+    error.code = "EMAIL_DESATIVADO_NO_AMBIENTE";
+    throw error;
+  }
   const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD } = process.env;
   if (!EMAIL_HOST || !EMAIL_USER || !EMAIL_PASSWORD || !/^\d+$/.test(EMAIL_PORT || "587")) {
     const error = new Error("Configuracao de e-mail indisponivel");

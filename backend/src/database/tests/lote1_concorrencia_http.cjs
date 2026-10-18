@@ -139,7 +139,7 @@ async function main() {
   const sufixo = crypto.randomBytes(12).toString("hex");
   const usuario = (await pool.query(`
     INSERT INTO usuarios (nome, email, senha_hash, perfil, ativo)
-    VALUES ($1, $2, 'hash-apenas-de-teste', 'gerente', true)
+    VALUES ($1, $2, 'hash-apenas-de-teste', 'administrador', true)
     RETURNING id, versao_sessao
   `, [`Gerente de integracao ${sufixo}`, `gerente-${sufixo}@example.invalid`])).rows[0];
   const token = jwt.sign({ id: usuario.id, versaoSessao: usuario.versao_sessao }, process.env.JWT_SECRET, { algorithm: "HS256" });

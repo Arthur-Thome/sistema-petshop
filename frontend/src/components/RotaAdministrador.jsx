@@ -26,8 +26,7 @@ function RotaAdministrador({
 
 
   if (
-    usuario.perfil !==
-    "administrador"
+    !["administrador", "super_administrador"].includes(usuario.perfil)
   ) {
 
     return (

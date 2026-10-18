@@ -48,6 +48,7 @@ function Dashboard() {
 
       usuarios_por_perfil: {
         administradores: 0,
+        super_administradores: 0,
         gerentes: 0,
         funcionarios: 0,
       },
@@ -128,11 +129,12 @@ function Dashboard() {
 
   const podeVerGestao =
     perfil === "gerente" ||
-    perfil === "administrador";
+    perfil === "administrador" ||
+    perfil === "super_administrador";
 
 
   const ehAdministrador =
-    perfil === "administrador";
+    ["administrador", "super_administrador"].includes(perfil);
 
 
   function formatarValor(valor) {
@@ -209,6 +211,8 @@ function Dashboard() {
         <div className="dashboard-perfil">
           {perfil === "administrador" &&
             "Administrador"}
+
+          {perfil === "super_administrador" && "Super Administrador"}
 
           {perfil === "gerente" &&
             "Gerente"}
@@ -774,6 +778,8 @@ function Dashboard() {
               }
               icone="🛡️"
             />
+
+            <Card titulo="Super Administradores" valor={carregando ? "..." : resumo.usuarios_por_perfil.super_administradores} icone="🛡" />
 
 
             <Card

@@ -217,7 +217,36 @@ async function registrarLog({
   }
 }
 
+async function registrarLogObrigatorio(dados, executor = pool) {
+  const {
+    usuarioId,
+    acao,
+    entidade,
+    registroId = null,
+    valorAnterior = null,
+    valorNovo = null,
+    ip = null,
+  } = dados;
+
+  await executor.query(
+    `INSERT INTO logs
+      (usuario_id, acao, entidade, registro_id, valor_anterior, valor_novo, ip)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      usuarioId,
+      acao,
+      entidade,
+      registroId,
+      removerDadosSensiveis(valorAnterior),
+      removerDadosSensiveis(valorNovo),
+      ip,
+    ]
+  );
+}
+
 
 module.exports = {
   registrarLog,
+  registrarLogObrigatorio,
+  removerDadosSensiveis,
 };

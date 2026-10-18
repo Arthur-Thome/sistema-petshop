@@ -14,7 +14,11 @@ function permitirPerfis(...perfisPermitidos) {
       });
     }
 
-    if (!perfisPermitidos.includes(req.usuario.perfil)) {
+    const perfil = req.usuario.perfil;
+    const superAdministradorHerdandoAdministrador =
+      perfil === "super_administrador" && perfisPermitidos.includes("administrador");
+
+    if (!perfisPermitidos.includes(perfil) && !superAdministradorHerdandoAdministrador) {
       return res.status(403).json({
         mensagem: "Você não possui permissão para realizar esta ação.",
       });

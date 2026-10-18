@@ -2,7 +2,7 @@ const pool = require("../database/connection");
 
 const LIMITE_PADRAO = 20;
 const LIMITE_MAXIMO = 100;
-const PERFIS_OPERACIONAIS = new Set(["funcionario", "gerente", "administrador"]);
+const PERFIS_OPERACIONAIS = new Set(["funcionario", "gerente", "administrador", "super_administrador"]);
 
 function converterId(valor) {
   const id = Number(valor);
@@ -51,7 +51,7 @@ async function materializarAtendimentosProximos(usuarioId) {
     CROSS JOIN banho_tosa bt
     WHERE u.id = $1
       AND u.ativo = TRUE
-      AND u.perfil IN ('funcionario', 'gerente', 'administrador')
+      AND u.perfil IN ('funcionario', 'gerente', 'administrador', 'super_administrador')
       AND bt.status = 'AGENDADO'
       AND bt.agendado_para > (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
       AND bt.agendado_para <= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo') + INTERVAL '24 hours'

@@ -15,6 +15,7 @@ const {
 
 const autenticar =
   require("../middleware/authMiddleware");
+const permitirPerfis = require("../middleware/permissaoMiddleware");
 
 
 /*
@@ -69,7 +70,7 @@ router.get(
  * ============================================================
  */
 
-router.use(autenticar);
+router.use(autenticar, permitirPerfis("administrador"));
 
 
 /*

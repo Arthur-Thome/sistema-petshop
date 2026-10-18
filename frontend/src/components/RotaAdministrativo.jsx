@@ -29,6 +29,7 @@ function RotaAdministrativo({
   const autorizado =
     [
       "administrador",
+      "super_administrador",
       "gerente",
     ].includes(usuario?.perfil);
 

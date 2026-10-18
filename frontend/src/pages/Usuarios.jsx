@@ -71,6 +71,7 @@ function Usuarios() {
   function formatarPerfil(perfil) {
     const perfis = {
       administrador: "Administrador",
+      super_administrador: "Super Administrador",
       gerente: "Gerente",
       funcionario: "Funcionário",
     };

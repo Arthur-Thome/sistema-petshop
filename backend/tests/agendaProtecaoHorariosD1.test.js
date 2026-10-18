@@ -39,7 +39,7 @@ function criarClient({ horariosProtegidos = [], horariosDoDia = [] } = {}) {
 function configurarAuth() {
   pool.query.mockImplementation(async (sql) => {
     if (String(sql).includes("FROM usuarios")) {
-      return { rows: [{ id: 17, nome: "Gerente", email: "gerente@example.invalid", perfil: "gerente", ativo: true, versao_sessao: 1 }] };
+      return { rows: [{ id: 17, nome: "Administrador", email: "admin@example.invalid", perfil: "administrador", ativo: true, versao_sessao: 1 }] };
     }
     return { rows: [] };
   });
@@ -98,4 +98,16 @@ test("fechamento em massa fecha a data sem apagar nem alterar horarios existente
   expect(response.body.resumo.horarios_ocupados_preservados).toBe(1);
   expect(client.query.mock.calls.some(([sql]) => /DELETE FROM agenda_publica_horarios|UPDATE agenda_publica_horarios/i.test(String(sql)))).toBe(false);
   expect(client.query.mock.calls.some(([sql]) => /UPDATE agenda_publica_dias/i.test(String(sql)))).toBe(true);
+});
+
+test("gerente nao administra a Agenda Publica", async () => {
+  pool.query.mockImplementation(async (sql) => {
+    if (String(sql).includes("FROM usuarios")) {
+      return { rows: [{ id: 17, nome: "Gerente", email: "gerente@example.invalid", perfil: "gerente", ativo: true, versao_sessao: 1 }] };
+    }
+    return { rows: [] };
+  });
+  const response = await request(app).post("/api/agenda-publica/admin/operacoes/massa")
+    .auth(token(), { type: "bearer" }).send(bodySubstituicao(["09:00"]));
+  expect(response.status).toBe(403);
 });

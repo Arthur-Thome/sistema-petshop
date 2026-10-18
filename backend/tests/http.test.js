@@ -33,10 +33,30 @@ test('importar app sem JWT_SECRET nao carrega dotenv, abre DB nem encerra o proc
 test('rota real exige autenticacao', async () => {
   expect((await request(app).get('/api/atendimentos/ativos')).status).toBe(401);
 });
+test('token anterior a uma mudança de perfil é invalidado pela versão da sessão', async () => {
+  const tokenAnterior = jwt.sign({ id: 1, versaoSessao: 1 }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+  pool.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Teste', email: 'teste@example.invalid',
+    perfil: 'super_administrador', ativo: true, versao_sessao: 2 }] });
+  const resposta = await request(app).get('/api/auth/me').auth(tokenAnterior, { type: 'bearer' });
+  expect(resposta.status).toBe(401);
+  expect(resposta.body.mensagem).toMatch(/sessão não é mais válida/i);
+});
+test('conta desativada não pode reutilizar token anterior', async () => {
+  const tokenAnterior = jwt.sign({ id: 1, versaoSessao: 1 }, process.env.JWT_SECRET, { algorithm: 'HS256' });
+  pool.query.mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Teste', email: 'teste@example.invalid',
+    perfil: 'funcionario', ativo: false, versao_sessao: 2 }] });
+  const resposta = await request(app).get('/api/auth/me').auth(tokenAnterior, { type: 'bearer' });
+  expect(resposta.status).toBe(403);
+  expect(resposta.body.mensagem).toMatch(/desativado/i);
+});
 test('readiness valida as dependencias usadas pelo login e identifica a requisição', async () => {
   pool.query
     .mockResolvedValueOnce({ rows: [] })
-    .mockResolvedValueOnce({ rows: [{ usuarios_disponiveis: true, rate_limit_disponivel: true, permissao_rate_limit: true }] })
+    .mockResolvedValueOnce({ rows: [{ usuarios_disponiveis: true, rate_limit_disponivel: true, permissao_rate_limit: true,
+      autorizacoes_operacionais_disponiveis: true, fila_exclusoes_disponivel: true,
+      permissao_autorizacoes: true, permissao_fila_exclusoes: true }] })
+    .mockResolvedValueOnce({ rows: [] })
+    .mockResolvedValueOnce({ rows: [] })
     .mockResolvedValueOnce({ rows: [] })
     .mockResolvedValueOnce({ rows: [] });
   const pronta = await request(app).get('/health/ready');

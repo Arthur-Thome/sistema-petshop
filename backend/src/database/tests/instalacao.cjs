@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const crypto = require('node:crypto');
 const { spawnSync, spawn } = require('node:child_process');
 
 const options = {};
@@ -24,7 +25,6 @@ assert.ok(['127.0.0.1', '::1'].includes(options.host), 'Somente IP literal de lo
 assert.ok(path.isAbsolute(options['data-directory']), 'Diretorio do cluster deve ser absoluto');
 const relativeCluster = path.relative(os.tmpdir(), path.resolve(options['data-directory']));
 assert.ok(!relativeCluster.startsWith('..') && !path.isAbsolute(relativeCluster) && /^amores-pet-test-[a-f0-9]{32}[\\/]data$/.test(relativeCluster), 'Cluster temporario exclusivo obrigatorio');
-const clusterDirectory = options['data-directory'].replaceAll('\\', '/').replace(/\/$/, '');
 // Comprova localmente o processo PostgreSQL e o listener ANTES de invocar psql.
 // pg_ctl status consulta apenas o PID file do cluster explicitamente indicado.
 const statusCluster = spawnSync(options['pg-ctl'], ['-D', options['data-directory'], 'status'],
@@ -36,11 +36,32 @@ assert.ok(Number.isSafeInteger(Number(linhasPid[0])) && Number(linhasPid[0]) > 0
 assert.equal(path.resolve(linhasPid[1] || ''), path.resolve(options['data-directory']), 'Cluster indicado difere do postmaster.pid');
 assert.equal(Number(linhasPid[3]), Number(options.port), 'Porta do processo PostgreSQL diverge da porta informada');
 assert.ok(String(linhasPid[5] || '').split(',').map(value => value.trim()).includes(options.host), 'Listener nao esta limitado ao loopback solicitado');
-const directory = path.resolve(__dirname, '..');
+assert.ok(Number.isSafeInteger(Number(linhasPid[2])) && Number(linhasPid[2]) > 0, 'Inicio do processo PostgreSQL invalido');
+const sourceDirectory = path.resolve(__dirname, '..');
+const stagingId = crypto.randomBytes(16).toString('hex');
+const directory = path.join(os.tmpdir(), `amores-pet-install-${stagingId}`);
+const relativeStagingPath = path.relative(path.resolve(os.tmpdir()), path.resolve(directory));
+assert.ok(relativeStagingPath && !relativeStagingPath.startsWith('..') && !path.isAbsolute(relativeStagingPath));
+assert.equal(path.basename(directory), `amores-pet-install-${stagingId}`);
+fs.cpSync(sourceDirectory, directory, { recursive: true });
+const bootstrapPath = path.join(directory, 'bootstrap', '001_schema_completo.sql');
+const bootstrap = fs.readFileSync(bootstrapPath, 'utf8');
+const psqlRestrictions = bootstrap.match(/^\s*\\(?:restrict|unrestrict)(?:\s+.*)?\s*$/gim) || [];
+assert.equal(psqlRestrictions.length, 2, 'Dump-base mudou; a copia temporaria nao sera adaptada.');
+fs.writeFileSync(bootstrapPath, bootstrap.split(/\r?\n/)
+  .filter(line => !/^\s*\\(?:restrict|unrestrict)(?:\s+.*)?\s*$/i.test(line)).join('\n'), 'utf8');
+process.on('exit', () => {
+  const resolved = path.resolve(directory);
+  const relative = path.relative(path.resolve(os.tmpdir()), resolved);
+  if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)
+    && path.basename(resolved) === `amores-pet-install-${stagingId}` && fs.existsSync(resolved)) {
+    fs.rmSync(resolved, { recursive: true, force: false });
+  }
+});
 const args = ['-X', '-w', '-h', options.host, '-p', options.port, '-U', options.user,
   '-d', options.database, '-v', 'ON_ERROR_STOP=1', '-v', `banco_confirmado=${options.database}`,
   '-v', `host_confirmado=${options.host}`, '-v', `porta_confirmada=${Number(options.port)}`,
-  '-v', `diretorio_confirmado=${clusterDirectory}`, '-v', `usuario_confirmado=${options.user}`];
+  '-v', `inicio_confirmado=${Number(linhasPid[2])}`, '-v', `usuario_confirmado=${options.user}`];
 
 // Remove TODAS as variaveis libpq/psql herdadas, inclusive PGHOSTADDR,
 // PGSERVICE, PGSERVICEFILE, PGOPTIONS, PGDATABASE e PGPASSWORD. Sem dotenv.
@@ -54,9 +75,9 @@ SELECT current_database() = :'banco_confirmado'
   AND current_database() <> 'sistema_petshop'
   AND inet_server_addr() = :'host_confirmado'::inet
   AND inet_server_port() = :'porta_confirmada'::integer
-  AND replace(current_setting('data_directory'), chr(92), '/') = :'diretorio_confirmado'
+  AND abs(extract(epoch FROM pg_postmaster_start_time())::bigint - :'inicio_confirmado'::bigint) <= 1
   AND current_user = :'usuario_confirmado'
-  AND NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'sistema_petshop') AS instancia_correta \\gset
+  AND NOT EXISTS (SELECT 1 FROM pg_database WHERE datname IN ('sistema_petshop', 'amores_pet_homologacao')) AS instancia_correta \\gset
 \\if :instancia_correta
 \\else
   DO $$ BEGIN RAISE EXCEPTION 'Instancia de testes divergente; nenhuma escrita autorizada'; END $$;
@@ -88,7 +109,7 @@ END $$;\n`;
 const baseline = '\\ir bootstrap/001_schema_completo.sql\nSET search_path TO public;\n';
 const corrections = '\\ir migrations/025_recuperacoes_senha.sql\n\\ir migrations/026_unicidade_email_usuarios.sql\n';
 
-const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n\\ir migrations/033_notificacoes_internas.sql\n\\ir migrations/034_rate_limit_upload_cleanup.sql\n\\ir migrations/035_renomear_tabelas_atendimentos.sql\n';
+const preparacaoEtapa21 = '\\ir migrations/027_estados_confirmacao_publica.sql\n\\ir migrations/028_historico_atendimentos.sql\n\\ir migrations/029_reutilizacao_segura_horarios.sql\n\\ir migrations/030_verificacao_email_publico.sql\n\\ir migrations/031_porte_gigante_pet.sql\n\\ir migrations/032_conteudo_site_galeria.sql\n\\ir migrations/033_notificacoes_internas.sql\n\\ir migrations/034_rate_limit_upload_cleanup.sql\n\\ir migrations/035_renomear_tabelas_atendimentos.sql\n\\ir migrations/036_autorizacoes_operacionais.sql\n\\ir migrations/037_notificacoes_super_administrador.sql\n';
 const preparacaoAntesRenomeacao = preparacaoEtapa21.replace('\\ir migrations/035_renomear_tabelas_atendimentos.sql\n', '');
 
 // Leitura e confirmacao do destino antes do primeiro teste que grava dados.
