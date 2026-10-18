@@ -32,7 +32,16 @@ Se a ACL existente não passar, o launcher para sem modificá-la. O arquivo de c
 
 ## Configuração do notebook
 
-Não copie `neon-runtime.json` pelo GitHub: o segredo DPAPI só pode ser aberto no computador/conta que o protegeu. No notebook, execute o inicializador local de homologação para preparar uma raiz privada e então o mesmo VBS Neon. Informe a senha Neon localmente quando solicitado. O JWT será distinto naquele computador. Para que desafios públicos persistidos possam ser validados alternadamente nas duas máquinas, o mesmo `CLIENTE_PUBLICO_PEPPER` precisa ser provisionado nas duas configurações por canal privado autorizado; não o copie para o repositório, tickets ou chat. Não use ambas as máquinas para editar os mesmos arquivos locais de uploads.
+Nao copie neon-runtime.json pelo GitHub: o DPAPI so pode ser aberto na conta Windows que o protegeu. Para transferir o pepper original sem gravar um pacote em texto puro:
+
+1. No computador principal, execute scripts/homologacao/Exportar-Pepper-Homologacao.vbs. O script valida as ACLs existentes, solicita duas vezes uma senha forte em entrada sem eco e cria um arquivo pepper-transfer-<id>.apet na raiz privada da homologacao. O pacote usa scrypt e AES-256-GCM.
+2. Transporte somente o pacote cifrado, preferencialmente por USB. Transmita a senha por um canal separado; nao envie a senha junto ao arquivo. Nao use GitHub, email ou chat para nenhum dos dois.
+3. No notebook, copie o pacote para %LOCALAPPDATA%\AmoresPet\Homologacao e execute scripts/homologacao/Importar-Pepper-Homologacao.vbs. A importacao preserva config.json se existente, altera somente app.clientePublicoPepper e recusa conflito. Se config.json estiver ausente, cria somente o JSON minimo dentro da raiz privada validada. Se neon-runtime.json ja existir, para sem altera-lo.
+4. Depois da importacao, execute Amores Pet - Homologacao Neon.vbs no notebook. O launcher solicita localmente a senha Neon e cria neon-runtime.json com DPAPI da conta atual.
+
+Os scripts nao corrigem ACLs. Se a raiz privada estiver ausente, inacessivel ou com ACL invalida, interrompem sem modificar permissoes. Nenhum script mostra, imprime hash ou registra o pepper.
+
+O build Neon precisa usar VITE_API_URL=/api. Gere-o sem alterar .env; nao compartilhe credenciais pelo GitHub.
 
 ## Antes de liberar além de leitura
 
